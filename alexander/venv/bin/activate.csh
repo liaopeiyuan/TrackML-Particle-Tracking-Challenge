@@ -8,7 +8,7 @@ alias deactivate 'test $?_OLD_VIRTUAL_PATH != 0 && setenv PATH "$_OLD_VIRTUAL_PA
 # Unset irrelevant variables.
 deactivate nondestructive
 
-setenv VIRTUAL_ENV "/Users/alexanderliao/Documents/GitHub/Kaggle-TrackML/alexander/venv"
+setenv VIRTUAL_ENV "/home/alexanderliao/data/GitHub/Kaggle-TrackML/alexander/venv"
 
 set _OLD_VIRTUAL_PATH="$PATH"
 setenv PATH "$VIRTUAL_ENV/bin:$PATH"
