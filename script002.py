@@ -23,8 +23,8 @@ import itertools
 from sklearn import cluster
 from sklearn.preprocessing import StandardScaler
 
-# from keras.layers import Input, Dense
-# from keras.models import Model
+from keras.layers import Input, Dense
+from keras.models import Model
 
 from trackml.dataset import load_event
 from trackml.score import score_event
@@ -47,6 +47,7 @@ SAMPLE_SUBMISSION_DIR = "E:/TrackMLData/sample_submission.csv"  # csv file for s
 TRAIN_EVENT_ID_LIST = sorted(set(int(x[x.index("0"):x.index("-")]) for x in os.listdir(TRAIN_DIR)))
 TEST_EVENT_ID_LIST = sorted(set(int(x[x.index("0"):x.index("-")]) for x in os.listdir(TEST_DIR)))
 
+# load feature engineering
 sfe1 = StaticFeatureEngineer()
 sfe1.add_method("r", lambda df: np.sqrt(df.x**2 + df.y**2 + df.z**2))
 sfe1.add_method("rx", lambda df: np.sqrt(df.y**2 + df.z**2))
@@ -73,6 +74,10 @@ val_id_list = event_id_list[n_train:]  # validation set
 
 
 # TODO: load keras model
+input_dim = 3 + sfe1.get_n_variables()
+input_cols = ["x", "y", "z"] + sfe1.get_variables()
+
+
 
 for event_id in event_id_list:
     hits, truth = load_event(TRAIN_DIR + get_event_name(event_id), [HITS, TRUTH])
