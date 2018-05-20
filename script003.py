@@ -4,6 +4,8 @@ script003.py
 continue with hidden space strategy
 important: error analysis by parts
 
+current experiment: tc_cols --> pc_cols --> (DBSCAN) track_id
+
 by Tianyi Miao
 """
 
@@ -17,7 +19,7 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 import hdbscan
 
 from keras.layers import Input, Dense
-from keras.models import Model
+from keras.models import Model, Sequential
 
 from trackml.dataset import load_event
 from trackml.score import score_event
@@ -33,7 +35,7 @@ TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, 
 
 
 n_event = 10
-n_train = 5
+n_train = 6
 event_id_list = np.random.choice(TRAIN_EVENT_ID_LIST, size=n_event, replace=False)
 train_id_list = event_id_list[:n_train]  # training set
 val_id_list = event_id_list[n_train:]  # validation set
@@ -47,21 +49,48 @@ pc_cols = ["px", "py", "pz"]
 tc_cols = ["tx", "ty", "tz"]
 tpc_cols = ["tpx", "tpy", "tpz"]
 
+feature_cols = tc_cols + tpc_cols
+
+
 # load neural network
-input_layer = Input(shape=(3,))
-encoded = Dense(64, activation="relu")(input_layer)
-encoded = Dense(64, activation="relu")(encoded)
-encoded = Dense(64, activation="relu")(encoded)
-encoded = Dense(64, activation="relu")(encoded)
+def get_nn_1():
+    input_layer = Input(shape=(len(feature_cols),))
+    encoded = Dense(64, activation="relu")(input_layer)
+    encoded = Dense(64, activation="relu")(encoded)
+    encoded = Dense(64, activation="tanh")(encoded)
+    encoded = Dense(64, activation="tanh")(encoded)
 
-decoded = Dense(64, activation="relu")(encoded)
-decoded = Dense(64, activation="relu")(decoded)
-decoded = Dense(64, activation="relu")(decoded)
-decoded = Dense(len(pc_cols), activation="linear")(decoded)
-# encoder = Model(input_layer, encoded)
-nn_predictor = Model(input_layer, decoded)
-nn_predictor.compile(optimizer="adadelta", loss="mean_squared_error")
+    decoded = Dense(64, activation="tanh")(encoded)
+    decoded = Dense(64, activation="tanh")(decoded)
+    decoded = Dense(64, activation="relu")(decoded)
+    decoded = Dense(len(pc_cols), activation="linear")(decoded)
+    # encoder = Model(input_layer, encoded)
+    nn_predictor = Model(input_layer, decoded)
+    nn_predictor.compile(optimizer="adadelta", loss="mean_squared_error")
+    return nn_predictor
 
+
+def get_nn_2():
+    input_layer = Input(shape=(len(feature_cols),))
+    encoded = Dense(64, activation="relu")(input_layer)
+    encoded = Dense(96, activation="relu")(encoded)
+    encoded = Dense(64, activation="relu")(encoded)
+    encoded = Dense(96, activation="relu")(encoded)
+    encoded = Dense(64, activation="relu")(encoded)
+    encoded = Dense(96, activation="relu")(encoded)
+    encoded = Dense(64, activation="relu")(encoded)
+    encoded = Dense(96, activation="relu")(encoded)
+
+    decoded = Dense(64, activation="relu")(encoded)
+    decoded = Dense(96, activation="relu")(decoded)
+    decoded = Dense(96, activation="relu")(decoded)
+    decoded = Dense(len(pc_cols), activation="linear")(decoded)
+    # encoder = Model(input_layer, encoded)
+    nn_predictor = Model(input_layer, decoded)
+    nn_predictor.compile(optimizer="adam", loss="mean_squared_error")
+    return nn_predictor
+
+nn_predictor = get_nn_2()
 
 for event_id in train_id_list:
     particles, truth = load_event(TRAIN_DIR + get_event_name(event_id), [PARTICLES, TRUTH])
@@ -71,12 +100,32 @@ for event_id in train_id_list:
 
     truth = truth.merge(particles, how="left", on="particle_id", copy=False)
 
-    truth.drop(vc_cols + ["q", "nhits"] + tpc_cols, axis=1, inplace=True)
+    truth.drop(vc_cols + ["q", "nhits"], axis=1, inplace=True)
 
     # current experiment: tc_cols to pc_cols
-    nn_predictor.fit(x=truth[tc_cols],
+    nn_predictor.fit(x=truth[feature_cols],
                      y=truth[pc_cols],
-                     batch_size=256, epochs=60, shuffle=True, validation_split=0.2)
+                     batch_size=256, epochs=20, shuffle=True, validation_split=0.2)
+
+for event_id in val_id_list:
+    print("start predicting new event")
+    particles, truth = load_event(TRAIN_DIR + get_event_name(event_id), [PARTICLES, TRUTH])
+
+    noisy_indices = truth[truth.particle_id == 0].index
+    truth.drop(noisy_indices, axis=0, inplace=True)  # drop noisy hits
+
+    truth = truth.merge(particles, how="left", on="particle_id", copy=False)
+    X_new = nn_predictor.predict(x=truth[feature_cols], verbose=1)
+    nn_predictor.evaluate(x=truth[feature_cols], y=truth[pc_cols])
+    for eps in (1e-3, 1e-2, 0.1, 0.3):
+        # eps = 0.00715
+        dbscan_1 = cluster.DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
+        pred = pd.DataFrame({
+            "hit_id": truth.hit_id,
+            "track_id": dbscan_1.fit_predict(X_new)
+        })
+        print("eps={}, final score:".format(eps), end="    ")
+        print(score_event(truth=truth, submission=pred))
 
 """
 for event_id in train_id_list:
