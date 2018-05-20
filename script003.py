@@ -34,8 +34,8 @@ from arsenal import HITS, CELLS, PARTICLES, TRUTH
 TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = get_directories()
 
 
-n_event = 10
-n_train = 6
+n_event = 10  # TODO: important parameter
+n_train = 10  # TODO: important parameter
 event_id_list = np.random.choice(TRAIN_EVENT_ID_LIST, size=n_event, replace=False)
 train_id_list = event_id_list[:n_train]  # training set
 val_id_list = event_id_list[n_train:]  # validation set
@@ -49,7 +49,7 @@ pc_cols = ["px", "py", "pz"]
 tc_cols = ["tx", "ty", "tz"]
 tpc_cols = ["tpx", "tpy", "tpz"]
 
-feature_cols = tc_cols + tpc_cols
+feature_cols = tc_cols  # TODO: important parameter
 
 
 # load neural network
@@ -70,8 +70,8 @@ def get_nn_1():
     return nn_predictor
 
 
-def get_nn_2():
-    input_layer = Input(shape=(len(feature_cols),))
+def get_nn_2(input_length):
+    input_layer = Input(shape=(input_length,))
     encoded = Dense(64, activation="relu")(input_layer)
     encoded = Dense(96, activation="relu")(encoded)
     encoded = Dense(64, activation="relu")(encoded)
@@ -90,7 +90,17 @@ def get_nn_2():
     nn_predictor.compile(optimizer="adam", loss="mean_squared_error")
     return nn_predictor
 
-nn_predictor = get_nn_2()
+
+def preprocess_1(df):
+    r = np.sqrt(df.tx ** 2 + df.ty ** 2 + df.tz ** 2)
+    rz = np.sqrt(df.tx ** 2 + df.ty ** 2)
+    df["tx"] /= r
+    df["ty"] /= r
+    df["tz"] /= rz
+    return df
+
+
+nn_predictor = get_nn_2(3)  # TODO: important parameter
 
 for event_id in train_id_list:
     particles, truth = load_event(TRAIN_DIR + get_event_name(event_id), [PARTICLES, TRUTH])
@@ -102,10 +112,39 @@ for event_id in train_id_list:
 
     truth.drop(vc_cols + ["q", "nhits"], axis=1, inplace=True)
 
+    preprocess_1(truth)  # TODO: important procedure
+
     # current experiment: tc_cols to pc_cols
     nn_predictor.fit(x=truth[feature_cols],
                      y=truth[pc_cols],
                      batch_size=256, epochs=20, shuffle=True, validation_split=0.2)
+
+    # checkc whether underfitting
+    X_new = nn_predictor.predict(x=truth[feature_cols], verbose=1)
+    print(pd.DataFrame(X_new).describe())
+    print(truth[pc_cols].describe())
+    for eps in (0.001, 0.003, 0.01, 0.03, 0.1, 0.2):
+        # eps = 0.00715
+        dbscan_1 = cluster.DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
+        pred = pd.DataFrame({
+            "hit_id": truth.hit_id,
+            "track_id": dbscan_1.fit_predict(X_new)
+        })
+        print("eps={}, final score:".format(eps), end="    ")
+        print(score_event(truth=truth, submission=pred))
+    print("directly cluster on tx/ty/tc:")
+    for eps in (0.001, 0.003, 0.01, 0.03, 0.1, 0.2):
+        # eps = 0.00715
+        dbscan_1 = cluster.DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
+        pred = pd.DataFrame({
+            "hit_id": truth.hit_id,
+            "track_id": dbscan_1.fit_predict(truth[tc_cols])
+        })
+        print("eps={}, final score:".format(eps), end="    ")
+        print(score_event(truth=truth, submission=pred))
+
+
+exit("early exit before running on the validation set")
 
 for event_id in val_id_list:
     print("start predicting new event")
@@ -116,8 +155,8 @@ for event_id in val_id_list:
 
     truth = truth.merge(particles, how="left", on="particle_id", copy=False)
     X_new = nn_predictor.predict(x=truth[feature_cols], verbose=1)
-    nn_predictor.evaluate(x=truth[feature_cols], y=truth[pc_cols])
-    for eps in (1e-3, 1e-2, 0.1, 0.3):
+
+    for eps in (1e-3, 3e-3, 1e-2, 3e-2, 0.1, 0.3):
         # eps = 0.00715
         dbscan_1 = cluster.DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
         pred = pd.DataFrame({
