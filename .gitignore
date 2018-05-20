@@ -1,4 +1,4 @@
 .*
 !.gitignore
 __*
-PyCharm_env-alexander
+PyCharm_env-alexander/*
