@@ -12,6 +12,12 @@ classes:
 StaticFeatureEngineer
 """
 
+# define data name strings as constants; prevent spelling errors
+HITS = "hits"
+CELLS = "cells"
+PARTICLES = "particles"
+TRUTH = "truth"
+
 
 def get_directories(parent_dir="./",
                     train_dir="train/",

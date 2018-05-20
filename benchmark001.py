@@ -31,13 +31,9 @@ from trackml.dataset import load_event
 from trackml.score import score_event
 
 from arsenal import get_directories, get_event_name
+from arsenal import HITS, CELLS, PARTICLES, TRUTH
 
 # important constants
-# define data name strings as constants; prevent spelling errors
-HITS = "hits"
-CELLS = "cells"
-PARTICLES = "particles"
-TRUTH = "truth"
 # define important directories; change it if you store your data differently!
 # TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR = get_directories("E:/TrackMLData/")
 TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR = get_directories()
@@ -119,7 +115,7 @@ for event_id in event_id_list:
     # print(hits[cols].describe())
     print("predicting...")
 
-    for min_cluster_size in range(2, 6):
+    for min_cluster_size in range(2, 12):
         dbscan_2 = hdbscan.HDBSCAN(min_samples=2, min_cluster_size=min_cluster_size, cluster_selection_method='leaf',
                                    prediction_data=False, metric='braycurtis', core_dist_n_jobs=-1)
         pred = pd.DataFrame({

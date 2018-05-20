@@ -1,6 +1,8 @@
 """
 script002.py
 
+Use neural network for encoding
+
 Author: Tianyi Miao
 
 TrackML CheatSheet
@@ -31,13 +33,8 @@ from trackml.dataset import load_event
 from trackml.score import score_event
 
 from arsenal import get_directories, get_event_name, StaticFeatureEngineer
+from arsenal import HITS, CELLS, PARTICLES, TRUTH
 
-# important constants
-# define data name strings as constants; prevent spelling errors
-HITS = "hits"
-CELLS = "cells"
-PARTICLES = "particles"
-TRUTH = "truth"
 # define important directories; change it if you store your data differently!
 # type help(get_directories) for more information
 # TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR = get_directories("E:/TrackMLData/")
@@ -83,7 +80,8 @@ val_id_list = event_id_list[n_train:]  # validation set
 # TODO: load keras model
 n_features = 3 + sfe1.get_n_variables()
 feature_cols = ["x", "y", "z"] + sfe1.get_variables()
-target_cols = ["vx", "vy", "vz", "px", "py", "pz", "q"]
+# target_cols = ["vx", "vy", "vz", "px", "py", "pz", "q"]
+target_cols = ["tx", "ty", "tz", "tpx", "tpy", "tpz"]
 
 
 input_layer = Input(shape=(n_features,))
@@ -130,10 +128,10 @@ for event_id in train_id_list:
 for event_id in val_id_list:
     hits, truth = load_event(TRAIN_DIR + get_event_name(event_id), [HITS, TRUTH])
     hits = sfe1.transform(hits, copy=False)
-    X_new = encoder.predict(StandardScaler().fit_transform(hits[feature_cols]))
+    X_new = encoder.predict(hits[feature_cols])
 
     # dbscan_1 = cluster.DBSCAN(eps=0.1, min_samples=1, algorithm='auto', n_jobs=-1)
-    dbscan_2 = hdbscan.HDBSCAN(min_samples=2, min_cluster_size=5, cluster_selection_method='leaf',
+    dbscan_2 = hdbscan.HDBSCAN(min_samples=2, min_cluster_size=7, cluster_selection_method='leaf',
                                prediction_data=False, metric='braycurtis', core_dist_n_jobs=-1)
     print("start predicting", end="")
     pred = pd.DataFrame({
