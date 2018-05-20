@@ -12,6 +12,8 @@ classes:
 StaticFeatureEngineer
 """
 
+import os
+
 # define data name strings as constants; prevent spelling errors
 HITS = "hits"
 CELLS = "cells"
@@ -24,7 +26,31 @@ def get_directories(parent_dir="./",
                     test_dir="test/",
                     detectors_dir="detectors.csv",
                     sample_submission_dir="sample_submission.csv"):
-    return parent_dir + train_dir, parent_dir + test_dir, parent_dir + detectors_dir, parent_dir + sample_submission_dir
+    train_dir = parent_dir + train_dir
+    test_dir = parent_dir + test_dir
+    detectors_dir = parent_dir + detectors_dir
+    sample_submission_dir = parent_dir + sample_submission_dir
+
+    # there are 8850 events in the training dataset; some ids from 1000 to 9999 are skipped
+    if os.path.isdir(train_dir):
+        train_event_id_list = sorted(set(int(x[x.index("0"):x.index("-")]) for x in os.listdir(train_dir)))
+    else:
+        train_dir = None
+        train_event_id_list = []
+
+    if os.path.isdir(test_dir):
+        test_event_id_list = sorted(set(int(x[x.index("0"):x.index("-")]) for x in os.listdir(test_dir)))
+    else:
+        test_dir = None
+        test_event_id_list = []
+
+    if not os.path.exists(detectors_dir):
+        detectors_dir = None
+
+    if not os.path.exists(sample_submission_dir):
+        sample_submission_dir = None
+
+    return train_dir, test_dir, detectors_dir, sample_submission_dir, train_event_id_list, test_event_id_list
 
 
 def get_event_name(event_id):
