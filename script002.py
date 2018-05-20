@@ -35,6 +35,12 @@ from arsenal import HITS, CELLS, PARTICLES, TRUTH
 
 # define important directories; change it if you store your data differently!
 # type help(get_directories) for more information
+
+# there are 8850 events in the training dataset; some ids from 1000 to 9999 are skipped
+TRAIN_EVENT_ID_LIST = sorted(set(int(x[x.index("0"):x.index("-")]) for x in os.listdir(TRAIN_DIR))) if os.path.isdir(TRAIN_DIR) else []
+TEST_EVENT_ID_LIST = sorted(set(int(x[x.index("0"):x.index("-")]) for x in os.listdir(TEST_DIR))) if os.path.isdir(TEST_DIR) else []
+
+
 # TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = get_directories("E:/TrackMLData/")
 TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = get_directories()
 
