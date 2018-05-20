@@ -15,8 +15,6 @@ nhit for a particle: minimum = 1, maximum = 28
 
 """
 
-import os
-
 import numpy as np
 import pandas as pd
 
@@ -39,6 +37,7 @@ from arsenal import HITS, CELLS, PARTICLES, TRUTH
 # type help(get_directories) for more information
 # TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = get_directories("E:/TrackMLData/")
 TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = get_directories()
+
 
 # load feature engineering
 def get_feature_engineer():
@@ -134,5 +133,5 @@ for event_id in val_id_list:
         "track_id": dbscan_2.fit_predict(X_new)
     })
 
-    print("\rfinal score:", end='\t')
+    print("\rfinal score:", end="    ")
     print(score_event(truth=truth, submission=pred))

@@ -14,7 +14,6 @@ truth:       ['hit_id', 'particle_id', 'tx', 'ty', 'tz', 'tpx', 'tpy', 'tpz', 'w
 nhit for a particle: minimum = 1, maximum = 28
 
 """
-import os
 
 import numpy as np
 import pandas as pd
