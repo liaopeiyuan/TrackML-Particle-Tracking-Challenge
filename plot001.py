@@ -27,7 +27,8 @@ def plot_2d_function(func, x_min, x_max, x_n, y_min, y_max, y_n):
     return fig
 
 # this converts cartesian coordiantes to angle
-plot_2d_function(lambda x, y: (0 if y >= 0 else np.pi) + np.arctan(x/y), -30, 30, 1000, -30, 30, 1000)
+# plot_2d_function(lambda x, y: (0 if y >= 0 else np.pi) + np.arctan(x/y), -30, 30, 1000, -30, 30, 1000)
+plot_2d_function(lambda x, y: np.log(x**4+y**4), -30, 30, 1000, -30, 30, 1000)
 
 plt.show()
 
