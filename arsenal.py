@@ -13,6 +13,14 @@ StaticFeatureEngineer
 """
 
 
+def get_directories(parent_dir="./",
+                    train_dir="train/",
+                    test_dir="test/",
+                    detectors_dir="detectors.csv",
+                    sample_submission_dir="sample_submission.csv"):
+    return parent_dir + train_dir, parent_dir + test_dir, parent_dir + detectors_dir, parent_dir + sample_submission_dir
+
+
 def get_event_name(event_id):
     return "event" + str(event_id).zfill(9)
 
