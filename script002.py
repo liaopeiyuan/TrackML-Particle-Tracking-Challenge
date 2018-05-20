@@ -87,8 +87,8 @@ target_cols = ["vx", "vy", "vz", "px", "py", "pz", "q"]
 
 
 input_layer = Input(shape=(n_features,))
-encoded = Dense(48, activation="relu")(input_layer)
-encoded = Dense(64, activation="relu")(encoded)
+encoded = Dense(256, activation="relu")(input_layer)
+encoded = Dense(128, activation="relu")(encoded)
 encoded = Dense(96, activation="relu")(encoded)
 encoded = Dense(64, activation="relu")(encoded)
 encoded = Dense(32, activation="relu")(encoded)
@@ -96,6 +96,7 @@ encoded = Dense(16, activation="sigmoid")(encoded)
 
 decoded = Dense(32, activation="relu")(encoded)
 decoded = Dense(64, activation="relu")(decoded)
+decoded = Dense(96, activation="relu")(decoded)
 decoded = Dense(len(target_cols), activation="linear")(decoded)
 
 encoder = Model(input_layer, encoded)
