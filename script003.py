@@ -16,6 +16,9 @@ from sklearn import cluster
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 import hdbscan
 
+from keras.layers import Input, Dense
+from keras.models import Model
+
 from trackml.dataset import load_event
 from trackml.score import score_event
 
@@ -44,6 +47,38 @@ pc_cols = ["px", "py", "pz"]
 tc_cols = ["tx", "ty", "tz"]
 tpc_cols = ["tpx", "tpy", "tpz"]
 
+# load neural network
+input_layer = Input(shape=(3,))
+encoded = Dense(64, activation="relu")(input_layer)
+encoded = Dense(64, activation="relu")(encoded)
+encoded = Dense(64, activation="relu")(encoded)
+encoded = Dense(64, activation="relu")(encoded)
+
+decoded = Dense(64, activation="relu")(encoded)
+decoded = Dense(64, activation="relu")(decoded)
+decoded = Dense(64, activation="relu")(decoded)
+decoded = Dense(len(pc_cols), activation="linear")(decoded)
+# encoder = Model(input_layer, encoded)
+nn_predictor = Model(input_layer, decoded)
+nn_predictor.compile(optimizer="adadelta", loss="mean_squared_error")
+
+
+for event_id in train_id_list:
+    particles, truth = load_event(TRAIN_DIR + get_event_name(event_id), [PARTICLES, TRUTH])
+
+    noisy_indices = truth[truth.particle_id == 0].index
+    truth.drop(noisy_indices, axis=0, inplace=True)  # drop noisy hits
+
+    truth = truth.merge(particles, how="left", on="particle_id", copy=False)
+
+    truth.drop(vc_cols + ["q", "nhits"] + tpc_cols, axis=1, inplace=True)
+
+    # current experiment: tc_cols to pc_cols
+    nn_predictor.fit(x=truth[tc_cols],
+                     y=truth[pc_cols],
+                     batch_size=256, epochs=60, shuffle=True, validation_split=0.2)
+
+"""
 for event_id in train_id_list:
     # important observation:
     # Many particle_id in particles do not appear in truth; perhaps they are not detected at all
@@ -62,17 +97,16 @@ for event_id in train_id_list:
     X_new = truth[pc_cols]
 
     # categorical encoding: use LabelEncoder
-    """
-    print("final score:    ", end="")
+
+    print("categorical encoding score:    ", end="")
     pred = pd.DataFrame({
         "hit_id": hits.hit_id,
         "track_id": LabelEncoder().fit_transform([str(row) for row in X_new.values])
         # "track_id": truth.particle_id
     })
     print(score_event(truth=truth, submission=pred))
-    """
 
-    use_hdbscan = True
+    use_hdbscan = False
     print("start predicting...")
     if use_hdbscan:  # use DBSCAN instead
         for min_cluster_size in range(2, 10):
@@ -86,12 +120,14 @@ for event_id in train_id_list:
             print("n={}, final score:".format(min_cluster_size), end="    ")
             print(score_event(truth=truth, submission=pred))
     else:
-        dbscan_1 = cluster.DBSCAN(eps=0.00715, min_samples=1, algorithm='auto', n_jobs=-1)
-        pred = pd.DataFrame({
-            "hit_id": hits.hit_id,
-            "track_id": dbscan_1.fit_predict(X_new)
-        })
-        print("dbscan, final score:", end="    ")
-        print(score_event(truth=truth, submission=pred))
+        for eps in (1e-3, 1e-2, 1e-1, 1.0, 1e1, 1e2, 1e3, 1e4):
+            # eps = 0.00715
+            dbscan_1 = cluster.DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
+            pred = pd.DataFrame({
+                "hit_id": hits.hit_id,
+                "track_id": dbscan_1.fit_predict(X_new)
+            })
+            print("eps={}, final score:".format(eps), end="    ")
+            print(score_event(truth=truth, submission=pred))
+"""
 
-# print("Error Analysis 2: cluster tracks from ")
