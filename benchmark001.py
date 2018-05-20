@@ -128,6 +128,14 @@ for event_id in event_id_list:
         })
         # print(pred)
         # this should give an average score of 0.2
-        print("c = {}; final score:  ".format(min_cluster_size), end="")
+        print("c = {}; final score:\t".format(min_cluster_size), end="")
         print(score_event(truth=truth, submission=pred))
+
+    dbscan_1 = cluster.DBSCAN(eps=0.00715, min_samples=1, algorithm='auto', n_jobs=-1)
+    pred = pd.DataFrame({
+        "hit_id": hits.hit_id,
+        "track_id": dbscan_1.fit_predict(StandardScaler().fit_transform(hits2[cols]))
+    })
+    print("dbscan; final score:\t", end="")
+    print(score_event(truth=truth, submission=pred))
 
