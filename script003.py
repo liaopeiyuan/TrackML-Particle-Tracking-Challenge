@@ -37,8 +37,8 @@ from arsenal import HITS, CELLS, PARTICLES, TRUTH
 TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = get_directories()
 
 
-n_event = 10  # TODO: important parameter
-n_train = 10  # TODO: important parameter
+n_event = 20  # TODO: important parameter
+n_train = 20  # TODO: important parameter
 event_id_list = np.random.choice(TRAIN_EVENT_ID_LIST, size=n_event, replace=False)
 train_id_list = event_id_list[:n_train]  # training set
 val_id_list = event_id_list[n_train:]  # validation set
@@ -116,7 +116,7 @@ nn_predictor = get_nn_2(3)  # TODO: important parameter
 
 rf_predictor = RandomForestRegressor(n_estimators=20, criterion="mse", max_depth=None, max_features=0.9, n_jobs=-1,
                                      warm_start=False, verbose=1)
-dt_predictor = DecisionTreeRegressor(criterion="mse", splitter="best", max_depth=None, min_samples_split=10)
+dt_predictor = DecisionTreeRegressor(criterion="mse", splitter="best", max_depth=None, min_samples_leaf=20)
 
 def test_dbscan(eps_list, hit_id, data, scaling):
     for eps in eps_list:
@@ -169,6 +169,20 @@ def test_kmeans(n_clusters, hit_id, data, scaling, minibatch):
     print(score_event(truth=truth, submission=pred))
 
 
+xy_pairs = [
+    ("tc_cols", "pc_cols"),
+    ("pc_cols", "tc_cols"),
+    ("tpc_cols", "pc_cols"),
+    ("pc_cols", "tpc_cols"),
+    ("tc_cols+tpc_cols", "pc_cols"),
+    ("tc_cols+pc_cols", "tpc_cols"),
+    ("tpc_cols+pc_cols", "tc_cols"),
+    ("tc_cols", "tpc_cols"),
+    ("tpc_cols", "tc_cols")
+]
+
+info_dict = {xy: {"score": [], "depth": []} for xy in xy_pairs}
+
 for event_id in train_id_list:
     print('='*120)
     particles, truth = load_event(TRAIN_DIR + get_event_name(event_id), [PARTICLES, TRUTH])
@@ -207,21 +221,10 @@ for event_id in train_id_list:
     # test_kmeans(n_clusters=n_particles, hit_id=truth.hit_id, data=truth[pc_cols], scaling=True, minibatch=True)
 
     if True:
-        for x, y in [
-            ("tc_cols", "pc_cols"),
-            ("pc_cols", "tc_cols"),
-            ("tpc_cols", "pc_cols"),
-            ("pc_cols", "tpc_cols"),
-            ("tc_cols+tpc_cols", "pc_cols"),
-            ("tc_cols+pc_cols", "tpc_cols"),
-            ("tpc_cols+pc_cols", "tc_cols"),
-            ("tc_cols", "tpc_cols"),
-            ("tpc_cols", "tc_cols")
-        ]:
-            print(x + " --> " + y, end="\t")
+        for x, y in xy_pairs:
             dt_predictor.fit(X=truth[eval(x)], y=truth[eval(y)])
-            print("score={}".format(dt_predictor.score(X=truth[eval(x)], y=truth[eval(y)])), end=", ")
-            print("max_depth={}".format(dt_predictor.tree_.max_depth))
+            info_dict[(x, y)]["score"].append(dt_predictor.score(X=truth[eval(x)], y=truth[eval(y)]))
+            info_dict[(x, y)]["depth"].append(dt_predictor.tree_.max_depth)
 
     if False:
         rf_predictor.fit(X=truth[feature_cols], y=truth[pc_cols])
@@ -251,6 +254,15 @@ for event_id in train_id_list:
         # test_agglomerative(n_particles, truth.hit_id, X_new, scaling=False)
         # test_birch((0.1, 0.05, 0.02), n_particles, truth.hit_id, X_new, scaling=False)
         # test_kmeans(n_clusters=n_particles, hit_id=truth.hit_id, data=X_new, scaling=True, minibatch=True)
+
+for x, y in info_dict:
+    print((x + "-->" + y).ljust(32, " "), end="")
+    score_list = info_dict[(x, y)]["score"]
+    print("score={:10.10f}".format(sum(score_list) / len(score_list)), end=", ")
+    depth_list = info_dict[(x, y)]["depth"]
+    print("depth={:4f}".format(sum(depth_list) / len(depth_list)))
+
+
 
 exit("early exit before running on the validation set")
 """
