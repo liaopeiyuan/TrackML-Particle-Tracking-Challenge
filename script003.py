@@ -105,7 +105,7 @@ nn_predictor = get_nn_2(3)  # TODO: important parameter
 
 def test_dbscan(eps_list, hit_id, data, scaling):
     for eps in eps_list:
-        dbscan_1 = DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
+        dbscan_1 = DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1, p=1.0)
         pred = pd.DataFrame({
             "hit_id": hit_id,
             "track_id": dbscan_1.fit_predict(
@@ -163,10 +163,10 @@ for event_id in train_id_list:
     # change tc_cols features
     preprocess_1(truth)  # TODO: important procedure
     print("directly cluster on tx/ty/tz before dropping noisy hits:")
-    # test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[tc_cols], scaling=True)
+    test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[tc_cols], scaling=True)
     # test_agglomerative(n_particles, truth.hit_id, truth[tc_cols], scaling=False)
     # test_birch((0.1, 0.05, 0.02), n_particles, truth.hit_id, truth[tc_cols], scaling=False)
-    test_kmeans(n_clusters=n_particles, hit_id=truth.hit_id, data=truth[tc_cols], scaling=True, minibatch=True)
+    # test_kmeans(n_clusters=n_particles, hit_id=truth.hit_id, data=truth[tc_cols], scaling=True, minibatch=True)
 
     # drop noisy hits
     noisy_indices = truth[truth.particle_id == 0].index
@@ -177,13 +177,13 @@ for event_id in train_id_list:
     truth.drop(vc_cols + ["q", "nhits"], axis=1, inplace=True)
 
     print("directly cluster on tx/ty/tz after dropping noisy hits:")
-    # test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[tc_cols], scaling=True)
+    test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[tc_cols], scaling=True)
     # test_agglomerative(n_particles, truth.hit_id, truth[tc_cols], scaling=False)
-    test_birch((0.1, 0.05, 0.02), n_particles, truth.hit_id, truth[tc_cols], scaling=False)
-    test_kmeans(n_clusters=n_particles, hit_id=truth.hit_id, data=truth[tc_cols], scaling=True, minibatch=True)
+    # test_birch((0.1, 0.05, 0.02), n_particles, truth.hit_id, truth[tc_cols], scaling=False)
+    # test_kmeans(n_clusters=n_particles, hit_id=truth.hit_id, data=truth[tc_cols], scaling=True, minibatch=True)
 
     print("cluster on true px/py/pz:")
-    # test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[pc_cols], scaling=True)
+    test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[pc_cols], scaling=True)
     # test_agglomerative(n_particles, truth.hit_id, truth[pc_cols], scaling=False)
     # test_birch((0.1, 0.05, 0.02), n_particles, truth.hit_id, truth[pc_cols], scaling=False)
     # test_kmeans(n_clusters=n_particles, hit_id=truth.hit_id, data=truth[pc_cols], scaling=True, minibatch=True)
@@ -199,10 +199,10 @@ for event_id in train_id_list:
     X_new = nn_predictor.predict(x=truth[feature_cols], verbose=0)
     # print(pd.DataFrame(X_new).describe()); print(truth[pc_cols].describe())
     print("cluster with results from neural networks")
-    # test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, X_new, scaling=True)
+    test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, X_new, scaling=True)
     # test_agglomerative(n_particles, truth.hit_id, X_new, scaling=False)
     # test_birch((0.1, 0.05, 0.02), n_particles, truth.hit_id, X_new, scaling=False)
-    test_kmeans(n_clusters=n_particles, hit_id=truth.hit_id, data=X_new, scaling=True, minibatch=True)
+    # test_kmeans(n_clusters=n_particles, hit_id=truth.hit_id, data=X_new, scaling=True, minibatch=True)
 
 exit("early exit before running on the validation set")
 """
