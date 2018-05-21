@@ -118,6 +118,7 @@ rf_predictor = RandomForestRegressor(n_estimators=20, criterion="mse", max_depth
                                      warm_start=False, verbose=1)
 dt_predictor = DecisionTreeRegressor(criterion="mse", splitter="best", max_depth=None, min_samples_leaf=80)
 
+
 def test_dbscan(eps_list, hit_id, data, scaling):
     for eps in eps_list:
         dbscan_1 = DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1, p=5.0)
