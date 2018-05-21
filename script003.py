@@ -87,7 +87,7 @@ def get_nn_2(input_length):
     decoded = Dense(len(pc_cols), activation="linear")(decoded)
     # encoder = Model(input_layer, encoded)
     nn_predictor = Model(input_layer, decoded)
-    nn_predictor.compile(optimizer="adam", loss="mean_squared_error")
+    nn_predictor.compile(optimizer="adadelta", loss="mean_absolute_error")  # mean_squared_error ?
     return nn_predictor
 
 
