@@ -99,9 +99,6 @@ event_id_list = np.random.choice(TRAIN_EVENT_ID_LIST, size=15, replace=False)
 cols = ["x", "y", "z"]
 
 sc1 = StandardScaler()
-dbscan_1 = cluster.DBSCAN(eps=0.00715, min_samples=1, algorithm='auto', n_jobs=-1)
-dbscan_2 = hdbscan.HDBSCAN(min_samples=2, min_cluster_size=3, cluster_selection_method='leaf',
-                           prediction_data=False, metric='braycurtis', core_dist_n_jobs=-1)
 for event_id in event_id_list:
     # hits, cells, particles, truth = load_event(TRAIN_DIR + get_event_name(event_id), [HITS, CELLS, PARTICLES, TRUTH])
     hits, truth = load_event(TRAIN_DIR + get_event_name(event_id), [HITS, TRUTH])

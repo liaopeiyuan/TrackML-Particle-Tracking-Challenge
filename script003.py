@@ -87,7 +87,7 @@ def get_nn_2(input_length):
     decoded = Dense(len(pc_cols), activation="linear")(decoded)
     # encoder = Model(input_layer, encoded)
     nn_predictor = Model(input_layer, decoded)
-    nn_predictor.compile(optimizer="adadelta", loss="mean_absolute_error")  # mean_squared_error ?
+    nn_predictor.compile(optimizer="adadelta", loss="mean_squared_error")  # mean_absolute_error ?
     return nn_predictor
 
 
@@ -104,26 +104,40 @@ nn_predictor = get_nn_2(3)  # TODO: important parameter
 
 for event_id in train_id_list:
     particles, truth = load_event(TRAIN_DIR + get_event_name(event_id), [PARTICLES, TRUTH])
+    truth = truth.merge(particles, how="left", on="particle_id", copy=False)
 
+    # change tc_cols features
+    preprocess_1(truth)  # TODO: important procedure
+    print("directly cluster on tx/ty/tc before dropping noisy hits:")
+    for eps in (0.001, 0.003, 0.01, 0.03, 0.1):
+        # eps = 0.00715
+        dbscan_1 = cluster.DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
+        pred = pd.DataFrame({
+            "hit_id": truth.hit_id,
+            "track_id": dbscan_1.fit_predict(truth[tc_cols])
+        })
+        print("eps={}, final score:".format(eps), end="    ")
+        print(score_event(truth=truth, submission=pred))
+
+    # drop noisy hits
     noisy_indices = truth[truth.particle_id == 0].index
     truth.drop(noisy_indices, axis=0, inplace=True)  # drop noisy hits
 
-    truth = truth.merge(particles, how="left", on="particle_id", copy=False)
-
+    # drop useless columns
     truth.drop(vc_cols + ["q", "nhits"], axis=1, inplace=True)
-
-    preprocess_1(truth)  # TODO: important procedure
 
     # current experiment: tc_cols to pc_cols
     nn_predictor.fit(x=truth[feature_cols],
                      y=truth[pc_cols],
-                     batch_size=256, epochs=20, shuffle=True, validation_split=0.2)
+                     batch_size=256, epochs=20, shuffle=True, validation_split=0.2,
+                     verbose=10
+                     )
 
     # checkc whether underfitting
     X_new = nn_predictor.predict(x=truth[feature_cols], verbose=1)
     print(pd.DataFrame(X_new).describe())
     print(truth[pc_cols].describe())
-    for eps in (0.001, 0.003, 0.01, 0.03, 0.1, 0.2):
+    for eps in (0.001, 0.003, 0.01, 0.03, 0.1):
         # eps = 0.00715
         dbscan_1 = cluster.DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
         pred = pd.DataFrame({
@@ -133,7 +147,7 @@ for event_id in train_id_list:
         print("eps={}, final score:".format(eps), end="    ")
         print(score_event(truth=truth, submission=pred))
     print("directly cluster on tx/ty/tc:")
-    for eps in (0.001, 0.003, 0.01, 0.03, 0.1, 0.2):
+    for eps in (0.001, 0.003, 0.01, 0.03, 0.1):
         # eps = 0.00715
         dbscan_1 = cluster.DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
         pred = pd.DataFrame({
