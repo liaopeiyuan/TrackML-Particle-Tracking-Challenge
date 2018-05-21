@@ -16,6 +16,9 @@ import itertools
 
 from sklearn.cluster import DBSCAN, Birch, AgglomerativeClustering, KMeans, MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.metrics import mean_squared_error
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.tree import DecisionTreeRegressor
 import hdbscan
 
 from keras.layers import Input, Dense
@@ -72,18 +75,27 @@ def get_nn_1():
 
 def get_nn_2(input_length):
     input_layer = Input(shape=(input_length,))
-    encoded = Dense(64, activation="relu")(input_layer)
+    encoded = Dense(256, activation="relu")(input_layer)
+
+    encoded = Dense(128, activation="relu")(encoded)
     encoded = Dense(96, activation="relu")(encoded)
     encoded = Dense(64, activation="relu")(encoded)
     encoded = Dense(96, activation="relu")(encoded)
+
+    encoded = Dense(128, activation="relu")(encoded)
+    encoded = Dense(96, activation="relu")(encoded)
     encoded = Dense(64, activation="relu")(encoded)
+    encoded = Dense(96, activation="relu")(encoded)
+
+    encoded = Dense(128, activation="relu")(encoded)
     encoded = Dense(96, activation="relu")(encoded)
     encoded = Dense(64, activation="relu")(encoded)
     encoded = Dense(96, activation="relu")(encoded)
 
     decoded = Dense(64, activation="relu")(encoded)
     decoded = Dense(96, activation="relu")(decoded)
-    decoded = Dense(96, activation="relu")(decoded)
+    decoded = Dense(128, activation="relu")(decoded)
+
     decoded = Dense(len(pc_cols), activation="linear")(decoded)
     # encoder = Model(input_layer, encoded)
     nn_predictor = Model(input_layer, decoded)
@@ -102,10 +114,13 @@ def preprocess_1(df):
 
 nn_predictor = get_nn_2(3)  # TODO: important parameter
 
+rf_predictor = RandomForestRegressor(n_estimators=20, criterion="mse", max_depth=None, max_features=0.9, n_jobs=-1,
+                                     warm_start=False, verbose=1)
+dt_predictor = DecisionTreeRegressor(criterion="mse", splitter="best", max_depth=None, min_samples_split=10)
 
 def test_dbscan(eps_list, hit_id, data, scaling):
     for eps in eps_list:
-        dbscan_1 = DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1, p=1.0)
+        dbscan_1 = DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1, p=5.0)
         pred = pd.DataFrame({
             "hit_id": hit_id,
             "track_id": dbscan_1.fit_predict(
@@ -161,9 +176,11 @@ for event_id in train_id_list:
     n_particles = np.unique(truth.particle_id).size
 
     # change tc_cols features
-    preprocess_1(truth)  # TODO: important procedure
-    print("directly cluster on tx/ty/tz before dropping noisy hits:")
-    test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[tc_cols], scaling=True)
+    if False:
+        print("transforming features")
+        preprocess_1(truth)  # TODO: important procedure
+    #print("directly cluster on tx/ty/tz before dropping noisy hits:")
+    #test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[tc_cols], scaling=False)
     # test_agglomerative(n_particles, truth.hit_id, truth[tc_cols], scaling=False)
     # test_birch((0.1, 0.05, 0.02), n_particles, truth.hit_id, truth[tc_cols], scaling=False)
     # test_kmeans(n_clusters=n_particles, hit_id=truth.hit_id, data=truth[tc_cols], scaling=True, minibatch=True)
@@ -174,35 +191,66 @@ for event_id in train_id_list:
     truth.drop(noisy_indices, axis=0, inplace=True)  # drop noisy hits
 
     # drop useless columns
-    truth.drop(vc_cols + ["q", "nhits"], axis=1, inplace=True)
+    truth.drop(vc_cols + ["nhits"], axis=1, inplace=True)
 
-    print("directly cluster on tx/ty/tz after dropping noisy hits:")
-    test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[tc_cols], scaling=True)
+    if False:
+        print("directly cluster on tx/ty/tz after dropping noisy hits:")
+        test_dbscan((0.001, 0.003, 0.008, 0.01, 0.02, 0.03, 0.1), truth.hit_id, truth[tc_cols], scaling=False)
     # test_agglomerative(n_particles, truth.hit_id, truth[tc_cols], scaling=False)
     # test_birch((0.1, 0.05, 0.02), n_particles, truth.hit_id, truth[tc_cols], scaling=False)
     # test_kmeans(n_clusters=n_particles, hit_id=truth.hit_id, data=truth[tc_cols], scaling=True, minibatch=True)
 
-    print("cluster on true px/py/pz:")
-    test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[pc_cols], scaling=True)
+    # print("cluster on true px/py/pz:")
+    # test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[pc_cols], scaling=False)
     # test_agglomerative(n_particles, truth.hit_id, truth[pc_cols], scaling=False)
     # test_birch((0.1, 0.05, 0.02), n_particles, truth.hit_id, truth[pc_cols], scaling=False)
     # test_kmeans(n_clusters=n_particles, hit_id=truth.hit_id, data=truth[pc_cols], scaling=True, minibatch=True)
 
-    # current experiment: tc_cols to pc_cols
-    nn_predictor.fit(x=truth[feature_cols],
-                     y=truth[pc_cols],
-                     batch_size=256, epochs=20, shuffle=True, validation_split=0.2,
-                     verbose=0
-                     )
+    if True:
+        for x, y in [
+            ("tc_cols", "pc_cols"),
+            ("pc_cols", "tc_cols"),
+            ("tpc_cols", "pc_cols"),
+            ("pc_cols", "tpc_cols"),
+            ("tc_cols+tpc_cols", "pc_cols"),
+            ("tc_cols+pc_cols", "tpc_cols"),
+            ("tpc_cols+pc_cols", "tc_cols"),
+            ("tc_cols", "tpc_cols"),
+            ("tpc_cols", "tc_cols")
+        ]:
+            print(x + " --> " + y, end="\t")
+            dt_predictor.fit(X=truth[eval(x)], y=truth[eval(y)])
+            print("score={}".format(dt_predictor.score(X=truth[eval(x)], y=truth[eval(y)])), end=", ")
+            print("max_depth={}".format(dt_predictor.tree_.max_depth))
 
-    # checck whether underfitting
-    X_new = nn_predictor.predict(x=truth[feature_cols], verbose=0)
-    # print(pd.DataFrame(X_new).describe()); print(truth[pc_cols].describe())
-    print("cluster with results from neural networks")
-    test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, X_new, scaling=True)
-    # test_agglomerative(n_particles, truth.hit_id, X_new, scaling=False)
-    # test_birch((0.1, 0.05, 0.02), n_particles, truth.hit_id, X_new, scaling=False)
-    # test_kmeans(n_clusters=n_particles, hit_id=truth.hit_id, data=X_new, scaling=True, minibatch=True)
+    if False:
+        rf_predictor.fit(X=truth[feature_cols], y=truth[pc_cols])
+        X_rf = rf_predictor.predict(X=truth[feature_cols])
+        print(pd.DataFrame(X_rf).describe())
+        print(truth[pc_cols].describe())
+        print("RF mean squared error: ", mean_squared_error(y_pred=X_rf, y_true=truth[pc_cols]))
+        print("RF depth: ", [estimator.tree_.max_depth for estimator in rf_predictor.estimators_])
+        print("cluster with results from random forest")
+        test_dbscan((0.001, 0.003, 0.008, 0.01, 0.02, 0.03, 0.1), truth.hit_id, X_rf, scaling=True)
+
+    if False:
+        nn_predictor.fit(x=truth[feature_cols],
+                         y=truth[pc_cols],
+                         batch_size=256, epochs=60, shuffle=True, validation_split=0.2,
+                         verbose=1
+                         )
+
+        # checck whether underfitting
+
+        X_nn = nn_predictor.predict(x=truth[feature_cols], verbose=0)
+        print("NN mean squared error: ", mean_squared_error(y_pred=X_nn, y_true=truth[pc_cols]))
+
+        # print(pd.DataFrame(X_new).describe()); print(truth[pc_cols].describe())
+        print("cluster with results from neural networks")
+        test_dbscan((0.001, 0.003, 0.008, 0.01, 0.02, 0.03, 0.1), truth.hit_id, X_nn, scaling=True)
+        # test_agglomerative(n_particles, truth.hit_id, X_new, scaling=False)
+        # test_birch((0.1, 0.05, 0.02), n_particles, truth.hit_id, X_new, scaling=False)
+        # test_kmeans(n_clusters=n_particles, hit_id=truth.hit_id, data=X_new, scaling=True, minibatch=True)
 
 exit("early exit before running on the validation set")
 """
