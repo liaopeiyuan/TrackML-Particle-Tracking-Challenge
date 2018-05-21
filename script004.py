@@ -11,13 +11,13 @@ by Tianyi Miao
 import numpy as np
 import pandas as pd
 
-import itertools
-
 from sklearn.cluster import DBSCAN, Birch, AgglomerativeClustering, KMeans, MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import mean_squared_error
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor
+
+import xgboost as xgb
 
 from trackml.dataset import load_event
 from trackml.score import score_event
@@ -54,20 +54,26 @@ def test_dbscan(eps_list, hit_id, data, scaling):
 
 def get_feature_engineer():
     sfe = StaticFeatureEngineer()
+    # radius
     sfe.add_method("r", lambda df: np.sqrt(df.tx ** 2 + df.ty ** 2 + df.tz ** 2))
     sfe.add_method("rx", lambda df: np.sqrt(df.ty ** 2 + df.tz ** 2))
     sfe.add_method("ry", lambda df: np.sqrt(df.tx ** 2 + df.tz ** 2))
     sfe.add_method("rz", lambda df: np.sqrt(df.tx ** 2 + df.ty ** 2))
+    # normalized
+    for v in ("tx", "ty", "tz"):
+        sfe.add_method("{}/{}".format(v, "r"+v[1:]), lambda df: df[v] / df["r"+v[1:]])
     sfe.compile()
     return sfe
 
+perform_sfe = False  # TODO: important parameter; whether or not perform feature engineering
 sfe1 = get_feature_engineer()
 
-feature_cols = tc_cols + sfe1.get_variables()  # TODO: important parameter
-target_cols = pc_cols
+# TODO: important parameter: feature and target columns
+feature_cols = tc_cols + (sfe1.get_variables() if perform_sfe else [])
+target_cols = pc_cols[0]  # TODO: modification for xgboost
 
-n_event = 30  # TODO: important parameter
-n_train = 20  # TODO: important parameter
+n_event = 40  # TODO: important parameter
+n_train = 40  # TODO: important parameter
 event_id_list = np.random.choice(TRAIN_EVENT_ID_LIST, size=n_event, replace=False)
 train_id_list = event_id_list[:n_train]  # training set
 val_id_list = event_id_list[n_train:]  # validation set
@@ -75,14 +81,24 @@ val_id_list = event_id_list[n_train:]  # validation set
 tree_delta = 10  # TODO: important parameter (the number of trees added at each training iteration)
 
 rf_predictor = RandomForestRegressor(n_estimators=tree_delta, criterion="mse", max_depth=None, max_features=0.8,
-                                     min_samples_split=20,
+                                     min_samples_split=15,
                                      n_jobs=-1, warm_start=True, verbose=0)
 dt_predictor = DecisionTreeRegressor(criterion="mse", splitter="best", max_depth=None, min_samples_leaf=80)
+
+xgb_predictor = xgb.XGBRegressor(
+    max_depth=5, learning_rate=0.05, n_estimators=300,
+    objective='reg:linear', booster='gbtree',
+    silent=True, n_jobs=-1, nthread=None,
+    gamma=0,
+    min_child_weight=1, max_delta_step=0,
+    subsample=0.8, colsample_bytree=1, colsample_bylevel=0.7,
+    reg_alpha=0, reg_lambda=1,
+    scale_pos_weight=1, base_score=0.5, random_state=0)
 
 avg_val_score = 0.0
 avg_train_score = 0.0
 
-predictor = rf_predictor  # TODO: important parameter
+predictor = xgb_predictor  # TODO: important parameter
 
 for event_id in train_id_list:
     print('='*120)
@@ -98,17 +114,26 @@ for event_id in train_id_list:
     # drop useless columns
     truth.drop(vc_cols + ["nhits"], axis=1, inplace=True)
 
-    # TODO: important; add feature engineering
-    sfe1.transform(truth, copy=False)
+    if perform_sfe:
+        sfe1.transform(truth, copy=False)
 
+    is_trained = True
     try:
         val_score = predictor.score(X=truth[feature_cols], y=truth[target_cols])
         avg_val_score += val_score
         print("validation score: {}".format(val_score))
     except Exception as err:
+        is_trained = False
         print(err)
 
-    predictor.fit(X=truth[feature_cols], y=truth[target_cols])
+    if isinstance(predictor, xgb.XGBRegressor):
+        predictor.fit(
+            X=truth[feature_cols], y=truth[target_cols], eval_set=[(truth[feature_cols], truth[target_cols])],
+            xgb_model=predictor.get_booster() if is_trained else None,  # training continuation
+            verbose=50)
+
+    else:
+        predictor.fit(X=truth[feature_cols], y=truth[target_cols])
 
     train_score = predictor.score(X=truth[feature_cols], y=truth[target_cols])
     print("training score: {}".format(train_score))
@@ -138,7 +163,10 @@ for event_id in val_id_list:
     # drop useless columns
     truth.drop(vc_cols + ["nhits"], axis=1, inplace=True)
 
-    X_new = predictor.predict(X=truth[feature_cols])
+    if perform_sfe:
+        sfe1.transform(truth, copy=False)
+
+    X_new = predictor.predict(truth[feature_cols])
     print(pd.DataFrame(X_new).describe())
     print(truth[target_cols].describe())
 
