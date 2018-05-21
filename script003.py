@@ -14,7 +14,7 @@ import pandas as pd
 
 import itertools
 
-from sklearn import cluster
+from sklearn.cluster import DBSCAN, Birch, AgglomerativeClustering, KMeans, MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 import hdbscan
 
@@ -105,7 +105,7 @@ nn_predictor = get_nn_2(3)  # TODO: important parameter
 
 def test_dbscan(eps_list, hit_id, data, scaling):
     for eps in eps_list:
-        dbscan_1 = cluster.DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
+        dbscan_1 = DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
         pred = pd.DataFrame({
             "hit_id": hit_id,
             "track_id": dbscan_1.fit_predict(
@@ -116,14 +116,57 @@ def test_dbscan(eps_list, hit_id, data, scaling):
         print(score_event(truth=truth, submission=pred))
 
 
+def test_agglomerative(n_clusters, hit_id, data, scaling):
+    ac = AgglomerativeClustering(n_clusters=n_clusters, affinity="euclidean", linkage="average")
+    pred = pd.DataFrame({
+        "hit_id": hit_id,
+        "track_id": ac.fit_predict(
+            StandardScaler().fit_transform(data) if scaling else data
+        )
+    })
+    print("Agglomerative Clustering score:  ", end="\t")
+    print(score_event(truth=truth, submission=pred))
+
+
+def test_birch(threshold_list, n_clusters, hit_id, data, scaling):
+    for t in threshold_list:
+        birch_1 = Birch(threshold=t, branching_factor=50, n_clusters=n_clusters, copy=True)
+        pred = pd.DataFrame({
+            "hit_id": hit_id,
+            "track_id": birch_1.fit_predict(
+                StandardScaler().fit_transform(data) if scaling else data
+            )
+        })
+        print("Birch score (threshold={}):  ".format(t), end="\t")
+        print(score_event(truth=truth, submission=pred))
+
+
+def test_kmeans(n_clusters, hit_id, data, scaling, minibatch):
+    km = MiniBatchKMeans(n_clusters=n_clusters) if minibatch else KMeans(n_clusters=n_clusters)
+    pred = pd.DataFrame({
+        "hit_id": hit_id,
+        "track_id": km.fit_predict(
+            StandardScaler().fit_transform(data) if scaling else data
+        )
+    })
+    print("KMeans score:  ", end="\t")
+    print(score_event(truth=truth, submission=pred))
+
+
 for event_id in train_id_list:
+    print('='*120)
     particles, truth = load_event(TRAIN_DIR + get_event_name(event_id), [PARTICLES, TRUTH])
     truth = truth.merge(particles, how="left", on="particle_id", copy=False)
 
     # change tc_cols features
     preprocess_1(truth)  # TODO: important procedure
     print("directly cluster on tx/ty/tc before dropping noisy hits:")
-    test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[tc_cols], scaling=False)
+    # test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[tc_cols], scaling=True)
+    # test_agglomerative(np.unique(truth.particle_id).size, truth.hit_id, truth[tc_cols], scaling=False)
+    # test_birch((0.1, 0.05, 0.02), np.unique(truth.particle_id).size, truth.hit_id, truth[tc_cols], scaling=False)
+    test_kmeans(n_clusters=np.unique(truth.particle_id).size,
+                hit_id=truth.hit_id, data=truth[tc_cols],
+                scaling=False, minibatch=False)
 
     # drop noisy hits
     noisy_indices = truth[truth.particle_id == 0].index
@@ -132,8 +175,21 @@ for event_id in train_id_list:
     # drop useless columns
     truth.drop(vc_cols + ["q", "nhits"], axis=1, inplace=True)
 
-    print("directly cluster on tx/ty/tc:")
-    test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[tc_cols], scaling=False)
+    print("directly cluster on tx/ty/tz after dropping noisy hits:")
+    # test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[tc_cols], scaling=True)
+    # test_agglomerative(np.unique(truth.particle_id).size, truth.hit_id, truth[tc_cols], scaling=False)
+    # test_birch((0.1, 0.05, 0.02), np.unique(truth.particle_id).size, truth.hit_id, truth[tc_cols], scaling=False)
+    test_kmeans(n_clusters=np.unique(truth.particle_id).size,
+                hit_id=truth.hit_id, data=truth[tc_cols],
+                scaling=False, minibatch=False)
+
+    print("cluster on true px/py/pz:")
+    # test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, truth[pc_cols], scaling=True)
+    # test_agglomerative(np.unique(truth.particle_id).size, truth.hit_id, truth[pc_cols], scaling=False)
+    # test_birch((0.1, 0.05, 0.02), np.unique(truth.particle_id).size, truth.hit_id, truth[pc_cols], scaling=False)
+    test_kmeans(n_clusters=np.unique(truth.particle_id).size,
+                hit_id=truth.hit_id, data=truth[pc_cols],
+                scaling=False, minibatch=False)
 
     # current experiment: tc_cols to pc_cols
     nn_predictor.fit(x=truth[feature_cols],
@@ -143,16 +199,18 @@ for event_id in train_id_list:
                      )
 
     # checck whether underfitting
-    X_new = nn_predictor.predict(x=truth[feature_cols], verbose=1)
-    # print(pd.DataFrame(X_new).describe())
-    # print(truth[pc_cols].describe())
+    X_new = nn_predictor.predict(x=truth[feature_cols], verbose=0)
+    # print(pd.DataFrame(X_new).describe()); print(truth[pc_cols].describe())
     print("cluster with results from neural networks")
-    test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, X_new, scaling=False)
-
-
+    # test_dbscan((0.001, 0.003, 0.01, 0.03, 0.1), truth.hit_id, X_new, scaling=True)
+    # test_agglomerative(np.unique(truth.particle_id).size, truth.hit_id, X_new, scaling=False)
+    # test_birch((0.1, 0.05, 0.02), np.unique(truth.particle_id).size, truth.hit_id, X_new, scaling=False)
+    test_kmeans(n_clusters=np.unique(truth.particle_id).size,
+                hit_id=truth.hit_id, data=X_new,
+                scaling=False, minibatch=False)
 
 exit("early exit before running on the validation set")
-
+"""
 for event_id in val_id_list:
     print("start predicting new event")
     particles, truth = load_event(TRAIN_DIR + get_event_name(event_id), [PARTICLES, TRUTH])
@@ -165,14 +223,14 @@ for event_id in val_id_list:
 
     for eps in (1e-3, 3e-3, 1e-2, 3e-2, 0.1, 0.3):
         # eps = 0.00715
-        dbscan_1 = cluster.DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
+        dbscan_1 = DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
         pred = pd.DataFrame({
             "hit_id": truth.hit_id,
             "track_id": dbscan_1.fit_predict(X_new)
         })
         print("eps={}, final score:".format(eps), end="    ")
         print(score_event(truth=truth, submission=pred))
-
+"""
 """
 for event_id in train_id_list:
     # important observation:
