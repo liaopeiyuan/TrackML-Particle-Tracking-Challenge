@@ -38,7 +38,7 @@ tpc_cols = ["tpx", "tpy", "tpz"]
 vc_cols = ["vx", "vy", "vz"]
 pc_cols = ["px", "py", "pz"]
 
-feature_cols = tpc_cols  # TODO: important parameter
+feature_cols = tc_cols  # TODO: important parameter
 target_cols = pc_cols
 
 n_event = 20  # TODO: important parameter
@@ -48,10 +48,15 @@ train_id_list = event_id_list[:n_train]  # training set
 val_id_list = event_id_list[n_train:]  # validation set
 
 
-rf_predictor = RandomForestRegressor(n_estimators=20, criterion="mse", max_depth=None, max_features=0.9, n_jobs=-1,
-                                     warm_start=True, verbose=1)
-dt_predictor = DecisionTreeRegressor(criterion="mse", splitter="best", max_depth=None, min_samples_leaf=20)
+rf_predictor = RandomForestRegressor(n_estimators=20, criterion="mse", max_depth=None, max_features=0.8,
+                                     min_samples_split=20,
+                                     n_jobs=-1, warm_start=True, verbose=0)
+dt_predictor = DecisionTreeRegressor(criterion="mse", splitter="best", max_depth=None, min_samples_leaf=80)
 
+avg_val_score = 0.0
+avg_train_score = 0.0
+
+predictor = rf_predictor  # TODO: important parameter
 
 for event_id in train_id_list:
     print('='*120)
@@ -68,10 +73,17 @@ for event_id in train_id_list:
     truth.drop(vc_cols + ["nhits"], axis=1, inplace=True)
 
     try:
-        print("validation score: {}".format(dt_predictor.score(X=truth[feature_cols], y=truth[target_cols])))
+        val_score = predictor.score(X=truth[feature_cols], y=truth[target_cols])
+        avg_val_score += val_score
+        print("validation score: {}".format(val_score))
     except Exception as err:
         print(err)
-    dt_predictor.fit(X=truth[feature_cols], y=truth[target_cols])
-    print("training score: {}".format(dt_predictor.score(X=truth[feature_cols], y=truth[target_cols])))
 
+    predictor.fit(X=truth[feature_cols], y=truth[target_cols])
+
+    print("training score: {}".format(predictor.score(X=truth[feature_cols], y=truth[target_cols])))
+    if isinstance(predictor, RandomForestRegressor):
+        if predictor.warm_start:
+            predictor.n_estimators += 20
+        print("number of trees: {}".format(len(predictor.estimators_)))
 
