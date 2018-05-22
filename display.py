@@ -261,7 +261,6 @@ for event_id in train_id_list:
 
     print(pd.Series(np.sqrt(truth["tx"] ** 2 + truth["ty"] ** 2)).describe())
     print(pd.Series(np.sqrt(truth["tx"] ** 2 + truth["ty"] ** 2+ truth["tz"] ** 2)).describe())
-    continue
 
     if flag_plot:
         plot_track_3d(
@@ -275,7 +274,7 @@ for event_id in train_id_list:
             # clusterer_list=[DBSCAN(eps=0.01, min_samples=1, algorithm='auto', n_jobs=-1)],
             n_tracks=150, cutoff=3)
     else:
-        pred_list = run_multiple_cluster(truth[["tx", "ty", "tz"]].values, n_theta=50)
+        run_multiple_cluster(truth[["tx", "ty", "tz"]].values, n_theta=50)
 
         # test_dbscan(
         # (0.001, 0.003, 0.008, 0.01, 0.02, 0.03, 0.07, 0.1, 0.3),
