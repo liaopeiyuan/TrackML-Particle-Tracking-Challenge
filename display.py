@@ -27,10 +27,15 @@ from arsenal import HITS, CELLS, PARTICLES, TRUTH
 print("finish importing; start running the script")
 
 
-def plot_track_3d(df, transformer_list, n_tracks=10, cutoff=3, verbose=False):
+def plot_track_3d(df, transformer_list, clusterer_list=(), n_tracks=10, cutoff=3, verbose=False):
     """
     :param df: Pandas DataFrame containing hit coordinate information
     must have the following columns: particle_id, [tx, ty, tz] or [x, y, z]
+
+    :param transformer_list: list of transformer functions that takes df as input, and returns a copy of df[xyz_cols]
+
+    :param clusterer_list: a list of clusterer objects; each of them will be used to transform the new dataset
+    example: [DBSCAN(eps=0.01), DBSCAN(eps=0.1)]
 
     :param n_tracks: the number of particles/tracks to display
 
@@ -51,20 +56,24 @@ def plot_track_3d(df, transformer_list, n_tracks=10, cutoff=3, verbose=False):
     particle_list = np.random.choice(particle_list, size=n_tracks, replace=False)
 
     fig = plt.figure()
-    for i, transformer in enumerate(transformer_list):
-        ax = fig.add_subplot(1, len(transformer_list), i + 1, projection='3d')
+    i = 1
 
+    p_masks = {p_id: df.particle_id == p_id for p_id in particle_list}
+    # filter out particles with fewer hits than cutoff
+    p_masks = {p_id: p_masks[p_id] for p_id in p_masks if sum(p_masks[p_id]) > cutoff}
+
+    p_union_mask = np.sum([p_masks[p_id] for p_id in p_masks], axis=0).astype(bool)
+
+    for transformer in transformer_list:  # iterate over transformers
+        ax = fig.add_subplot(len(transformer_list), len(clusterer_list) + 1, i, projection='3d')
+        # transform the dataset using transformer
         df_new = transformer(df)
 
-        for p_id in particle_list:
-            z = df.loc[df.particle_id == p_id, xyz_cols[-1]]  # original z coordinates
-
-            if z.shape[0] <= cutoff:
-                # skip the particles with less than cutoff hits
-                continue
+        for p_id in p_masks:
+            z = df.loc[p_masks[p_id], xyz_cols[-1]]  # original z coordinates
 
             idx = np.argsort(z)  # sort by z value
-            coordinates = df_new.loc[df.particle_id == p_id, xyz_cols].values[idx]
+            coordinates = df_new.loc[p_masks[p_id], xyz_cols].values[idx]
 
             if verbose:
                 print("Particle ID: ", str(int(p_id)))
@@ -77,6 +86,36 @@ def plot_track_3d(df, transformer_list, n_tracks=10, cutoff=3, verbose=False):
         ax.set_ylabel("Y")
         ax.set_zlabel("Z")
         # ax.set_title("Particle ID: " + str(int(p_id)))
+        i += 1  # increment the subplot index
+
+        for clusterer in clusterer_list:
+            ax = fig.add_subplot(len(transformer_list), len(clusterer_list) + 1, i, projection='3d')
+            cluster_id = clusterer.fit_predict(df_new)
+            for c_id in np.unique(cluster_id[p_union_mask]):
+                c_mask = (cluster_id == c_id) & p_union_mask
+                z = df.loc[c_mask, xyz_cols[-1]]
+                idx = np.argsort(z)  # sort by z value
+                coordinates = df_new.loc[c_mask, xyz_cols].values[idx]
+                ax.plot(coordinates[:, 0], coordinates[:, 1], coordinates[:, 2], '.-')
+
+            """
+            for p_id in particle_list:
+                p_mask = df.particle_id == p_id  # boolean array denoting the occurrences of p_id
+                z = df.loc[p_mask, xyz_cols[-1]]  # original z coordinates
+
+                if z.shape[0] <= cutoff:
+                    # skip the particles with less than cutoff hits
+                    continue
+
+                idx = np.argsort(z)  # sort by z value
+                coordinates = df_new.loc[p_mask, xyz_cols].values[idx]
+
+                ax.plot(coordinates[:, 0], coordinates[:, 1], coordinates[:, 2], '.-', c=cluster_id[p_mask][idx])
+            """
+            ax.set_xlabel("X")
+            ax.set_ylabel("Y")
+            ax.set_zlabel("Z")
+            i += 1
     plt.show()
 
 
@@ -97,18 +136,24 @@ def transform_dummy(df):
     return df[["tx", "ty", "tz"]].copy()
 
 
-def transform_1(df):
-    new_df = df[["tx", "ty", "tz"]].copy()
-    x = df["tx"]
-    y = df["ty"]
-    z = df["tz"]
-
+def helix_1(x, y, z):
+    """
+    helix unrolling that works since the beginning
+    """
     d = np.sqrt(x ** 2 + y ** 2 + z ** 2)
     r = np.sqrt(x ** 2 + y ** 2)
+    return x/d, y/d, z/r
 
-    new_df["tx"] /= d
-    new_df["ty"] /= d
-    new_df["tz"] /= r
+
+def helix_2(x, y, z, theta=20):
+    """
+    rotate the helix by an angle of 20
+    """
+
+
+def transform_1(df):
+    new_df = df[["tx", "ty", "tz"]].copy()
+    new_df["tx"], new_df["ty"], new_df["tz"] = helix_1(df["tx"], df["ty"], df["tz"])
     return new_df
 
 
@@ -130,6 +175,7 @@ def transform_2(df, deg):
 
     return new_df
 
+
 def transform_3(df):
     x = df["tx"]
     y = df["ty"]
@@ -145,17 +191,20 @@ def transform_3(df):
     new_df["ty"] = hy
     new_df["tz"] = hz
 
-    hd = np.sqrt(hx ** 2 + hy ** 2 + hz ** 2)
-    hr = np.sqrt(hx ** 2 + hy ** 2)
-
-    new_df["tx"] /= hd
-    new_df["ty"] /= hd
-    new_df["tz"] /= hr
+    # hd = np.sqrt(hx ** 2 + hy ** 2 + hz ** 2)
+    # hr = np.sqrt(hx ** 2 + hy ** 2)
+    # new_df["tx"] /= hd
+    # new_df["ty"] /= hd
+    # new_df["tz"] /= hr
 
     return new_df
 
 # TODO: important parameter
-flag_plot = False
+flag_plot = True
+if flag_plot:
+    print("PLOTTING mode")
+else:
+    print("CLUSTERING mode")
 
 TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = \
     get_directories("E:/TrackMLData/") if flag_plot else get_directories()
@@ -172,7 +221,11 @@ for event_id in train_id_list:
     truth, = load_event(TRAIN_DIR + get_event_name(event_id), [TRUTH])
 
     if flag_plot:
-        plot_track_3d(truth, transformer_list=[transform_dummy, transform_3], n_tracks=50, cutoff=3)
+        plot_track_3d(
+            truth,
+            transformer_list=[transform_dummy, transform_1],
+            clusterer_list=[DBSCAN(eps=0.01, min_samples=1, algorithm='auto', n_jobs=-1)],
+            n_tracks=50, cutoff=3)
     else:
         test_dbscan(
             (0.001, 0.003, 0.008, 0.01, 0.02, 0.03, 0.07, 0.1, 0.3),
