@@ -24,42 +24,41 @@ from arsenal import HITS, CELLS, PARTICLES, TRUTH
 
 print("finish importing; start running the script")
 
-TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = get_directories(
-    "E:/TrackMLData/"
-)
 
-n_event = 40  # important parameter
-n_train = 1  # important parameter
-event_id_list = np.random.choice(TRAIN_EVENT_ID_LIST, size=n_event, replace=False)
-train_id_list = event_id_list[:n_train]  # training set
-val_id_list = event_id_list[n_train:]  # validation set
+def plot_track_3d(df, n_tracks=10, cutoff=3):
+    """
+    :param df: Pandas DataFrame containing hit coordinate information
+    must have the following columns: particle_id, [tx, ty, tz] or [x, y, z]
 
-for event_id in train_id_list:
-    print('='*120)
-    particles, truth = load_event(TRAIN_DIR + get_event_name(event_id), [PARTICLES, TRUTH])
-    # merge truth and particle
-    truth = truth.merge(particles, how="left", on="particle_id", copy=False)
+    :param n_tracks: the number of particles/tracks to display
 
-    # drop noisy hits
-    noisy_indices = truth[truth.particle_id == 0].index
-    truth.drop(noisy_indices, axis=0, inplace=True)  # drop noisy hits
-    
-    particle_id_list = np.unique(truth.particle_id)
-    
-    selected_particle_id_list = np.random.choice(particle_id_list, size=20, replace=False)
+    :param cutoff: particles with less than or equal to cutoff hits will be ignored.
 
-    # prepare to plot
+    """
+
+    if all("t"+s in df.columns for s in ("x", "y", "z")):
+        xyz_cols = ["tx", "ty", "tz"]
+    elif all(s in df.columns for s in ("x", "y", "z")):
+        xyz_cols = ["x", "y", "z"]
+    else:
+        raise ValueError("input DataFrame does not contain valid coordinate columns (tx, ty, tz) or (x, y, z)")
+
+    particle_list = np.unique(df.particle_id)
+    particle_list = np.delete(particle_list, np.where(particle_list == 0))
+    particle_list = np.random.choice(particle_list, size=n_tracks, replace=False)
+
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    for p_id in selected_particle_id_list:
-        hits_from_particle = truth.loc[truth.particle_id == p_id, ["tx", "ty", "tz", "hit_id"]]
+    for p_id in particle_list:
+        coordinates = df.loc[df.particle_id == p_id, xyz_cols]
 
-        if hits_from_particle.shape[0] <= 3:
+        if coordinates.shape[0] <= cutoff:
+            # skip the particles with less than cutoff hits
             continue
 
-        idx = np.argsort(hits_from_particle["tz"])
-        coordinates = hits_from_particle[["tx", "ty", "tz"]].values[idx]
+        idx = np.argsort(coordinates[xyz_cols[-1]])  # sort by z value
+        coordinates = coordinates[xyz_cols].values[idx]
 
         print("Particle ID: ", str(int(p_id)))
         print(coordinates)
@@ -72,3 +71,18 @@ for event_id in train_id_list:
     # ax.set_title("Particle ID: " + str(int(p_id)))
     plt.show()
 
+
+TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = get_directories(
+    "E:/TrackMLData/"
+)
+
+n_event = 40  # important parameter
+n_train = 1  # important parameter
+event_id_list = np.random.choice(TRAIN_EVENT_ID_LIST, size=n_event, replace=False)
+train_id_list = event_id_list[:n_train]  # training set
+val_id_list = event_id_list[n_train:]  # validation set
+
+for event_id in train_id_list:
+    print('='*120)
+    truth, = load_event(TRAIN_DIR + get_event_name(event_id), [TRUTH])
+    plot_track_3d(truth, n_tracks=20, cutoff=3)
