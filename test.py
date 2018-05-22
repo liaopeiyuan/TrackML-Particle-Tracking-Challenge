@@ -1,6 +1,6 @@
 from trackml.dataset import load_event
 
-hits, cells, particles, truth = load_event('/home/alexanderliao/data/Kaggle/competitions/trackml-particle-identification/train_1/event000001000')
+hits, cells, particles, truth = load_event('./portable-dataset/')
 
 from trackml.randomize import shuffle_hits
 from trackml.score import score_event
