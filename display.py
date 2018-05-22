@@ -219,31 +219,23 @@ def merge_2_cluster(pred_1, pred_2):
             if all_cluster_id_1[cluster_id_temp] < nhits:
                 pred_1[hit_id] = cluster_id
     return pred_1
-"""
 
 
 def merge_2_cluster(pred_1, pred_2):
     pred_2[pred_2 > 0] += max(pred_1)
     pred_1[pred_1 == 0] += pred_2[pred_1 == 0]
     return pred_1
+"""
 
 
 def run_multiple_cluster(xyz_array, eps=0.00715, n_theta=20):
     df = pd.DataFrame()
-    pred_list = []
     for theta in np.linspace(0.0, 180.0, n_theta):
         print(theta)
-        df["hx"], df["hy"], df["hz"] = StandardScaler().fit_transform(
-            helix_1(*helix_2(xyz_array[:, 0], xyz_array[:, 1], xyz_array[:, 2], theta)))
-        dbscan_1 = DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
-        pred_list.append(dbscan_1.fit_predict(df))
-
-    pred_list = pred_list[::-1]
-    pred = pred_list[0]
-    for next_pred in pred_list[1:]:
-        pred = merge_2_cluster(pred, next_pred)
-    return pred
-
+        df["hx"], df["hy"], df["hz"] = helix_1(*helix_2(xyz_array[:, 0], xyz_array[:, 1], xyz_array[:, 2], theta))
+        print("running dbscan test")
+        test_dbscan((0.004, 0.008, 0.01, 0.02, 0.04), truth.hit_id, df, truth, True)
+    return None
 
 
 # TODO: important parameter
@@ -267,6 +259,10 @@ for event_id in train_id_list:
     print('='*120)
     truth, = load_event(TRAIN_DIR + get_event_name(event_id), [TRUTH])
 
+    print(pd.Series(np.sqrt(truth["tx"] ** 2 + truth["ty"] ** 2)).describe())
+    print(pd.Series(np.sqrt(truth["tx"] ** 2 + truth["ty"] ** 2+ truth["tz"] ** 2)).describe())
+    continue
+
     if flag_plot:
         plot_track_3d(
             truth.loc[(truth.tpz > 2), :],
@@ -279,13 +275,7 @@ for event_id in train_id_list:
             # clusterer_list=[DBSCAN(eps=0.01, min_samples=1, algorithm='auto', n_jobs=-1)],
             n_tracks=150, cutoff=3)
     else:
-        pred = run_multiple_cluster(truth[["tx", "ty", "tz"]].values, n_theta=5)
-        print("final score:      ", end="")
-        pred = pd.DataFrame({
-            "hit_id": truth.hit_id,
-            "track_id": pred,
-        })
-        print(score_event(truth=truth, submission=pred))
+        pred_list = run_multiple_cluster(truth[["tx", "ty", "tz"]].values, n_theta=50)
 
         # test_dbscan(
         # (0.001, 0.003, 0.008, 0.01, 0.02, 0.03, 0.07, 0.1, 0.3),
