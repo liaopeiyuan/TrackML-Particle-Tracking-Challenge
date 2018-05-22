@@ -142,7 +142,10 @@ def helix_2(x, y, z, theta=20):
     """
     rotate the helix by an angle of 20
     """
-
+    phi = theta / 180 * np.pi * z * 0.0005  # normalize z into range [-1, 1]
+    hx = x * np.cos(-phi) - y * np.sin(-phi)
+    hy = x * np.sin(-phi) + y * np.cos(-phi)
+    return hx, hy
 
 def transform_dummy(df, scaling=False):
     xyz_cols = ["tx", "ty", "tz"]
