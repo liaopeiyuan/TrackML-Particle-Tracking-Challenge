@@ -132,10 +132,6 @@ def test_dbscan(eps_list, hit_id, data, truth, scaling):
         print(score_event(truth=truth, submission=pred))
 
 
-def transform_dummy(df):
-    return df[["tx", "ty", "tz"]].copy()
-
-
 def helix_1(x, y, z):
     """
     helix unrolling that works since the beginning
@@ -151,9 +147,20 @@ def helix_2(x, y, z, theta=20):
     """
 
 
-def transform_1(df):
+def transform_dummy(df, scaling=False):
+    xyz_cols = ["tx", "ty", "tz"]
+    new_df = df[xyz_cols].copy()
+    if scaling:
+        new_df[xyz_cols] = StandardScaler().fit_transform(new_df[xyz_cols])
+    return new_df
+
+
+def transform_1(df, scaling=False):
     new_df = df[["tx", "ty", "tz"]].copy()
-    new_df["tx"], new_df["ty"], new_df["tz"] = helix_1(df["tx"], df["ty"], df["tz"])
+    if scaling:
+        new_df["tx"], new_df["ty"], new_df["tz"] = StandardScaler().fit_transform(helix_1(df["tx"], df["ty"], df["tz"]))
+    else:
+        new_df["tx"], new_df["ty"], new_df["tz"] = helix_1(df["tx"], df["ty"], df["tz"])
     return new_df
 
 
@@ -223,7 +230,12 @@ for event_id in train_id_list:
     if flag_plot:
         plot_track_3d(
             truth,
-            transformer_list=[transform_dummy, transform_1],
+            transformer_list=[
+                lambda df: transform_dummy(df, scaling=True),
+                lambda df: transform_1(df, scaling=True),
+                # transform_dummy,
+                # transform_1
+            ],
             clusterer_list=[DBSCAN(eps=0.01, min_samples=1, algorithm='auto', n_jobs=-1)],
             n_tracks=50, cutoff=3)
     else:
