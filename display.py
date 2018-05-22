@@ -1,3 +1,12 @@
+"""
+display.py
+
+plotting the tracks in 3D
+looking for the ways to unroll the helix
+
+by Tianyi Miao
+"""
+
 import numpy as np
 import pandas as pd
 
@@ -13,6 +22,7 @@ from trackml.score import score_event
 from arsenal import get_directories, get_event_name, StaticFeatureEngineer
 from arsenal import HITS, CELLS, PARTICLES, TRUTH
 
+print("finish importing; start running the script")
 
 TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = get_directories(
     "E:/TrackMLData/"
@@ -36,9 +46,29 @@ for event_id in train_id_list:
     
     particle_id_list = np.unique(truth.particle_id)
     
-    selected_particle_id_list = np.random.choice(particle_id_list, size=1, replace=False)
-    
+    selected_particle_id_list = np.random.choice(particle_id_list, size=20, replace=False)
+
+    # prepare to plot
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
     for p_id in selected_particle_id_list:
         hits_from_particle = truth.loc[truth.particle_id == p_id, ["tx", "ty", "tz", "hit_id"]]
-        print(hits_from_particle)
+
+        if hits_from_particle.shape[0] <= 3:
+            continue
+
+        idx = np.argsort(hits_from_particle["tz"])
+        coordinates = hits_from_particle[["tx", "ty", "tz"]].values[idx]
+
+        print("Particle ID: ", str(int(p_id)))
+        print(coordinates)
+
+        ax.plot(coordinates[:, 0], coordinates[:, 1], coordinates[:, 2], '.-')
+
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+    # ax.set_title("Particle ID: " + str(int(p_id)))
+    plt.show()
 
