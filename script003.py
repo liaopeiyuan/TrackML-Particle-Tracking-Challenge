@@ -121,7 +121,7 @@ dt_predictor = DecisionTreeRegressor(criterion="mse", splitter="best", max_depth
 
 def test_dbscan(eps_list, hit_id, data, scaling):
     for eps in eps_list:
-        dbscan_1 = DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1, p=5.0)
+        dbscan_1 = DBSCAN(eps=eps, min_samples=1, algorithm='auto', n_jobs=-1)
         pred = pd.DataFrame({
             "hit_id": hit_id,
             "track_id": dbscan_1.fit_predict(
