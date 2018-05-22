@@ -71,7 +71,6 @@ def plot_track_3d(df, transformer_list, clusterer_list=(), n_tracks=10, cutoff=3
 
         for p_id in p_masks:
             z = df.loc[p_masks[p_id], xyz_cols[-1]]  # original z coordinates
-
             idx = np.argsort(z)  # sort by z value
             coordinates = df_new.loc[p_masks[p_id], xyz_cols].values[idx]
 
@@ -82,9 +81,7 @@ def plot_track_3d(df, transformer_list, clusterer_list=(), n_tracks=10, cutoff=3
 
             ax.plot(coordinates[:, 0], coordinates[:, 1], coordinates[:, 2], '.-')
 
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-        ax.set_zlabel("Z")
+        ax.set_xlabel("X"), ax.set_ylabel("Y"), ax.set_zlabel("Z")
         # ax.set_title("Particle ID: " + str(int(p_id)))
         i += 1  # increment the subplot index
 
@@ -156,11 +153,11 @@ def transform_dummy(df, scaling=False):
 
 
 def transform_1(df, scaling=False):
-    new_df = df[["tx", "ty", "tz"]].copy()
+    xyz_cols = ["tx", "ty", "tz"]
+    new_df = df[xyz_cols].copy()
+    new_df[xyz_cols[0]], new_df[xyz_cols[1]], new_df[xyz_cols[2]] = helix_1(new_df[xyz_cols[0]], new_df[xyz_cols[1]], new_df[xyz_cols[2]])
     if scaling:
-        new_df["tx"], new_df["ty"], new_df["tz"] = StandardScaler().fit_transform(helix_1(df["tx"], df["ty"], df["tz"]))
-    else:
-        new_df["tx"], new_df["ty"], new_df["tz"] = helix_1(df["tx"], df["ty"], df["tz"])
+        new_df[xyz_cols] = StandardScaler().fit_transform(new_df[xyz_cols])
     return new_df
 
 
@@ -231,8 +228,8 @@ for event_id in train_id_list:
         plot_track_3d(
             truth,
             transformer_list=[
-                lambda df: transform_dummy(df, scaling=True),
-                lambda df: transform_1(df, scaling=True),
+                lambda df: transform_dummy(df, scaling=False),
+                lambda df: transform_1(df, scaling=False),
                 # transform_dummy,
                 # transform_1
             ],
