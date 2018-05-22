@@ -4,6 +4,8 @@ display.py
 plotting the tracks in 3D
 looking for the ways to unroll the helix
 
+transform_1 steadily gives a DBSCAN score around 0.2, when eps=0.008 and scaling=True
+
 by Tianyi Miao
 """
 
@@ -109,39 +111,51 @@ def transform_1(df):
     new_df["tz"] /= r
     return new_df
 
-"""
-def transform_1(df):
+
+def transform_2(df, deg):
+    new_df = df[["tx", "ty", "tz"]].copy()
     x = df["tx"]
     y = df["ty"]
     z = df["tz"]
 
-    d = np.sqrt(x ** 2 + y ** 2 + z ** 2)
+    d2 = x ** 2 + y ** 2 + z ** 2
+    d = np.sqrt(d2)
     r = np.sqrt(x ** 2 + y ** 2)
-    # r = np.sqrt(df["tx"] ** 2 + df["ty"] ** 2)
 
-    df["tx"] /= d
-    df["ty"] /= d
-    df["tz"] /= r
+    phi = (deg/180.0) * np.pi * z / 2000
+    # u = x / d2
+    # v = y / d2
+    new_df["tx"] = x * np.cos(-phi) - y * np.sin(-phi)
+    new_df["ty"] = x * np.sin(-phi) + y * np.cos(-phi)
 
-    # tz1 = np.sign(df["tz"]) * np.abs(df["tz"])**(1/2)
-    # tz1 = df["tz"]
-    # df["tx"] = df["tx"] / r  # * df["tz"]
-    # df["ty"] = df["ty"] / r  # * df["tz"]
+    return new_df
 
-    # df["tz"] /= 4000
-    # r2 = 10 ** -(np.sqrt(df["tx"] ** 2 + df["ty"] ** 2)) + 2
+def transform_3(df):
+    x = df["tx"]
+    y = df["ty"]
+    z = df["tz"]
 
-    # print(pd.Series(r2).describe())
-    # df["tx"] = df["tx"] * r2
-    # df["ty"] = df["ty"] * r2
-    # df["tz"] = np.sign(df["tz"]) * np.sqrt(np.abs(df["tz"]))
-    # ss = StandardScaler()
-    # df[["tx", "ty", "tz"]] = ss.fit_transform(df[["tx", "ty", "tz"]])
-    return None
-"""
+    phi = 40 / 180 * np.pi * z * 0.0005
+    hx = x * np.cos(-phi) - y * np.sin(-phi)
+    hy = x * np.sin(-phi) + y * np.cos(-phi)
+    hz = z
+
+    new_df = df[["tx", "ty", "tz"]].copy()
+    new_df["tx"] = hx
+    new_df["ty"] = hy
+    new_df["tz"] = hz
+
+    hd = np.sqrt(hx ** 2 + hy ** 2 + hz ** 2)
+    hr = np.sqrt(hx ** 2 + hy ** 2)
+
+    new_df["tx"] /= hd
+    new_df["ty"] /= hd
+    new_df["tz"] /= hr
+
+    return new_df
 
 # TODO: important parameter
-flag_plot = True
+flag_plot = False
 
 TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = \
     get_directories("E:/TrackMLData/") if flag_plot else get_directories()
@@ -158,10 +172,10 @@ for event_id in train_id_list:
     truth, = load_event(TRAIN_DIR + get_event_name(event_id), [TRUTH])
 
     if flag_plot:
-        plot_track_3d(truth, transformer_list=[transform_dummy, transform_1], n_tracks=100, cutoff=3)
+        plot_track_3d(truth, transformer_list=[transform_dummy, transform_3], n_tracks=50, cutoff=3)
     else:
         test_dbscan(
-            # (0.001, 0.003, 0.008, 0.01, 0.02, 0.03, 0.07, 0.1, 0.3),
-            (0.01, 0.03, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6),
-            hit_id=truth.hit_id, data=truth[["tx", "ty", "tz"]], truth=truth, scaling=False)
+            (0.001, 0.003, 0.008, 0.01, 0.02, 0.03, 0.07, 0.1, 0.3),
+            # (0.01, 0.03, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6),
+            hit_id=truth.hit_id, data=transform_3(truth), truth=truth, scaling=False)
 
