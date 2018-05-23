@@ -103,8 +103,8 @@ def merge_cluster(pred_list):
 
 
 def predict_multiple_cluster(xyz_array, n_theta=20):
-    df = pd.DataFrame()
     pred_list = []
+    df = pd.DataFrame()
     for theta in np.linspace(0.0, 180.0, n_theta):
         df["hx"], df["hy"], df["hz"] = helix_1(*helix_2(xyz_array[:, 0], xyz_array[:, 1], xyz_array[:, 2], theta))
         pred = dbscan(X=scale(df), eps=0.007, min_samples=1, n_jobs=-1)[1]
@@ -161,11 +161,13 @@ for event_id in train_id_list:
 sub_list = []
 
 for event_id in TEST_EVENT_ID_LIST:
-    hits, = load_event(TEST_DIR + get_event_name(event_id))
-    pred_list = predict_multiple_cluster(hits[["x", "y", "z"]], n_theta=40)
+    print(event_id)
+    hits, = load_event(TEST_DIR + get_event_name(event_id), [HITS])
+    pred_list = predict_multiple_cluster(hits[["x", "y", "z"]].values, n_theta=40)
     sub = pd.DataFrame({"hit_id": hits.hit_id, "track_id": merge_cluster(pred_list)})
     sub.insert(0, "event_id", event_id)
     sub_list.append(sub)
 
-
+final_submission = pd.concat(sub_list)
+final_submission.to_csv("sub0001.csv", sep=",", header=True, index=False)
 
