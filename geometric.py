@@ -84,7 +84,7 @@ def merge_2_clusters(pred_1, pred_2, cutoff=25):
 
 
 def merge_2_clusters(pred_1, pred_2, cutoff=21):
-    pred_1, pred_2 = pred_1.copy(), pred_2.copy()  # hit id -> track id
+    # pred_1, pred_2 # hit id -> track id
     c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
     n1 = np.array([c1[c_id] for c_id in pred_1])  # hit id -> track size
     n2 = np.array([c2[c_id] for c_id in pred_2])  # hit id -> track size
