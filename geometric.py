@@ -166,7 +166,7 @@ def aggregate_helix_1(xyz: np.ndarray, truth=None):
 
     pred = None
 
-    dz = 0.00012
+    dz = -0.00012
     stepdz = 0.00001
     for ii in range(13):
         dz += ii * stepdz
