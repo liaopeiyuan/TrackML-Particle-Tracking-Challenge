@@ -16,7 +16,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from sklearn.cluster import DBSCAN
+from sklearn.cluster import DBSCAN, dbscan
 from sklearn.preprocessing import StandardScaler
 
 from trackml.dataset import load_event
