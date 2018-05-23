@@ -56,21 +56,29 @@ def helix_2(x, y, z, theta=20, v=1000):
     return hx, hy, z
 
 
+def merge_cluster(pred_list):
+    pred = pred_list[0]
+    for next_pred in pred_list[1:]:
+        next_pred[next_pred != -1] += max(pred) + 1
+        pred[pred == -1] = next_pred[pred == -1]
+    return pred
+
+
 def run_multiple_cluster(xyz_array, truth, eps_list=(0.004, 0.007, 0.008, 0.01, 0.02), n_theta=20):
     df = pd.DataFrame()
     pred_list = []
     for theta in np.linspace(0.0, 180.0, n_theta):
-        print("*" * 60)
+        # print("*" * 60)
         print("theta = ", theta)
         df["hx"], df["hy"], df["hz"] = helix_1(*helix_2(xyz_array[:, 0], xyz_array[:, 1], xyz_array[:, 2], theta))
 
-        pred = dbscan(X=scale(df), eps=0.008, min_samples=1, n_jobs=-1)[1]
+        pred = dbscan(X=scale(df), eps=0.008, min_samples=3, n_jobs=-1)[1]
 
-        print("zero entries: {}/{}".format(sum(pred == 0), pred.size))
+        print("-1 entries: {}/{}".format(sum(pred == -1), pred.size))
         c1 = Counter(pred)  # cluster id -> cluster size
         c2 = Counter(n for c_id, n in c1.most_common())  # cluster size -> number of clusters with that size
 
-        print(sorted(c2.most_common()))
+        # print(sorted(c2.most_common()))
 
         print("current score: ", end="")
         print(score_event(truth=truth, submission=pd.DataFrame({"hit_id": truth.hit_id, "track_id": pred})))
@@ -94,5 +102,12 @@ for event_id in train_id_list:
     print('='*120)
     truth, = load_event(TRAIN_DIR + get_event_name(event_id), [TRUTH])
     pred_list = run_multiple_cluster(truth[["tx", "ty", "tz"]].values, truth=truth, n_theta=20)
+
+    print("final score: ", end="")
+    print(score_event(truth=truth, submission=pd.DataFrame({
+        "hit_id": truth.hit_id,
+        "track_id": merge_cluster(pred_list) + 1
+    })))
+
 
 
