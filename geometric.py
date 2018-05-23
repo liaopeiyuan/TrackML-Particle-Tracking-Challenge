@@ -76,7 +76,10 @@ def run_multiple_cluster(xyz_array, truth, eps_list=(0.004, 0.007, 0.008, 0.01, 
 
         print("-1 entries: {}/{}".format(sum(pred == -1), pred.size))
         c1 = Counter(pred)  # cluster id -> cluster size
-        c2 = Counter(n for c_id, n in c1.most_common())  # cluster size -> number of clusters with that size
+        for c_id in c1:
+            if c1[c_id] > 30:
+                pred[pred == c_id] = -1
+        # c2 = Counter(n for c_id, n in c1.most_common())  # cluster size -> number of clusters with that size
 
         # print(sorted(c2.most_common()))
 
