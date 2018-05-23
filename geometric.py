@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.cluster import dbscan
-from sklearn.preprocessing import scale
+from sklearn.preprocessing import scale, LabelEncoder
 
 from trackml.dataset import load_event
 from trackml.score import score_event
@@ -55,33 +55,6 @@ def helix_2(x, y, z, theta=20, v=1000):
     hy = x * np.sin(-phi) + y * np.cos(-phi)
     return hx, hy, z
 
-"""
-def merge_2_clusters(pred_1, pred_2, cutoff=25):
-    n_replacement = 0
-
-    pred_1, pred_2 = pred_1.copy(), pred_2.copy()  # hit id -> track id
-    c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
-
-    n1 = len(c1) - 1  # number of tracks/clusters, excluding track_id==-1
-    n2 = len(c2) - 1  # number of tracks/clusters, excluding track_id==-1
-
-    g2 = [[] for _ in range(n2)]  # track id -> hit id
-    for i, track_id_2 in enumerate(pred_2):
-        if track_id_2 != -1:
-            g2[track_id_2].append(i)
-
-    for track_id_2 in range(n2):
-        if c2[track_id_2] > cutoff:
-            continue
-        if all(pred_1[hit_id] == -1 or c1[pred_1[hit_id]] > cutoff or c1[pred_1[hit_id]] < c2[pred_2[hit_id]]
-               for hit_id in g2[track_id_2]):
-            n_replacement += 1
-            for hit_id in g2[track_id_2]:
-                pred_1[hit_id] = track_id_2 + n1
-    print("number of replacements: ", n_replacement)
-    return pred_1
-"""
-
 
 def merge_2_clusters(pred_1, pred_2, cutoff=21):
     # pred_1, pred_2 # hit id -> track id
@@ -114,7 +87,7 @@ def predict_multiple_cluster(xyz_array, n_theta=20):
 
 def run_multiple_cluster(xyz_array, truth, n_theta=20):
     pred_list = []
-    df = pd.DataFrame() # the length always matches
+    df = pd.DataFrame()  # the length always matches
     for theta in np.linspace(0.0, 180.0, n_theta):
         # print("*" * 60)
         print("theta={:.4f}".format(theta), end="; ")
@@ -147,7 +120,7 @@ def merge2_func1(pred_1, pred_2):
     return pred
 
 
-def merg2_func2(pred_1, pred_2, cutoff=21):
+def merge2_func2(pred_1, pred_2, cutoff=21):
     c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
     n1 = np.array([c1[c_id] for c_id in pred_1])  # hit id -> track size
     n2 = np.array([c2[c_id] for c_id in pred_2])  # hit id -> track size
@@ -165,6 +138,7 @@ def aggregate_helix_1(xyz: np.ndarray, truth=None):
     z1 = z / rt
 
     pred = None
+    merge2_func = merge2_func1
 
     dz = -0.00012
     stepdz = 0.00001
@@ -176,10 +150,30 @@ def aggregate_helix_1(xyz: np.ndarray, truth=None):
         x3 = x1 + x2
         dfs = scale(np.vstack([a1, z1, x1, x2, x3]).T)
         res = dbscan(X=dfs, eps=.0035, min_samples=1, n_jobs=-1)[1]
+
+        # todo: test code, remove when done ============================================================================
+        if False and truth is not None:
+            temp_var = lambda df: sum(np.var(df, axis=0))
+            temp_c = Counter(res)  # cluster id -> cluster size
+            temp_d1 = []  # cluster id -> cluster size and cluster variance in hidden space
+            for temp_c_id in temp_c:
+                if temp_c[temp_c_id] > 3:
+                    temp_d1.append((temp_c[temp_c_id], temp_var(dfs[res == temp_c_id, :])))
+            temp_t = Counter(truth.particle_id)  # track/particle id -> cluster size
+            temp_d2 = []  # track id -> track size and track variance in hidden space
+            for temp_t_id in temp_t:
+                if temp_t_id != 0 and temp_t[temp_t_id] > 3:
+                    temp_d2.append((temp_t[temp_t_id], temp_var(dfs[truth.particle_id == temp_t_id, :])))
+            pd.DataFrame(np.array(temp_d1)).to_csv("cluster_variance.csv", index=False, header=False)
+            pd.DataFrame(np.array(temp_d2)).to_csv("track_variance.csv", index=False, header=False)
+            exit("early exit on purpose")
+
+        # todo: test code, remove when done ============================================================================
+
         if ii == 0:
             pred = res
         else:
-            pred = merge2_func1(pred, res)
+            pred = merge2_func(pred, res)
         if truth is not None:
             print("current score: ", score_event(truth=truth, submission=pd.DataFrame({"hit_id": truth.hit_id, "track_id": pred})))
 
@@ -193,7 +187,7 @@ def aggregate_helix_1(xyz: np.ndarray, truth=None):
         x3 = x1 + x2
         dfs = scale(np.vstack([a1, z1, x1, x2, x3]).T)
         res = dbscan(X=dfs, eps=.0035, min_samples=1, n_jobs=-1)[1]
-        pred = merge2_func1(pred, res)
+        pred = merge2_func(pred, res)
         if truth is not None:
             print("current score: ", score_event(truth=truth, submission=pd.DataFrame({"hit_id": truth.hit_id, "track_id": pred})))
     return pred
@@ -219,7 +213,6 @@ for event_id in train_id_list:
         "hit_id": truth.hit_id,
         "track_id": pred,
     })))
-
 
 
 if False:
