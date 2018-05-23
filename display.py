@@ -8,6 +8,7 @@ transform_1 steadily gives a DBSCAN score around 0.2, when eps=0.008 and scaling
 
 by Tianyi Miao
 """
+from collections import Counter
 
 import numpy as np
 import pandas as pd
@@ -15,7 +16,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-from sklearn.cluster import DBSCAN
+from sklearn.cluster import DBSCAN, dbscan
 from sklearn.preprocessing import StandardScaler
 
 from trackml.dataset import load_event
@@ -71,7 +72,6 @@ def plot_track_3d(df, transformer_list, clusterer_list=(), n_tracks=10, cutoff=3
 
         for p_id in p_masks:
             z = df.loc[p_masks[p_id], xyz_cols[-1]]  # original z coordinates
-
             idx = np.argsort(z)  # sort by z value
             coordinates = df_new.loc[p_masks[p_id], xyz_cols].values[idx]
 
@@ -82,9 +82,7 @@ def plot_track_3d(df, transformer_list, clusterer_list=(), n_tracks=10, cutoff=3
 
             ax.plot(coordinates[:, 0], coordinates[:, 1], coordinates[:, 2], '.-')
 
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-        ax.set_zlabel("Z")
+        ax.set_xlabel("X"), ax.set_ylabel("Y"), ax.set_zlabel("Z")
         # ax.set_title("Particle ID: " + str(int(p_id)))
         i += 1  # increment the subplot index
 
@@ -145,6 +143,10 @@ def helix_2(x, y, z, theta=20):
     """
     rotate the helix by an angle of 20
     """
+    phi = theta / 180 * np.pi * z * 0.0005  # normalize z into range [-1, 1]
+    hx = x * np.cos(-phi) - y * np.sin(-phi)
+    hy = x * np.sin(-phi) + y * np.cos(-phi)
+    return hx, hy, z
 
 
 def transform_dummy(df, scaling=False):
@@ -156,11 +158,11 @@ def transform_dummy(df, scaling=False):
 
 
 def transform_1(df, scaling=False):
-    new_df = df[["tx", "ty", "tz"]].copy()
+    xyz_cols = ["tx", "ty", "tz"]
+    new_df = df[xyz_cols].copy()
+    new_df[xyz_cols[0]], new_df[xyz_cols[1]], new_df[xyz_cols[2]] = helix_1(new_df[xyz_cols[0]], new_df[xyz_cols[1]], new_df[xyz_cols[2]])
     if scaling:
-        new_df["tx"], new_df["ty"], new_df["tz"] = StandardScaler().fit_transform(helix_1(df["tx"], df["ty"], df["tz"]))
-    else:
-        new_df["tx"], new_df["ty"], new_df["tz"] = helix_1(df["tx"], df["ty"], df["tz"])
+        new_df[xyz_cols] = StandardScaler().fit_transform(new_df[xyz_cols])
     return new_df
 
 
@@ -206,6 +208,36 @@ def transform_3(df):
 
     return new_df
 
+"""
+def merge_2_cluster(pred_1, pred_2):
+    pred_2 += max(pred_1) + 1  # prevent repeated cluster ids
+    all_cluster_id_1 = Counter(pred_1)  # map from cluster_id in pred_1 to the number of its occurrences
+    all_cluster_id_2 = Counter(pred_2)  # map from cluster_id in pred_2 to the number of its occurrences
+    for cluster_id, nhits in all_cluster_id_2.most_common():
+        for hit_id in np.where(pred_2 == cluster_id)[0]:
+            cluster_id_temp = pred_1[hit_id]
+            if all_cluster_id_1[cluster_id_temp] < nhits:
+                pred_1[hit_id] = cluster_id
+    return pred_1
+
+
+def merge_2_cluster(pred_1, pred_2):
+    pred_2[pred_2 > 0] += max(pred_1)
+    pred_1[pred_1 == 0] += pred_2[pred_1 == 0]
+    return pred_1
+"""
+
+
+def run_multiple_cluster(xyz_array, eps=0.00715, n_theta=20):
+    df = pd.DataFrame()
+    for theta in np.linspace(0.0, 180.0, n_theta):
+        print(theta)
+        df["hx"], df["hy"], df["hz"] = helix_1(*helix_2(xyz_array[:, 0], xyz_array[:, 1], xyz_array[:, 2], theta))
+        print("running dbscan test")
+        test_dbscan((0.004, 0.008, 0.01, 0.02, 0.04), truth.hit_id, df, truth, True)
+    return None
+
+
 # TODO: important parameter
 flag_plot = True
 if flag_plot:
@@ -227,20 +259,26 @@ for event_id in train_id_list:
     print('='*120)
     truth, = load_event(TRAIN_DIR + get_event_name(event_id), [TRUTH])
 
+    print(pd.Series(np.sqrt(truth["tx"] ** 2 + truth["ty"] ** 2)).describe())
+    print(pd.Series(np.sqrt(truth["tx"] ** 2 + truth["ty"] ** 2+ truth["tz"] ** 2)).describe())
+
     if flag_plot:
         plot_track_3d(
             truth,
+            # truth.loc[(truth.tpz > 2), :],
             transformer_list=[
-                lambda df: transform_dummy(df, scaling=True),
+                # lambda df: transform_dummy(df, scaling=False),
                 lambda df: transform_1(df, scaling=True),
                 # transform_dummy,
                 # transform_1
             ],
-            clusterer_list=[DBSCAN(eps=0.01, min_samples=1, algorithm='auto', n_jobs=-1)],
-            n_tracks=50, cutoff=3)
+            # clusterer_list=[DBSCAN(eps=0.01, min_samples=1, algorithm='auto', n_jobs=-1)],
+            n_tracks=150, cutoff=3)
     else:
-        test_dbscan(
-            (0.001, 0.003, 0.008, 0.01, 0.02, 0.03, 0.07, 0.1, 0.3),
-            # (0.01, 0.03, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6),
-            hit_id=truth.hit_id, data=transform_3(truth), truth=truth, scaling=False)
+        run_multiple_cluster(truth[["tx", "ty", "tz"]].values, n_theta=50)
+
+        # test_dbscan(
+        # (0.001, 0.003, 0.008, 0.01, 0.02, 0.03, 0.07, 0.1, 0.3),
+        # (0.01, 0.03, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6),
+        # hit_id=truth.hit_id, data=transform_3(truth), truth=truth, scaling=False)
 
