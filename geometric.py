@@ -82,7 +82,8 @@ def merge_2_clusters(pred_1, pred_2, cutoff=25):
     return pred_1
 """
 
-def merge_2_clusters(pred_1, pred_2, cutoff=25):
+
+def merge_2_clusters(pred_1, pred_2, cutoff=21):
     pred_1, pred_2 = pred_1.copy(), pred_2.copy()  # hit id -> track id
     c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
     n1 = np.array([c1[c_id] for c_id in pred_1])  # hit id -> track size
@@ -93,7 +94,6 @@ def merge_2_clusters(pred_1, pred_2, cutoff=25):
     return pred
 
 
-
 def merge_cluster(pred_list):
     # pred_list = pred_list[::-1]  # reverse the list
     pred = pred_list[0]
@@ -102,15 +102,25 @@ def merge_cluster(pred_list):
     return pred
 
 
-def run_multiple_cluster(xyz_array, truth, n_theta=20):
+def predict_multiple_cluster(xyz_array, n_theta=20):
     df = pd.DataFrame()
     pred_list = []
+    for theta in np.linspace(0.0, 180.0, n_theta):
+        df["hx"], df["hy"], df["hz"] = helix_1(*helix_2(xyz_array[:, 0], xyz_array[:, 1], xyz_array[:, 2], theta))
+        pred = dbscan(X=scale(df), eps=0.007, min_samples=1, n_jobs=-1)[1]
+        pred_list.append(pred)
+    return pred_list
+
+
+def run_multiple_cluster(xyz_array, truth, n_theta=20):
+    pred_list = []
+    df = pd.DataFrame() # the length always matches
     for theta in np.linspace(0.0, 180.0, n_theta):
         # print("*" * 60)
         print("theta={:.4f}".format(theta), end="; ")
         df["hx"], df["hy"], df["hz"] = helix_1(*helix_2(xyz_array[:, 0], xyz_array[:, 1], xyz_array[:, 2], theta))
 
-        pred = dbscan(X=scale(df), eps=0.007, min_samples=2, n_jobs=-1)[1]
+        pred = dbscan(X=scale(df), eps=0.007, min_samples=1, n_jobs=-1)[1]
 
         # print("-1 entries: {}/{}".format(sum(pred == -1), pred.size))
         # c1 = Counter(pred)  # cluster id -> cluster size
@@ -135,7 +145,7 @@ n_train = 20  # TODO:important parameter
 event_id_list = np.random.choice(TRAIN_EVENT_ID_LIST, size=n_event, replace=False)
 train_id_list = event_id_list[:n_train]  # training set
 val_id_list = event_id_list[n_train:]  # validation set
-
+"""
 for event_id in train_id_list:
     print('='*120)
     hits, truth = load_event(TRAIN_DIR + get_event_name(event_id), [HITS, TRUTH])
@@ -146,6 +156,16 @@ for event_id in train_id_list:
         "hit_id": truth.hit_id,
         "track_id": merge_cluster(pred_list)
     })))
+"""
+
+sub_list = []
+
+for event_id in TEST_EVENT_ID_LIST:
+    hits, = load_event(TEST_DIR + get_event_name(event_id))
+    pred_list = predict_multiple_cluster(hits[["x", "y", "z"]], n_theta=40)
+    sub = pd.DataFrame({"hit_id": hits.hit_id, "track_id": merge_cluster(pred_list)})
+    sub.insert(0, "event_id", event_id)
+    sub_list.append(sub)
 
 
 
