@@ -239,7 +239,7 @@ def run_multiple_cluster(xyz_array, eps=0.00715, n_theta=20):
 
 
 # TODO: important parameter
-flag_plot = False
+flag_plot = True
 if flag_plot:
     print("PLOTTING mode")
 else:
@@ -264,10 +264,11 @@ for event_id in train_id_list:
 
     if flag_plot:
         plot_track_3d(
-            truth.loc[(truth.tpz > 2), :],
+            truth,
+            # truth.loc[(truth.tpz > 2), :],
             transformer_list=[
-                lambda df: transform_dummy(df, scaling=False),
-                lambda df: transform_1(df, scaling=False),
+                # lambda df: transform_dummy(df, scaling=False),
+                lambda df: transform_1(df, scaling=True),
                 # transform_dummy,
                 # transform_1
             ],

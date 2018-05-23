@@ -55,36 +55,71 @@ def helix_2(x, y, z, theta=20, v=1000):
     hy = x * np.sin(-phi) + y * np.cos(-phi)
     return hx, hy, z
 
+"""
+def merge_2_clusters(pred_1, pred_2, cutoff=25):
+    n_replacement = 0
 
-def merge_cluster(pred_list):
-    pred = pred_list[0]
-    for next_pred in pred_list[1:]:
-        next_pred[next_pred != -1] += max(pred) + 1
-        pred[pred == -1] = next_pred[pred == -1]
+    pred_1, pred_2 = pred_1.copy(), pred_2.copy()  # hit id -> track id
+    c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
+
+    n1 = len(c1) - 1  # number of tracks/clusters, excluding track_id==-1
+    n2 = len(c2) - 1  # number of tracks/clusters, excluding track_id==-1
+
+    g2 = [[] for _ in range(n2)]  # track id -> hit id
+    for i, track_id_2 in enumerate(pred_2):
+        if track_id_2 != -1:
+            g2[track_id_2].append(i)
+
+    for track_id_2 in range(n2):
+        if c2[track_id_2] > cutoff:
+            continue
+        if all(pred_1[hit_id] == -1 or c1[pred_1[hit_id]] > cutoff or c1[pred_1[hit_id]] < c2[pred_2[hit_id]]
+               for hit_id in g2[track_id_2]):
+            n_replacement += 1
+            for hit_id in g2[track_id_2]:
+                pred_1[hit_id] = track_id_2 + n1
+    print("number of replacements: ", n_replacement)
+    return pred_1
+"""
+
+def merge_2_clusters(pred_1, pred_2, cutoff=25):
+    pred_1, pred_2 = pred_1.copy(), pred_2.copy()  # hit id -> track id
+    c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
+    n1 = np.array([c1[c_id] for c_id in pred_1])  # hit id -> track size
+    n2 = np.array([c2[c_id] for c_id in pred_2])  # hit id -> track size
+    pred = pred_1.copy()
+    pred[(n2 > n1) & (n2 < cutoff)] = max(pred_1) + 1 + pred_2[(n2 > n1) & (n2 < cutoff)]
+    pred[(pred_1 == -1) & (pred_2 != -1)] = max(pred_1) + 1 + pred_2[(pred_1 == -1) & (pred_2 != -1)]
     return pred
 
 
-def run_multiple_cluster(xyz_array, truth, eps_list=(0.004, 0.007, 0.008, 0.01, 0.02), n_theta=20):
+
+def merge_cluster(pred_list):
+    # pred_list = pred_list[::-1]  # reverse the list
+    pred = pred_list[0]
+    for next_pred in pred_list[1:]:
+        pred = merge_2_clusters(pred, next_pred)
+    return pred
+
+
+def run_multiple_cluster(xyz_array, truth, n_theta=20):
     df = pd.DataFrame()
     pred_list = []
     for theta in np.linspace(0.0, 180.0, n_theta):
         # print("*" * 60)
-        print("theta = ", theta)
+        print("theta={:.4f}".format(theta), end="; ")
         df["hx"], df["hy"], df["hz"] = helix_1(*helix_2(xyz_array[:, 0], xyz_array[:, 1], xyz_array[:, 2], theta))
 
-        pred = dbscan(X=scale(df), eps=0.008, min_samples=3, n_jobs=-1)[1]
+        pred = dbscan(X=scale(df), eps=0.007, min_samples=2, n_jobs=-1)[1]
 
-        print("-1 entries: {}/{}".format(sum(pred == -1), pred.size))
-        c1 = Counter(pred)  # cluster id -> cluster size
-        for c_id in c1:
-            if c1[c_id] > 30:
-                pred[pred == c_id] = -1
+        # print("-1 entries: {}/{}".format(sum(pred == -1), pred.size))
+        # c1 = Counter(pred)  # cluster id -> cluster size
+        # pred[pred == c_id] = -1 for c_id in c1 if c1[c_id] > 30 # this is not an expression
         # c2 = Counter(n for c_id, n in c1.most_common())  # cluster size -> number of clusters with that size
 
         # print(sorted(c2.most_common()))
 
-        print("current score: ", end="")
-        print(score_event(truth=truth, submission=pd.DataFrame({"hit_id": truth.hit_id, "track_id": pred})))
+        print("score={:.6f}".format(score_event(truth=truth, submission=pd.DataFrame({"hit_id": truth.hit_id, "track_id": pred}))))
 
         pred_list.append(pred)
 
@@ -103,13 +138,13 @@ val_id_list = event_id_list[n_train:]  # validation set
 
 for event_id in train_id_list:
     print('='*120)
-    truth, = load_event(TRAIN_DIR + get_event_name(event_id), [TRUTH])
-    pred_list = run_multiple_cluster(truth[["tx", "ty", "tz"]].values, truth=truth, n_theta=20)
+    hits, truth = load_event(TRAIN_DIR + get_event_name(event_id), [HITS, TRUTH])
+    pred_list = run_multiple_cluster(hits[["x", "y", "z"]].values, truth=truth, n_theta=40)
 
     print("final score: ", end="")
     print(score_event(truth=truth, submission=pd.DataFrame({
         "hit_id": truth.hit_id,
-        "track_id": merge_cluster(pred_list) + 1
+        "track_id": merge_cluster(pred_list)
     })))
 
 
