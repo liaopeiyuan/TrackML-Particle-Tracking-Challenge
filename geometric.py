@@ -137,6 +137,68 @@ def run_multiple_cluster(xyz_array, truth, n_theta=20):
         # test_dbscan(eps_list=eps_list, hit_id=truth.hit_id, data=df, truth=truth, scaling=True)
     return pred_list
 
+
+def merge2_func1(pred_1, pred_2):
+    c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
+    n1 = np.array([c1[c_id] for c_id in pred_1])  # hit id -> track size
+    n2 = np.array([c2[c_id] for c_id in pred_2])  # hit id -> track size
+    pred = pred_1.copy()
+    pred[(n2 > n1)] = max(pred_1) + 1 + pred_2[(n2 > n1)]
+    return pred
+
+
+def merg2_func2(pred_1, pred_2, cutoff=21):
+    c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
+    n1 = np.array([c1[c_id] for c_id in pred_1])  # hit id -> track size
+    n2 = np.array([c2[c_id] for c_id in pred_2])  # hit id -> track size
+    pred = pred_1.copy()
+    pred[(n2 > n1) & (n2 < cutoff)] = max(pred_1) + 1 + pred_2[(n2 > n1) & (n2 < cutoff)]
+    pred[(pred_1 == -1) & (pred_2 != -1)] = max(pred_1) + 1 + pred_2[(pred_1 == -1) & (pred_2 != -1)]
+    return pred
+
+
+def aggregate_helix_1(xyz: np.ndarray, truth=None):
+    x, y, z = xyz[:, 0], xyz[:, 1], xyz[:, 2]
+    r = np.sqrt(x*x + y*y + z*z)  # radius in spherical coordinate system
+    rt = np.sqrt(x*x + y*y)  # radius in cylindrical coordinate system
+    a0 = np.arctan2(y, x)  # angle in cylindrical coordinate system
+    z1 = z / rt
+
+    pred = None
+
+    dz = 0.00012
+    stepdz = 0.00001
+    for ii in range(13):
+        dz += ii * stepdz
+        a1 = a0 + dz * z * np.sign(z)
+        x1 = a1 / z1
+        x2 = 1 / z1
+        x3 = x1 + x2
+        dfs = scale(np.vstack([a1, z1, x1, x2, x3]).T)
+        res = dbscan(X=dfs, eps=.0035, min_samples=1, n_jobs=-1)[1]
+        if ii == 0:
+            pred = res
+        else:
+            pred = merge2_func1(pred, res)
+        if truth is not None:
+            print("current score: ", score_event(truth=truth, submission=pd.DataFrame({"hit_id": truth.hit_id, "track_id": pred})))
+
+    dz = 0.00012
+    stepdz = -0.00001
+    for ii in range(13):
+        dz += ii * stepdz
+        a1 = a0 + dz * z * np.sign(z)
+        x1 = a1 / z1
+        x2 = 1 / z1
+        x3 = x1 + x2
+        dfs = scale(np.vstack([a1, z1, x1, x2, x3]).T)
+        res = dbscan(X=dfs, eps=.0035, min_samples=1, n_jobs=-1)[1]
+        pred = merge2_func1(pred, res)
+        if truth is not None:
+            print("current score: ", score_event(truth=truth, submission=pd.DataFrame({"hit_id": truth.hit_id, "track_id": pred})))
+    return pred
+
+
 print("start running the script")
 TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = get_directories()
 
@@ -145,29 +207,30 @@ n_train = 20  # TODO:important parameter
 event_id_list = np.random.choice(TRAIN_EVENT_ID_LIST, size=n_event, replace=False)
 train_id_list = event_id_list[:n_train]  # training set
 val_id_list = event_id_list[n_train:]  # validation set
-"""
+
 for event_id in train_id_list:
     print('='*120)
     hits, truth = load_event(TRAIN_DIR + get_event_name(event_id), [HITS, TRUTH])
-    pred_list = run_multiple_cluster(hits[["x", "y", "z"]].values, truth=truth, n_theta=40)
+    # pred_list = run_multiple_cluster(hits[["x", "y", "z"]].values, truth=truth, n_theta=40)
+    pred = aggregate_helix_1(hits[["x", "y", "z"]].values, truth=truth)
 
     print("final score: ", end="")
     print(score_event(truth=truth, submission=pd.DataFrame({
         "hit_id": truth.hit_id,
-        "track_id": merge_cluster(pred_list)
+        "track_id": pred,
     })))
-"""
 
-sub_list = []
 
-for event_id in TEST_EVENT_ID_LIST:
-    print(event_id)
-    hits, = load_event(TEST_DIR + get_event_name(event_id), [HITS])
-    pred_list = predict_multiple_cluster(hits[["x", "y", "z"]].values, n_theta=40)
-    sub = pd.DataFrame({"hit_id": hits.hit_id, "track_id": merge_cluster(pred_list)})
-    sub.insert(0, "event_id", event_id)
-    sub_list.append(sub)
 
-final_submission = pd.concat(sub_list)
-final_submission.to_csv("sub0001.csv", sep=",", header=True, index=False)
+if False:
+    sub_list = []
+    for event_id in TEST_EVENT_ID_LIST:
+        print(event_id)
+        hits, = load_event(TEST_DIR + get_event_name(event_id), [HITS])
+        pred_list = predict_multiple_cluster(hits[["x", "y", "z"]].values, n_theta=40)
+        sub = pd.DataFrame({"hit_id": hits.hit_id, "track_id": merge_cluster(pred_list)})
+        sub.insert(0, "event_id", event_id)
+        sub_list.append(sub)
+    final_submission = pd.concat(sub_list)
+    final_submission.to_csv("sub0001.csv", sep=",", header=True, index=False)
 
