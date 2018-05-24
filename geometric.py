@@ -148,7 +148,7 @@ def aggregate_helix_1(xyz: np.ndarray, truth=None):
         x1 = a1 / z1
         x2 = 1 / z1
         x3 = x1 + x2
-        dfs = scale(np.vstack([a1, z1, x1, x2, x3]).T)
+        dfs = scale(np.column_stack([a1, z1, x1, x2, x3]))
         res = dbscan(X=dfs, eps=.0035, min_samples=1, n_jobs=-1)[1]
 
         # todo: test code, remove when done ============================================================================
@@ -185,7 +185,7 @@ def aggregate_helix_1(xyz: np.ndarray, truth=None):
         x1 = a1 / z1
         x2 = 1 / z1
         x3 = x1 + x2
-        dfs = scale(np.vstack([a1, z1, x1, x2, x3]).T)
+        dfs = scale(np.column_stack([a1, z1, x1, x2, x3]))
         res = dbscan(X=dfs, eps=.0035, min_samples=1, n_jobs=-1)[1]
         pred = merge2_func(pred, res)
         if truth is not None:
