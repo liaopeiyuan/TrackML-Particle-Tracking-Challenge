@@ -22,50 +22,56 @@ from datetime import datetime
 numpy.random.seed(7)
 X=numpy.loadtxt('feature.csv',dtype='float',delimiter=',')
 Y=numpy.loadtxt('label.csv',dtype='float',delimiter=',')
-Xtrain=X[1:5000,:]
-Ytrain=Y[1:5000,1]
-#Xtrain=normalize(Xtrain,axis=0)
-Xtrain = scale( Xtrain, axis=0, with_mean=True, with_std=True, copy=True )
-#Ytrain=normalize(Ytrain,axis=0)
-Ytrain = scale( Ytrain, axis=0, with_mean=True, with_std=True, copy=True )
+Xtrain=X[0:50000,:]
+Ytrain=Y[0:50000,:]
+Xtrain=normalize(Xtrain,axis=1)
+#Xtrain = scale( Xtrain, axis=0, with_mean=True, with_std=True, copy=True )
+Ytrain=normalize(Ytrain,axis=1)
+#Ytrain = scale( Ytrain, axis=0, with_mean=True, with_std=True, copy=True )
 print(Xtrain)
 Xtest=X[300000:310000,:]
-Ytest=Y[300000:310000,1]
-#Xtest=normalize(Xtest,axis=0)
-Xtest = scale( Xtest, axis=0, with_mean=True, with_std=True, copy=True )
-#Ytest=normalize(Ytest,axis=0)
-Ytest = scale( Ytest, axis=0, with_mean=True, with_std=True, copy=True )
+Ytest=Y[300000:310000,:]
+Xtest=normalize(Xtest,axis=1)
+#Xtest = scale( Xtest, axis=0, with_mean=True, with_std=True, copy=True )
+Ytest=normalize(Ytest,axis=1)
+#Ytest = scale( Ytest, axis=0, with_mean=True, with_std=True, copy=True )
 print(type(X))
 print(type(Y))
 
 def nn_1(input_length):
     input_layer = Input(shape=(input_length,))
-    encoded = Dense(256, activation="tanh")(input_layer)
+    encoded = Dense(256, activation="relu")(input_layer)
 
-    encoded = Dense(256, activation="tanh" )(encoded)
+    encoded = Dense(256, activation="relu" )(encoded)
     encoded = Dropout(0.1, noise_shape=None, seed=None)(encoded)
-    encoded = Dense(256, activation="tanh" )(encoded)
-    encoded = Dense(256, activation="tanh" )(encoded)
+    encoded = Dense(256, activation="relu" )(encoded)
+    encoded = Dense(256, activation="relu" )(encoded)
     encoded = Dropout(0.1, noise_shape=None, seed=None)(encoded)
-    encoded = Dense(256, activation="tanh" )(encoded)
+    encoded = Dense(256, activation="relu" )(encoded)
 
-    encoded = Dense(256, activation="tanh")(encoded)
-    encoded = Dense( 256, activation="tanh")(encoded)
-    encoded = Dense(256, activation="tanh")(encoded)
-    encoded = Dense( 256, activation="tanh")(encoded)
+    encoded = Dense(256, activation="relu")(encoded)
+    encoded = Dense( 256, activation="relu")(encoded)
+    encoded = Dense(256, activation="relu")(encoded)
+    encoded = Dense( 256, activation="relu")(encoded)
 
-    encoded = Dense(256, activation="tanh")(encoded)
-    encoded = Dense( 256, activation="tanh")(encoded)
-    encoded = Dense(256, activation="tanh")(encoded)
-    encoded = Dense( 256, activation="tanh")(encoded)
+    encoded = Dense(256, activation="relu")(encoded)
+    encoded = Dense( 256, activation="relu")(encoded)
+    encoded = Dense(256, activation="relu")(encoded)
+    encoded = Dense( 256, activation="relu")(encoded)
 
-    decoded = Dense(256, activation="tanh" )(encoded)
-    encoded = Dropout(0.1, noise_shape=None, seed=None)(encoded)
-    decoded = Dense(256, activation="tanh" )(decoded)
-    encoded = Dropout(0.1, noise_shape=None, seed=None)(encoded)
+    decoded = Dense(256, activation="relu" )(encoded)
+    decoded = Dropout(0.1, noise_shape=None, seed=None)(decoded)
+    decoded = Dense(256, activation="relu" )(decoded)
+    decoded = Dense(256, activation="relu" )(decoded)
+    decoded = Dense(256, activation="relu" )(decoded)
     decoded = Dense(256, activation="relu" )(decoded)
 
-    decoded = Dense(1, activation="linear")(decoded)
+    decoded = Dense(256, activation="relu" )(decoded)
+
+    decoded = Dropout(0.1, noise_shape=None, seed=None)(decoded)
+    decoded = Dense(256, activation="relu" )(decoded)
+
+    decoded = Dense(3, activation="linear")(decoded)
     # encoder = Model(input_layer, encoded)
     nn_predictor = Model(input_layer, decoded)
     nn_predictor.compile(optimizer="adam", loss="mean_squared_error")  # mean_absolute_error ?
@@ -75,7 +81,7 @@ nn_predictor = nn_1(3)
 
 with tf.device('/gpu:0'):
     try:
-        nn_predictor.fit(Xtrain,Ytrain, batch_size=512, epochs=500, validation_split=0.2,verbose=1)
+        nn_predictor.fit(Xtrain,Ytrain, batch_size=256, epochs=1000000, validation_split=0.2,verbose=1)
     except (KeyboardInterrupt, SystemExit):
         nn_predictor.save(str(datetime.now()))
         print(r2_score(Ytest,nn_predictor.predict(Xtest)))
