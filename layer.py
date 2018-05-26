@@ -10,6 +10,7 @@ by Alexander Liao
 
 from keras.layers import Input, Dense, Dropout
 from keras.models import Model, Sequential
+from keras import optimizers
 from keras import regularizers
 import numpy
 from scipy.io import loadmat
@@ -22,18 +23,16 @@ from datetime import datetime
 numpy.random.seed(7)
 X=numpy.loadtxt('feature.csv',dtype='float',delimiter=',')
 Y=numpy.loadtxt('label.csv',dtype='float',delimiter=',')
-Xtrain=X[0:50000,:]
-Ytrain=Y[0:50000,:]
-Xtrain=normalize(Xtrain,axis=1)
-#Xtrain = scale( Xtrain, axis=0, with_mean=True, with_std=True, copy=True )
-Ytrain=normalize(Ytrain,axis=1)
+Xtrain=X[0:150000,:]
+Ytrain=Y[0:150000,:]
+#Xtrain=normalize(Xtrain,axis=1)
+Xtrain = scale( Xtrain, axis=0, with_mean=True, with_std=True, copy=True )
 #Ytrain = scale( Ytrain, axis=0, with_mean=True, with_std=True, copy=True )
 print(Xtrain)
-Xtest=X[300000:310000,:]
+Xtest=X[300000:310000,:]*1000
 Ytest=Y[300000:310000,:]
 Xtest=normalize(Xtest,axis=1)
 #Xtest = scale( Xtest, axis=0, with_mean=True, with_std=True, copy=True )
-Ytest=normalize(Ytest,axis=1)
 #Ytest = scale( Ytest, axis=0, with_mean=True, with_std=True, copy=True )
 print(type(X))
 print(type(Y))
@@ -74,14 +73,15 @@ def nn_1(input_length):
     decoded = Dense(3, activation="linear")(decoded)
     # encoder = Model(input_layer, encoded)
     nn_predictor = Model(input_layer, decoded)
-    nn_predictor.compile(optimizer="adam", loss="mean_squared_error")  # mean_absolute_error ?
+    opt = optimizers.SGD(lr=0.01, momentum=0.5, decay=0.5, nesterov=True)
+    nn_predictor.compile(optimizer="Nadam", loss="mean_squared_error")  # mean_absolute_error ?
     return nn_predictor
 
 nn_predictor = nn_1(3)
 
 with tf.device('/gpu:0'):
     try:
-        nn_predictor.fit(Xtrain,Ytrain, batch_size=256, epochs=1000000, validation_split=0.2,verbose=1)
+        nn_predictor.fit(Xtrain,Ytrain, batch_size=256, epochs=5000, validation_split=0.2,verbose=1)
     except (KeyboardInterrupt, SystemExit):
         nn_predictor.save(str(datetime.now()))
         print(r2_score(Ytest,nn_predictor.predict(Xtest)))
