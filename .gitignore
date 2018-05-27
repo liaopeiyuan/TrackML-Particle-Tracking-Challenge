@@ -1,3 +1,6 @@
 .*
 !.gitignore
 __*
+triplenet/data
+*.pickle
+**/*.pickle
