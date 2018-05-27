@@ -1,0 +1,47 @@
+
+--- [START 2018-05-27_11-41-48] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/0515/build/dummy-07/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/0515/build/dummy-07/results/xx10
+
+** net setting **
+	initial_checkpoint = /home/alexanderliao/data/GitHub/Kaggle-TrackML/0515/build/dummy-07/results/xx10/checkpoint/00002200_model.pth
+
+--- [START 2018-05-27_11-43-30] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/0515/build/dummy-07/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/0515/build/dummy-07/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 8
+	batch_size  = 8
+	iter_accum  = 1
+	batch_size*iter_accum  = 8
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 8
+
+ rate    iter   epoch  num   | valid_loss               | train_loss               | batch_loss               |  time          
+-------------------------------------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+0.0010   0.1 k  100.0  0.0 m |  0.000  |  0.323  |  0.269  |  0 hr 03 min
+0.0010   0.2 k  200.0  0.0 m |  0.000  |  0.150  |  0.131  |  0 hr 06 min
+0.0010   0.3 k  300.0  0.0 m |  0.000  |  0.091  |  0.084  |  0 hr 09 min
+0.0010   0.4 k  400.0  0.0 m |  0.000  |  0.068  |  0.058  |  0 hr 13 min
