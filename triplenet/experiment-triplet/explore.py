@@ -18,13 +18,16 @@ def run_explore():
     data_dir  = '/home/alexanderliao/data/Kaggle/competitions/trackml-particle-identification'
     detectors = pd.read_csv(data_dir + '/detectors.csv')
 
+    """
     events = [
          '000001025','000001026','000001027','000001028','000001029',#
          '000001030','000001031','000001032','000001033','000001034',
      ]
-    #events = glob.glob('/home/alexanderliao/data/Kaggle/competitions/trackml-particle-identification/event*-truth.csv')
-    #sorted(events)
-    #events = [e.split('/')[-1].replace('event','').replace('-truth.csv','') for e in events]
+    """
+
+    events = glob.glob('/home/alexanderliao/data/Kaggle/competitions/trackml-particle-identification/train_triplet/event*-truth.csv')
+    sorted(events)
+    events = [e.split('/')[-1].replace('event','').replace('-truth.csv','') for e in events]
     #events = ['000001093']
 
     #https://matplotlib.org/mpl_toolkits/mplot3d/tutorial.html
