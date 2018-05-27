@@ -45,3 +45,52 @@ Parameter Group 0
 0.0010   0.2 k  200.0  0.0 m |  0.000  |  0.150  |  0.131  |  0 hr 06 min
 0.0010   0.3 k  300.0  0.0 m |  0.000  |  0.091  |  0.084  |  0 hr 09 min
 0.0010   0.4 k  400.0  0.0 m |  0.000  |  0.068  |  0.058  |  0 hr 13 min
+
+--- [START 2018-05-27_13-13-54] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 168
+	batch_size  = 8
+	iter_accum  = 1
+	batch_size*iter_accum  = 8
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 168
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+0.0010   0.1 k    4.8  0.0 m |  0.000  |  0.349  |  0.273  |  0 hr 03 min
+0.0010   0.2 k    9.5  0.0 m |  0.000  |  0.164  |  0.142  |  0 hr 06 min
+0.0010   0.3 k   14.3  0.0 m |  0.000  |  0.096  |  0.092  |  0 hr 09 min
+0.0010   0.4 k   19.0  0.0 m |  0.000  |  0.064  |  0.060  |  0 hr 12 min
+0.0010   0.5 k   23.8  0.0 m |  0.000  |  0.053  |  0.050  |  0 hr 15 min
+0.0010   0.6 k   28.6  0.0 m |  0.000  |  0.045  |  0.040  |  0 hr 19 min
+0.0010   0.7 k   33.3  0.0 m |  0.000  |  0.038  |  0.040  |  0 hr 23 min
+0.0010   0.8 k   38.1  0.0 m |  0.000  |  0.028  |  0.035  |  0 hr 27 min
+0.0010   0.9 k   42.9  0.0 m |  0.000  |  0.029  |  0.025  |  0 hr 32 min
+0.0010   1.0 k   47.6  0.0 m |  0.000  |  0.026  |  0.023  |  0 hr 37 min
+0.0010   1.1 k   52.4  0.0 m |  0.000  |  0.023  |  0.027  |  0 hr 42 min
+0.0010   1.2 k   57.1  0.0 m |  0.000  |  0.020  |  0.017  |  0 hr 48 min
+0.0010   1.3 k   61.9  0.0 m |  0.000  |  0.018  |  0.017  |  0 hr 55 min
+0.0010   1.4 k   66.7  0.0 m |  0.000  |  0.016  |  0.015  |  1 hr 02 min
+0.0010   1.5 k   71.4  0.0 m |  0.000  |  0.014  |  0.041  |  1 hr 10 min
