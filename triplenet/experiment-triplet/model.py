@@ -26,29 +26,29 @@ class TripletNet(nn.Module):
 
         self.feature = nn.Sequential(
             Linear_Bn(3*num_points, 64),
-            nn.ReLU(inplace=True),
+            nn.PReLU(num_parameters=1, init=0.25),
             Linear_Bn( 64,  128),
-            nn.ReLU(inplace=True),
+            nn.PReLU(num_parameters=1, init=0.25),
             Linear_Bn(128,  256),
-            nn.ReLU(inplace=True),
+            nn.PReLU(num_parameters=1, init=0.25),
             Linear_Bn(256,  512),
-            nn.ReLU(inplace=True),
+            nn.PReLU(num_parameters=1, init=0.25),
             Linear_Bn(512,  1024),
-            nn.ReLU(inplace=True),
+            nn.PReLU(num_parameters=1, init=0.25),
 
             Linear_Bn(1024, 2048),
-            nn.ReLU(inplace=True),
+            nn.PReLU(num_parameters=1, init=0.25),
             Linear_Bn(2048, 1024),
-            nn.ReLU(inplace=True),
+            nn.PReLU(num_parameters=1, init=0.25),
 
             Linear_Bn(1024, 512),
-            nn.ReLU(inplace=True),
+            nn.PReLU(num_parameters=1, init=0.25),
             Linear_Bn(512,  256),
-            nn.ReLU(inplace=True),
+            nn.PReLU(num_parameters=1, init=0.25),
             Linear_Bn(256,  128),
-            nn.ReLU(inplace=True),
+            nn.PReLU(num_parameters=1, init=0.25),
             Linear_Bn(128,   64),
-            nn.ReLU(inplace=True),
+            nn.PReLU(num_parameters=1, init=0.25),
         )
 
         self.logit = nn.Sequential(
