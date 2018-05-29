@@ -9,6 +9,11 @@ many of its functions are copied from the old arsenal.py
 
 import os
 
+import numpy as np
+import pandas as pd
+
+from trackml.dataset import load_event
+
 
 class Session(object):
     HITS = "hits"
@@ -16,68 +21,83 @@ class Session(object):
     PARTICLES = "particles"
     TRUTH = "truth"
 
-    def __init__(self, parent_dir=None, train_dir=None, test_dir=None, detectors_dir=None, sample_submission_dir=None):
-        self._init_dir(parent_dir, train_dir, test_dir, detectors_dir, sample_submission_dir)
-
-    def _init_dir(self, parent_dir, train_dir, test_dir, detectors_dir, sample_submission_dir):
+    def __init__(self, parent_dir="./", train_dir="train/", test_dir="test/", detectors_dir="detectors.csv", sample_submission_dir="sample_submission.csv"):
         """
-        Initialize directories for the dataset
-        parent_dir: the parent directory that contains train (directory), test (directory), detectors (csv file), and
-        sample_submission (csv file)
-        The following directories are all relative to parent_dir:
-        train_dir, test_dir, detectors_dir, sample_submission_dir
+        default input:
+        Session("./", "train/", "test/", "detectors.csv", "sample_submission.csv")
+        Session(parent_dir="./", train_dir="train/", test_dir="test/", detectors_dir="detectors.csv", sample_submission_dir="sample_submission.csv")
         """
-        if isinstance(parent_dir, str):
-            self._parent_dir = parent_dir
-        else:
-            self._parent_dir = "./"
+        self._parent_dir = parent_dir
+        self._train_dir = train_dir
+        self._test_dir = test_dir
+        self._detectors_dir = detectors_dir
+        self._sample_submission_dir = sample_submission_dir
 
-        if isinstance(train_dir, str):
-            self._train_dir = train_dir
-        else:
-            self._train_dir = "train/"
+        if not os.path.isdir(self._parent_dir):
+            raise ValueError("The input parent directory {} is invalid.".format(self._parent_dir))
 
-        if isinstance(test_dir, str):
-            self._test_dir = test_dir
+        if os.path.isdir(self._parent_dir + self._train_dir):
+            self._train_event_id_list = sorted(
+                set(int(x[x.index("0"):x.index("-")]) for x in os.listdir(self._parent_dir + self._train_dir)))
         else:
-            self._test_dir = "test/"
+            self._train_dir = None
+            self._train_event_id_list = []
 
-        if isinstance(detectors_dir, str):
-            self._detectors_dir = detectors_dir
+        if os.path.isdir(self._parent_dir + self._test_dir):
+            self._test_event_id_list = sorted(
+                set(int(x[x.index("0"):x.index("-")]) for x in os.listdir(self._parent_dir + self._test_dir)))
         else:
-            self._detectors_dir = "detectors.csv"
+            self._test_dir = None
+            self._test_event_id_list = []
 
-        if isinstance(sample_submission_dir, str):
-            self._sample_submission_dir = sample_submission_dir
-        else:
-            self._sample_submission_dir = "sample_submission.csv"
+        if not os.path.exists(self._parent_dir + self._detectors_dir):
+            self._detectors_dir = None
 
-    def _init_file(self):
+        if not os.path.exists(self._parent_dir + self._sample_submission_dir):
+            self._sample_submission_dir = None
+
+    @staticmethod
+    def get_event_name(event_id):
+        return "event" + str(event_id).zfill(9)
+
+    def remove_train_events(self, n=10, content=(HITS, TRUTH), randomness=True):
         """
-        initialize the data files (train events, test events, detectors, sample_submission, etc.)
+        get n events from self._train_event_id_list:
+        if random, get n random events; otherwise, get the first n events
+        :return:
+         1. ids: event ids
+         2. an iterator that loads a tuple of hits/cells/particles/truth files
+        remove these train events from the current id list
         """
-        
+        n = min(n, len(self._train_event_id_list))
+        if random:
+            event_ids = np.random.choice(self._train_event_id_list, size=n, replace=False).tolist()
+            for event_id in event_ids:
+                self._train_event_id_list.remove(event_id)
+        else:
+            event_ids, self._train_event_id_list = self._train_event_id_list[:n], self._train_event_id_list[n:]
+
+        event_names = [Session.get_event_name(event_id) for event_id in event_ids]
+        return event_names,\
+            (load_event(self._parent_dir + self._train_dir + event_name, content) for event_name in event_names)
+
+    def remove_test_events(self, n=10, content=(HITS, CELLS), randomness=False):
+        n = min(n, len(self._test_event_id_list))
+        if randomness:
+            event_ids = np.random.choice(self._test_event_id_list, size=n, replace=False).tolist()
+            for event_id in event_ids:
+                self._test_event_id_list.remove(event_id)
+        else:
+            event_ids, self._test_event_id_list = self._test_event_id_list[:n], self._test_event_id_list[n:]
+        event_names = [Session.get_event_name(event_id) for event_id in event_ids]
+        return event_names, \
+            (load_event(self._parent_dir + self._test_dir + event_name, content) for event_name in event_names)
 
 
-
-    @property
-    def parent_dir(self):
-        return self._parent_dir
-
-    @property
-    def train_dir(self):
-        return self._train_dir
-
-    @property
-    def test_dir(self):
-        return self._test_dir
-
-    @property
-    def detectors_dir(self):
-        return self._detectors_dir
-
-    @property
-    def sample_submission_dir(self):
-        return self._sample_submission_dir
-
-
+if __name__ == "__main__":
+    s1 = Session(parent_dir="E:/TrackMLData/")
+    event_names, event_loaders = s1.remove_train_events(4, content=[s1.HITS, s1.TRUTH], randomness=True)
+    for hits, truth in event_loaders:
+        print(hits)
+        print("=" * 120)
+        print(truth)
