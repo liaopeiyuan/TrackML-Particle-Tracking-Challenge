@@ -69,36 +69,36 @@ def train_collate(batch):
 
 
 ### training ##############################################################
-# def evaluate( net, test_loader ):
-#
-#     test_num  = 0
-#     test_loss = np.zeros(6,np.float32)
-#     return test_loss
-#
-#     for i, (inputs, foregrounds_truth, cuts_truth, images, masks_truth, indices) in enumerate(test_loader, 0):
-#
-#         with torch.no_grad():
-#             inputs            = Variable(inputs).cuda()
-#             foregrounds_truth = Variable(foregrounds_truth).cuda()
-#             cuts_truth        = Variable(cuts_truth).cuda()
-#
-#             net.forward( inputs )
-#             net.criterion( foregrounds_truth, cuts_truth )
-#
-#         batch_size = len(indices)
-#         test_loss += batch_size*np.array((
-#                            net.loss.cpu().data.numpy(),
-#                            net.foreground_loss.cpu().data.numpy(),
-#                            net.cut_loss.cpu().data.numpy(),
-#                            0,
-#                            0,
-#                            0,
-#                          ))
-#         test_num  += batch_size
-#
-#     assert(test_num == len(test_loader.sampler))
-#     test_loss = test_loss/test_num
-#     return test_loss
+def evaluate( net, test_loader ):
+
+    test_num  = 0
+    test_loss = np.zeros(6,np.float32)
+    return test_loss
+
+    for i, (inputs, foregrounds_truth, cuts_truth, images, masks_truth, indices) in enumerate(test_loader, 0):
+
+        with torch.no_grad():
+            inputs            = Variable(inputs).cuda()
+            foregrounds_truth = Variable(foregrounds_truth).cuda()
+            cuts_truth        = Variable(cuts_truth).cuda()
+
+            net.forward( inputs )
+            net.criterion( foregrounds_truth, cuts_truth )
+
+        batch_size = len(indices)
+        test_loss += batch_size*np.array((
+                        net.loss.cpu().data.numpy(),
+                        net.foreground_loss.cpu().data.numpy(),
+                        net.cut_loss.cpu().data.numpy(),
+                        0,
+                        0,
+                        0,
+                        ))
+        test_num  += batch_size
+
+    assert(test_num == len(test_loader.sampler))
+    test_loss = test_loss/test_num
+    return test_loss
 
 
 
@@ -159,9 +159,10 @@ def run_train():
 
     ## optimiser ----------------------------------
     iter_accum  = 1
-    batch_size  = 8
+    batch_size  = 2
+    valid_size  = 2
 
-    num_iters   = 1000  *1000
+    num_iters   = 200
     iter_smooth = 20
     iter_log    = 50
     iter_valid  = 100
@@ -203,12 +204,25 @@ def run_train():
                         pin_memory  = True,
                         collate_fn  = train_collate)
 
+    valid_dataset = DummyDataset(
+                            'samples_valid',
+                            mode='<not_used>',transform = train_augment)
+
+    valid_loader  = DataLoader(
+                        train_dataset,
+                        sampler = RandomSampler(valid_dataset),
+                        #sampler = SequentialSampler(train_dataset),
+                        batch_size  = valid_size,
+                        drop_last   = True,
+                        num_workers = 4,
+                        pin_memory  = True,
+                        collate_fn  = train_collate)
 
 
     # log.write('\ttrain_dataset.split = %s\n'%(train_dataset.split))
     # log.write('\tvalid_dataset.split = %s\n'%(valid_dataset.split))
     log.write('\tlen(train_dataset)  = %d\n'%(len(train_dataset)))
-    # log.write('\tlen(valid_dataset)  = %d\n'%(len(valid_dataset)))
+    log.write('\tlen(valid_dataset)  = %d\n'%(len(valid_dataset)))
     # log.write('\tlen(train_loader)   = %d\n'%(len(train_loader)))
     # log.write('\tlen(valid_loader)   = %d\n'%(len(valid_loader)))
     log.write('\tbatch_size  = %d\n'%(batch_size))
@@ -277,7 +291,6 @@ def run_train():
     j = 0
     i = 0
 
-    counter =0
     while  i<num_iters:  # loop over the dataset multiple times
         sum_train_loss = np.zeros(6,np.float32)
         sum = 0
@@ -294,7 +307,8 @@ def run_train():
 
             if i % iter_valid==0:
                 net.set_mode('valid')
-                #valid_loss = evaluate(net, valid_loader)
+                valid_loss = evaluate(net, valid_loader)
+                #print(valid_loss)
                 net.set_mode('train')
 
                 print('\r',end='',flush=True)
@@ -444,9 +458,9 @@ def run_train():
 def run_predict():
 
     out_dir = RESULTS_DIR + '/xx10'
-    initial_checkpoint = \
-        RESULTS_DIR + '/xx10/checkpoint/00002200_model.pth'
-        #None #
+    initial_checkpoint = None
+        #RESULTS_DIR + '/xx10/checkpoint/00002200_model.pth'
+        #None 
 
 
     #start experiments here!
@@ -576,9 +590,9 @@ def run_predict():
 # main #################################################################
 if __name__ == '__main__':
     print( '%s: calling main function ... ' % os.path.basename(__file__))
-
-    run_train()
-    run_predict()
+    for i in range (10):
+        run_train()
+        run_predict()
 
 
     print('\nsucess!')

@@ -94,3 +94,645 @@ Parameter Group 0
 0.0010   1.3 k   61.9  0.0 m |  0.000  |  0.018  |  0.017  |  0 hr 55 min
 0.0010   1.4 k   66.7  0.0 m |  0.000  |  0.016  |  0.015  |  1 hr 02 min
 0.0010   1.5 k   71.4  0.0 m |  0.000  |  0.014  |  0.041  |  1 hr 10 min
+0.0010   1.6 k   76.2  0.0 m |  0.000  |  0.014  |  0.013  |  1 hr 18 min
+0.0010   1.7 k   81.0  0.0 m |  0.000  |  0.011  |  0.014  |  1 hr 27 min
+0.0010   1.8 k   85.7  0.0 m |  0.000  |  0.014  |  0.015  |  1 hr 36 min
+0.0010   1.9 k   90.5  0.0 m |  0.000  |  0.011  |  0.011  |  1 hr 46 min
+0.0010   2.0 k   95.2  0.0 m |  0.000  |  0.013  |  0.014  |  1 hr 57 min
+0.0010   2.1 k  100.0  0.0 m |  0.000  |  0.013  |  0.016  |  2 hr 08 min
+0.0010   2.2 k  104.8  0.0 m |  0.000  |  0.012  |  0.007  |  2 hr 20 min
+0.0010   2.3 k  109.5  0.0 m |  0.000  |  0.010  |  0.015  |  2 hr 32 min
+0.0010   2.4 k  114.3  0.0 m |  0.000  |  0.008  |  0.013  |  2 hr 45 min
+0.0010   2.5 k  119.0  0.0 m |  0.000  |  0.006  |  0.012  |  2 hr 59 min
+0.0010   2.6 k  123.8  0.0 m |  0.000  |  0.010  |  0.012  |  3 hr 13 min
+0.0010   2.7 k  128.6  0.0 m |  0.000  |  0.010  |  0.007  |  3 hr 28 min
+0.0010   2.8 k  133.3  0.0 m |  0.000  |  0.012  |  0.006  |  3 hr 43 min
+0.0010   2.9 k  138.1  0.0 m |  0.000  |  0.008  |  0.005  |  4 hr 00 min
+0.0010   3.0 k  142.9  0.0 m |  0.000  |  0.006  |  0.007  |  4 hr 17 min
+0.0010   3.1 k  147.6  0.0 m |  0.000  |  0.007  |  0.005  |  4 hr 34 min
+0.0010   3.2 k  152.4  0.0 m |  0.000  |  0.008  |  0.005  |  4 hr 52 min
+0.0010   3.3 k  157.1  0.0 m |  0.000  |  0.009  |  0.011  |  5 hr 11 min
+0.0010   3.4 k  161.9  0.0 m |  0.000  |  0.007  |  0.005  |  5 hr 30 min
+0.0010   3.5 k  166.7  0.0 m |  0.000  |  0.009  |  0.007  |  5 hr 50 min
+0.0010   3.6 k  171.4  0.0 m |  0.000  |  0.006  |  0.006  |  6 hr 11 min
+0.0010   3.7 k  176.2  0.0 m |  0.000  |  0.005  |  0.004  |  6 hr 32 min
+0.0010   3.8 k  181.0  0.0 m |  0.000  |  0.004  |  0.008  |  6 hr 54 min
+0.0010   3.9 k  185.7  0.0 m |  0.000  |  0.007  |  0.005  |  7 hr 16 min
+0.0010   4.0 k  190.5  0.0 m |  0.000  |  0.007  |  0.009  |  7 hr 39 min
+0.0010   4.1 k  195.2  0.0 m |  0.000  |  0.007  |  0.004  |  8 hr 03 min
+0.0010   4.2 k  200.0  0.0 m |  0.000  |  0.006  |  0.004  |  8 hr 27 min
+0.0010   4.3 k  204.8  0.0 m |  0.000  |  0.005  |  0.004  |  8 hr 55 min
+0.0010   4.4 k  209.5  0.0 m |  0.000  |  0.006  |  0.007  |  9 hr 21 min
+0.0010   4.5 k  214.3  0.0 m |  0.000  |  0.005  |  0.003  |  9 hr 47 min
+0.0010   4.6 k  219.0  0.0 m |  0.000  |  0.008  |  0.011  | 10 hr 14 min
+0.0010   4.7 k  223.8  0.0 m |  0.000  |  0.005  |  0.005  | 10 hr 42 min
+0.0010   4.8 k  228.6  0.0 m |  0.000  |  0.020  |  0.018  | 11 hr 11 min
+0.0010   4.9 k  233.3  0.0 m |  0.000  |  0.007  |  0.004  | 11 hr 40 min
+0.0010   5.0 k  238.1  0.0 m |  0.000  |  0.007  |  0.008  | 12 hr 10 min
+0.0010   5.1 k  242.9  0.0 m |  0.000  |  0.006  |  0.005  | 12 hr 41 min
+0.0010   5.2 k  247.6  0.0 m |  0.000  |  0.005  |  0.019  | 13 hr 12 min
+0.0010   5.3 k  252.4  0.0 m |  0.000  |  0.006  |  0.020  | 13 hr 44 min
+0.0010   5.4 k  257.1  0.0 m |  0.000  |  0.004  |  0.012  | 14 hr 16 min
+0.0010   5.5 k  261.9  0.0 m |  0.000  |  0.007  |  0.003  | 14 hr 49 min
+0.0010   5.6 k  266.7  0.0 m |  0.000  |  0.006  |  0.003  | 15 hr 23 min
+0.0010   5.7 k  271.4  0.0 m |  0.000  |  0.004  |  0.002  | 15 hr 58 min
+0.0010   5.8 k  276.2  0.0 m |  0.000  |  0.007  |  0.014  | 16 hr 33 min
+0.0010   5.9 k  281.0  0.0 m |  0.000  |  0.005  |  0.003  | 17 hr 09 min
+0.0010   6.0 k  285.7  0.0 m |  0.000  |  0.006  |  0.005  | 17 hr 45 min
+0.0010   6.1 k  290.5  0.0 m |  0.000  |  0.005  |  0.003  | 18 hr 22 min
+0.0010   6.2 k  295.2  0.0 m |  0.000  |  0.007  |  0.008  | 19 hr 01 min
+0.0010   6.3 k  300.0  0.1 m |  0.000  |  0.004  |  0.002  | 19 hr 39 min
+0.0010   6.4 k  304.8  0.1 m |  0.000  |  0.004  |  0.002  | 20 hr 18 min
+0.0010   6.5 k  309.5  0.1 m |  0.000  |  0.005  |  0.016  | 20 hr 58 min
+0.0010   6.6 k  314.3  0.1 m |  0.000  |  0.003  |  0.014  | 21 hr 38 min
+0.0010   6.7 k  319.0  0.1 m |  0.000  |  0.005  |  0.003  | 22 hr 20 min
+0.0010   6.8 k  323.8  0.1 m |  0.000  |  0.004  |  0.002  | 23 hr 01 min
+0.0010   6.9 k  328.6  0.1 m |  0.000  |  0.005  |  0.011  | 23 hr 44 min
+0.0010   7.0 k  333.3  0.1 m |  0.000  |  0.003  |  0.003  | 24 hr 27 min
+0.0010   7.1 k  338.1  0.1 m |  0.000  |  0.004  |  0.009  | 25 hr 11 min
+0.0010   7.2 k  342.9  0.1 m |  0.000  |  0.003  |  0.008  | 25 hr 55 min
+0.0010   7.3 k  347.6  0.1 m |  0.000  |  0.007  |  0.007  | 26 hr 40 min
+0.0010   7.4 k  352.4  0.1 m |  0.000  |  0.005  |  0.007  | 27 hr 26 min
+
+--- [START 2018-05-28_16-53-45] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+
+--- [START 2018-05-28_16-55-16] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	batch_size  = 8
+	iter_accum  = 1
+	batch_size*iter_accum  = 8
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+0.0010   0.1 k   42.1  0.0 m |  0.000  |  0.236  |  0.178  |  0 hr 03 min
+
+--- [START 2018-05-28_17-01-48] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	batch_size  = 8
+	iter_accum  = 1
+	batch_size*iter_accum  = 8
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+0.0010   0.1 k   42.1  0.0 m |  0.000  |  0.219  |  0.186  |  0 hr 03 min
+
+--- [START 2018-05-28_17-07-00] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	len(valid_dataset)  = 2
+	batch_size  = 8
+	iter_accum  = 1
+	batch_size*iter_accum  = 8
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+
+--- [START 2018-05-28_17-09-09] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	len(valid_dataset)  = 2
+	batch_size  = 8
+	iter_accum  = 1
+	batch_size*iter_accum  = 8
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+
+--- [START 2018-05-28_17-12-55] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	len(valid_dataset)  = 2
+	batch_size  = 8
+	iter_accum  = 1
+	batch_size*iter_accum  = 8
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+
+--- [START 2018-05-28_17-14-59] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	len(valid_dataset)  = 2
+	batch_size  = 8
+	iter_accum  = 1
+	batch_size*iter_accum  = 8
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+0.0010   0.1 k   42.1  0.0 m |  0.000  |  0.221  |  0.179  |  0 hr 03 min
+0.0010   0.2 k   84.2  0.0 m |  0.000  |  0.097  |  0.086  |  0 hr 06 min
+0.0010   0.3 k  126.3  0.0 m |  0.000  |  0.052  |  0.045  |  0 hr 10 min
+0.0010   0.4 k  168.4  0.0 m |  0.000  |  0.031  |  0.036  |  0 hr 14 min
+0.0010   0.5 k  210.5  0.0 m |  0.000  |  0.041  |  0.020  |  0 hr 19 min
+0.0010   0.6 k  252.6  0.0 m |  0.000  |  0.021  |  0.022  |  0 hr 24 min
+0.0010   0.7 k  294.7  0.0 m |  0.000  |  0.014  |  0.019  |  0 hr 30 min
+0.0010   0.8 k  336.8  0.0 m |  0.000  |  0.017  |  0.014  |  0 hr 37 min
+0.0010   0.9 k  378.9  0.0 m |  0.000  |  0.025  |  0.012  |  0 hr 44 min
+0.0010   1.0 k  421.1  0.0 m |  0.000  |  0.011  |  0.009  |  0 hr 52 min
+0.0010   1.1 k  463.2  0.0 m |  0.000  |  0.014  |  0.007  |  1 hr 01 min
+0.0010   1.2 k  505.3  0.0 m |  0.000  |  0.016  |  0.008  |  1 hr 10 min
+0.0010   1.3 k  547.4  0.0 m |  0.000  |  0.008  |  0.016  |  1 hr 20 min
+0.0010   1.4 k  589.5  0.0 m |  0.000  |  0.020  |  0.009  |  1 hr 31 min
+0.0010   1.5 k  631.6  0.0 m |  0.000  |  0.005  |  0.007  |  1 hr 43 min
+0.0010   1.6 k  673.7  0.0 m |  0.000  |  0.011  |  0.006  |  1 hr 55 min
+0.0010   1.7 k  715.8  0.0 m |  0.000  |  0.013  |  0.008  |  2 hr 09 min
+0.0010   1.8 k  757.9  0.0 m |  0.000  |  0.006  |  0.005  |  2 hr 22 min
+0.0010   1.9 k  800.0  0.0 m |  0.000  |  0.005  |  0.004  |  2 hr 37 min
+0.0010   2.0 k  842.1  0.0 m |  0.000  |  0.011  |  0.003  |  2 hr 52 min
+0.0010   2.1 k  884.2  0.0 m |  0.000  |  0.003  |  0.012  |  3 hr 08 min
+0.0010   2.2 k  926.3  0.0 m |  0.000  |  0.009  |  0.011  |  3 hr 24 min
+0.0010   2.3 k  968.4  0.0 m |  0.000  |  0.004  |  0.006  |  3 hr 42 min
+0.0010   2.4 k 1010.5  0.0 m |  0.000  |  0.003  |  0.007  |  4 hr 00 min
+
+--- [START 2018-05-28_21-27-43] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+
+--- [START 2018-05-28_21-28-00] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	len(valid_dataset)  = 2
+	batch_size  = 2
+	iter_accum  = 1
+	batch_size*iter_accum  = 2
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+0.0010   0.1 k   10.5  0.0 m |  0.000  |  0.235  |  0.202  |  0 hr 00 min
+0.0010   0.2 k   21.1  0.0 m |  0.000  |  0.107  |  0.079  |  0 hr 01 min
+
+--- [START 2018-05-28_21-36-49] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	len(valid_dataset)  = 2
+	batch_size  = 2
+	iter_accum  = 1
+	batch_size*iter_accum  = 2
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+0.0010   0.1 k   10.5  0.0 m |  0.000  |  0.218  |  0.156  |  0 hr 00 min
+0.0010   0.2 k   21.1  0.0 m |  0.000  |  0.093  |  0.072  |  0 hr 01 min
+0.0010   0.3 k   31.6  0.0 m |  0.000  |  0.045  |  0.091  |  0 hr 02 min
+
+--- [START 2018-05-28_21-40-55] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	len(valid_dataset)  = 2
+	batch_size  = 2
+	iter_accum  = 1
+	batch_size*iter_accum  = 2
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+
+--- [START 2018-05-28_21-41-53] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	len(valid_dataset)  = 2
+	batch_size  = 2
+	iter_accum  = 1
+	batch_size*iter_accum  = 2
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+
+
+--- [START 2018-05-28_21-42-49] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	len(valid_dataset)  = 2
+	batch_size  = 2
+	iter_accum  = 1
+	batch_size*iter_accum  = 2
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+
+
+--- [START 2018-05-28_21-43-40] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	len(valid_dataset)  = 2
+	batch_size  = 2
+	iter_accum  = 1
+	batch_size*iter_accum  = 2
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+
+
+--- [START 2018-05-28_21-50-26] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	len(valid_dataset)  = 2
+	batch_size  = 2
+	iter_accum  = 1
+	batch_size*iter_accum  = 2
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+0.0010   0.1 k   10.5  0.0 m |  0.000  |  0.371  |  0.315  |  0 hr 00 min
+0.0010   0.2 k   21.1  0.0 m |  0.000  |  0.184  |  0.211  |  0 hr 01 min
+0.0010   0.3 k   31.6  0.0 m |  0.000  |  0.163  |  0.095  |  0 hr 02 min
+0.0010   0.4 k   42.1  0.0 m |  0.000  |  0.104  |  0.063  |  0 hr 03 min
+0.0010   0.5 k   52.6  0.0 m |  0.000  |  0.110  |  0.081  |  0 hr 03 min
+0.0010   0.6 k   63.2  0.0 m |  0.000  |  0.067  |  0.055  |  0 hr 04 min
+
+--- [START 2018-05-28_21-56-03] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	len(valid_dataset)  = 2
+	batch_size  = 2
+	iter_accum  = 1
+	batch_size*iter_accum  = 2
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
+
+
+--- [START 2018-05-28_21-56-50] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+** net setting **
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+	len(train_dataset)  = 19
+	len(valid_dataset)  = 2
+	batch_size  = 2
+	iter_accum  = 1
+	batch_size*iter_accum  = 2
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.001
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ images_per_epoch = 19
+
+ rate    iter   epoch  num   | valid_loss        | train_loss       | batch_loss      |  time       
+----------------------------------------------------------------------------------------------------
+0.0000   0.0 k    0.0  0.0 m |  0.000  |  0.000  |  0.000  |  0 hr 00 min
