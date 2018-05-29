@@ -9,15 +9,13 @@ from collections import Counter
 
 import numpy as np
 import pandas as pd
-
 from sklearn.cluster import dbscan
-from sklearn.preprocessing import scale, LabelEncoder
-
+from sklearn.preprocessing import scale
 from trackml.dataset import load_event
 from trackml.score import score_event
 
-from arsenal import get_directories, get_event_name, StaticFeatureEngineer
-from arsenal import HITS, CELLS, PARTICLES, TRUTH
+from eda_old.arsenal import HITS, TRUTH
+from eda_old.arsenal import get_directories, get_event_name
 
 
 def test_dbscan(eps_list, hit_id, data, truth, scaling):

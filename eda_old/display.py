@@ -8,22 +8,17 @@ transform_1 steadily gives a DBSCAN score around 0.2, when eps=0.008 and scaling
 
 by Tianyi Miao
 """
-from collections import Counter
-
-import numpy as np
-import pandas as pd
 
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
-from sklearn.cluster import DBSCAN, dbscan
+import numpy as np
+import pandas as pd
+from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
-
 from trackml.dataset import load_event
 from trackml.score import score_event
 
-from arsenal import get_directories, get_event_name, StaticFeatureEngineer
-from arsenal import HITS, CELLS, PARTICLES, TRUTH
+from eda_old.arsenal import TRUTH
+from eda_old.arsenal import get_directories, get_event_name
 
 print("finish importing; start running the script")
 

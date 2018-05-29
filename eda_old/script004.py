@@ -10,21 +10,16 @@ by Tianyi Miao
 
 import numpy as np
 import pandas as pd
-
-from sklearn.cluster import DBSCAN, Birch, AgglomerativeClustering, KMeans, MiniBatchKMeans
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.metrics import mean_squared_error
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.tree import DecisionTreeRegressor
-
 import xgboost as xgb
-
+from sklearn.cluster import DBSCAN
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeRegressor
 from trackml.dataset import load_event
 from trackml.score import score_event
 
-from arsenal import get_directories, get_event_name, StaticFeatureEngineer
-from arsenal import HITS, CELLS, PARTICLES, TRUTH
-
+from eda_old.arsenal import PARTICLES, TRUTH
+from eda_old.arsenal import get_directories, get_event_name, StaticFeatureEngineer
 
 TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = get_directories()
 

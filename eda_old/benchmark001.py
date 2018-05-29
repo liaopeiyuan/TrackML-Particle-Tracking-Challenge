@@ -15,22 +15,19 @@ nhit for a particle: minimum = 1, maximum = 28
 
 """
 
+import hdbscan
 import numpy as np
 import pandas as pd
-
 from sklearn import cluster
 from sklearn.preprocessing import StandardScaler
-
-import hdbscan
-
-# import xgboost as xgb
-# import lightgbm as lgbm
-
 from trackml.dataset import load_event
 from trackml.score import score_event
 
-from arsenal import get_directories, get_event_name
-from arsenal import HITS, CELLS, PARTICLES, TRUTH
+from eda_old.arsenal import HITS, TRUTH
+from eda_old.arsenal import get_directories, get_event_name
+
+# import xgboost as xgb
+# import lightgbm as lgbm
 
 # important constants
 # define important directories; change it if you store your data differently!

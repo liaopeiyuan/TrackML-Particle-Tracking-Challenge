@@ -11,25 +11,18 @@ by Tianyi Miao
 
 import numpy as np
 import pandas as pd
-
-import itertools
-
-from sklearn.cluster import DBSCAN, Birch, AgglomerativeClustering, KMeans, MiniBatchKMeans
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.metrics import mean_squared_error
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.tree import DecisionTreeRegressor
-import hdbscan
-
 from keras.layers import Input, Dense
-from keras.models import Model, Sequential
-
+from keras.models import Model
+from sklearn.cluster import DBSCAN, Birch, AgglomerativeClustering, KMeans, MiniBatchKMeans
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeRegressor
 from trackml.dataset import load_event
 from trackml.score import score_event
 
-from arsenal import get_directories, get_event_name, StaticFeatureEngineer
-from arsenal import HITS, CELLS, PARTICLES, TRUTH
-
+from eda_old.arsenal import PARTICLES, TRUTH
+from eda_old.arsenal import get_directories, get_event_name
 
 # define important directories; change it if you store your data differently!
 # type help(get_directories) for more information

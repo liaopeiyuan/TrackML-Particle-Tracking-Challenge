@@ -15,23 +15,18 @@ nhit for a particle: minimum = 1, maximum = 28
 
 """
 
-import numpy as np
-import pandas as pd
-
 import itertools
 
-from sklearn import cluster
-from sklearn.preprocessing import StandardScaler
 import hdbscan
-
+import numpy as np
+import pandas as pd
 from keras.layers import Input, Dense
 from keras.models import Model
-
 from trackml.dataset import load_event
 from trackml.score import score_event
 
-from arsenal import get_directories, get_event_name, StaticFeatureEngineer
-from arsenal import HITS, CELLS, PARTICLES, TRUTH
+from eda_old.arsenal import HITS, PARTICLES, TRUTH
+from eda_old.arsenal import get_directories, get_event_name, StaticFeatureEngineer
 
 # define important directories; change it if you store your data differently!
 # type help(get_directories) for more information
