@@ -3,6 +3,8 @@ d02.py
 by Tianyi Miao
 
 Explore the possibility of cone scanning
+
+az margin is set to 2
 """
 
 import numpy as np
@@ -11,7 +13,10 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+from sklearn.cluster import dbscan
+
 from geometric.session import Session
+from geometric.utils import label_encode, reassign_noise
 from trackml.score import score_event
 
 
@@ -69,15 +74,27 @@ def subroutine_2(df):
     df.loc[:, "ac"] = np.arctan2(df.y, df.x)  # from -pi to pi
     df.loc[:, "az"] = np.arctan2(df.rc, df.z)  # from 0 to pi
 
-    for az_center in np.arange(0, 180, 1):
+    # useful stats
+    track_size = df.groupby("particle_id")["x"].agg("count")  # pd.Series; track id -> track size
+    if False:
+        for az_center in np.arange(0, 180):
+            print("center=" + str(az_center).rjust(3) + ": ", end="")
+            for az_margin in np.arange(0, 10, 0.5):
+                lo, hi = np.deg2rad(az_center - az_margin), np.deg2rad(az_center + az_margin)
+                idx = (df.az >= lo) & (df.az < hi)
+                hc = hit_completeness(df, idx, track_size)
+                print("{:.1f}: {:.4f}".format(az_margin, hc), end=", ")
+            print()
+
+    for az_center in np.arange(0, 180, 2):
         # az_center = 75
-        az_margin = 1
+        az_margin = 2
         lo, hi = np.deg2rad(az_center - az_margin), np.deg2rad(az_center + az_margin)
         idx = (df.az >= lo) & (df.az < hi)
 
         print("[{:.4f}, {:.4f}] ".format(lo, hi),
               str(idx.sum()).rjust(5),
-              " {:.6f}".format(hit_completeness(df, idx)))
+              " {:.6f}".format(hit_completeness(df, idx, track_size)))
     """
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -93,6 +110,7 @@ def subroutine_3(df):
     df.loc[:, "az"] = np.arctan2(df.rc, df.z)  # from 0 to pi
 
     # parameter for conic scanning
+    pred = None
 
 
 if __name__ == "__main__":

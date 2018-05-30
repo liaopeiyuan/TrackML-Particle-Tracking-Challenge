@@ -49,6 +49,10 @@ def reassign_noise(labels: np.ndarray, idx):
 
 
 def merge_two_1(pred_1, pred_2, cutoff=20):
+    """
+    naive cluster merging:
+    iterate over hits; if a hit belongs to a larger cluster in pred_2, it is reassigned
+    """
     c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
     n1, n2 = np.vectorize(c1.__getitem__)(pred_1), np.vectorize(c2.__getitem__)(pred_2)  # hit id -> track size
     pred = pred_1.copy()
@@ -58,6 +62,11 @@ def merge_two_1(pred_1, pred_2, cutoff=20):
 
 
 def merge_two_2(pred_1, pred_2, cutoff=21):
+    """
+    discreet cluster merging (less likely to reassign points)
+    iterate over clusters in pred_2; np.sum(n1[idx]) < c2[track]**2 -> pred[idx] = d + track
+    this is self-documenting
+    """
     c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
     n1, n2 = np.vectorize(c1.__getitem__)(pred_1), np.vectorize(c2.__getitem__)(pred_2)  # hit id -> track size
     pred = reassign_noise(pred_1, n1 > cutoff)
