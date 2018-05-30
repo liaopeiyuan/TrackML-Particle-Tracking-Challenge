@@ -36,6 +36,7 @@ class Session(object):
         if not os.path.isdir(self._parent_dir):
             raise ValueError("The input parent directory {} is invalid.".format(self._parent_dir))
 
+        # there are 8850 events in the training dataset; some ids from 1000 to 9999 are skipped
         if os.path.isdir(self._parent_dir + self._train_dir):
             self._train_event_id_list = sorted(
                 set(int(x[x.index("0"):x.index("-")]) for x in os.listdir(self._parent_dir + self._train_dir)))
