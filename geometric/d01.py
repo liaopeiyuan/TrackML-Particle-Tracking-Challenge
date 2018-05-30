@@ -13,14 +13,15 @@ from geometric.session import Session
 
 import numpy as np
 import pandas as pd
+
 from matplotlib import pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 
 def subroutine_1(df):
     """
     explore track size
     """
-    print("="*120)
     track_size = df.groupby("particle_id")["x"].agg("count")
     track_size.drop(0, axis=0, inplace=True)
     plt.hist(track_size, alpha=0.3, color="g", range=(0.5, 21.5), bins=21)
@@ -31,16 +32,79 @@ def subroutine_2(df, n=20):
     """
     plot 3d tracks
     """
-    track_size = df.groupby("particle_id")["x"].agg("count")
+    # particle id -> track size
+    track_size = df.groupby("particle_id", sort=False)["x"].agg("count")
+    # ignore noisy track
     track_size.drop(0, axis=0, inplace=True)
-    track_size[track_size > 3].index
+    # ignore small tracks (track size <= 3)
+    particle_list = track_size[track_size > 3].index
+    # randomly select n particles/tracks
+    particle_list = np.random.choice(particle_list, size=n, replace=False)
+    # get boolean mask
+    selected_idx = df.particle_id.isin(particle_list)
+    # aggregate selected df by particle id
+    df_agg = df.loc[selected_idx, :].groupby("particle_id", sort=False)
 
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    def plot_track(sub_df):
+        sub_df = sub_df.sort_values(by="z")
+        ax.plot(sub_df.x.values, sub_df.y.values, sub_df.z.values, ".-")
+        return sub_df
+    df_agg.apply(plot_track)
+
+    noise_df = df.loc[df.particle_id == 0].sample(n=200, replace=False)
+    ax.plot(noise_df.x.values, noise_df.y.values, noise_df.z.values, ".", color="grey")
+    ax.set_xlabel("X"), ax.set_ylabel("Y"), ax.set_zlabel("Z")
+    plt.show()
+
+
+def subroutine_3(df):
+    """
+    h1: `rc=np.sqrt(x*x+y*y)` is increasing with respect to `np.abs(z)` within a track
+    """
+    # particle id -> track size
+    track_size = df.groupby("particle_id", sort=False)["x"].agg("count")
+    # ignore noisy track
+    track_size.drop(0, axis=0, inplace=True)
+    # ignore small tracks (track size <= 3)
+    particle_list = track_size[track_size > 3].index
+    # only consider the meaningful particles (size > 3 and not noisy)
+    df = df.loc[df.particle_id.isin(particle_list), :]
+
+    df.loc[:, "rc"] = np.sqrt(df.x ** 2 + df.y ** 2)
+    df.loc[:, "abs_z"] = np.abs(df.z)
+
+    df_agg = df.groupby("particle_id", sort=False)
+
+    def check_monotonic(sub_df):
+        """
+        returns the spearman correlation coefficient and the size of the data
+        """
+        spearman_corr = sub_df["rc"].corr(sub_df["abs_z"], method="spearman")
+        tp = np.mean(np.sqrt(sub_df.tpx ** 2 + sub_df.tpy ** 2 + sub_df.tpz ** 2))
+        return pd.Series(
+            (spearman_corr, sub_df["x"].count(), tp)
+        )
+
+    # spearman correlation coefficient between rc and abs_z
+    res = df_agg.apply(check_monotonic)
+    res.columns = ["spearman", "track_size", "momentum"]
+    print("number of tracks violating h1: ", sum(res.spearman < 1.0 - 1e-12))
+    print("total number of tracks: ", res.shape[0])
+    # plt.hist(res["spearman"])  # plot histogram
+    plt.scatter(x=res.momentum, y=res.spearman)
+    plt.xlabel("particle momentum")
+    plt.ylabel("spearman between rc and abs_z")
+
+    plt.show()
 
 if __name__ == "__main__":
     print("start running script d01.py")
 
     s1 = Session(parent_dir="E:/TrackMLData/")
-    for hits, truth in s1.remove_train_events(n=15, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
+    for hits, truth in s1.remove_train_events(n=10, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
+        print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
-        subroutine_1(hits[["x", "y", "z", "particle_id", "weight"]])
-    plt.show()
+        subroutine_3(hits)
