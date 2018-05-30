@@ -6,7 +6,12 @@ explore geometric properties of particle tracks
 by Tianyi Miao
 
 Notes:
+h1: `rc=np.sqrt(x*x+y*y)` is increasing with respect to `np.abs(z)` within a track
+This is true for 80% of tracks, but particles with low momentum are a notable exception
 
+h2: the monotonicity score (spearman) described in h1 is related to az
+ac = np.arctan2(y, x)
+az = np.arctan2(rc, z)  # the angle between [a ray from origin to the point] and [z-axis]
 """
 
 from geometric.session import Session
@@ -65,7 +70,7 @@ def subroutine_3(df):
         return np.sqrt(sub_df.tpx ** 2 + sub_df.tpy ** 2 + sub_df.tpz ** 2)
 
     df["tp"] = calculate_momentum(df)
-    print(df[["tpx", "tpy", "tpz", "tp"]].describe())
+    # print(df[["tpx", "tpy", "tpz", "tp"]].describe())
 
     """
     h1: `rc=np.sqrt(x*x+y*y)` is increasing with respect to `np.abs(z)` within a track
@@ -81,6 +86,7 @@ def subroutine_3(df):
 
     df.loc[:, "rc"] = np.sqrt(df.x ** 2 + df.y ** 2)
     df.loc[:, "abs_z"] = np.abs(df.z)
+    df.loc[:, "az"] = np.arctan2(df.rc, df.z)
 
     df_agg = df.groupby("particle_id", sort=False)
 
@@ -90,20 +96,66 @@ def subroutine_3(df):
         """
         spearman_corr = sub_df["rc"].corr(sub_df["abs_z"], method="spearman")
         return pd.Series(
-            (spearman_corr, sub_df["x"].count(), np.mean(calculate_momentum(sub_df)))
+            (spearman_corr,
+             sub_df["x"].count(),
+             np.mean(calculate_momentum(sub_df)),
+             np.mean(sub_df.z),
+             np.std(sub_df.z)
+             )
         )
 
     # spearman correlation coefficient between rc and abs_z
     res = df_agg.apply(check_monotonic)
-    res.columns = ["spearman", "track_size", "momentum"]
-    print("number of tracks violating h1: ", sum(res.spearman < 1.0 - 1e-12))
-    print("total number of tracks: ", res.shape[0])
-    # plt.hist(res["spearman"])  # plot histogram
-    plt.scatter(x=np.log1p(res.momentum), y=res.spearman)
-    plt.xlabel("particle momentum")
-    plt.ylabel("spearman between rc and abs_z")
+    res.columns = ["spearman", "track_size", "momentum", "mean_z", "std_z"]
+    # print("number of tracks violating h1: ", sum(res.spearman < 1.0 - 1e-12))
 
+    # ill_behaved_particles = res[res.spearman < 1.0 - 1e-12].index
+    ill_behaved_particles = res[res.spearman < 0.5].index
+
+    if True:
+        fig = plt.figure()
+        ax1 = fig.add_subplot(121)
+        ax1.scatter(x=res.mean_z, y=res.spearman)
+        ax1.set_xlabel("mean z in track")
+        ax1.set_ylabel("spearman between rc and abs_z")
+        ax2 = fig.add_subplot(122)
+        ax2.scatter(x=res.std_z, y=res.spearman)
+        ax2.set_xlabel("standard deviation of z in track")
+        ax2.set_ylabel("spearman between rc and abs_z")
+    if False:
+        print("total weight for ill-behaved tracks: ", df.weight[df.particle_id.isin(ill_behaved_particles)].sum())
+    if False:
+        print("number of ill-behaved tracks", len(ill_behaved_particles))
+        print("total number of tracks: ", res.shape[0])
+    if False:
+        plt.hist(res["spearman"])  # plot histogram
+    if False:
+        plt.scatter(x=np.log1p(res.momentum), y=res.spearman)
+        plt.xlabel("particle momentum (log scale)")
+        plt.ylabel("spearman between rc and abs_z")
     plt.show()
+    if False:
+        # visualize tracks from ill-behaved particles
+        n = 40
+        # select a random subset of particles for visualization
+        particle_list = np.random.choice(ill_behaved_particles, size=n, replace=False)
+        # get boolean mask
+        selected_idx = df.particle_id.isin(particle_list)
+        # aggregate selected df by particle id
+        df_agg = df.loc[selected_idx, :].groupby("particle_id", sort=False)
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        def plot_track(sub_df):
+            sub_df = sub_df.sort_values(by="z")
+            ax.plot(sub_df.x.values, sub_df.y.values, sub_df.z.values, ".-")
+            return sub_df
+
+        df_agg.apply(plot_track)
+
+        plt.show()
+    print("")
 
 if __name__ == "__main__":
     print("start running script d01.py")
