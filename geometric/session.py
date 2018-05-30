@@ -70,7 +70,7 @@ class Session(object):
         remove these train events from the current id list
         """
         n = min(n, len(self._train_event_id_list))
-        if random:
+        if randomness:
             event_ids = np.random.choice(self._train_event_id_list, size=n, replace=False).tolist()
             for event_id in event_ids:
                 self._train_event_id_list.remove(event_id)
