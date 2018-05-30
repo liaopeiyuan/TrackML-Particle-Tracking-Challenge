@@ -26,7 +26,6 @@ from geometric.session import Session
 from trackml.score import score_event
 
 
-
 def label_encode(y):
     return LabelEncoder().fit_transform(y)
 
@@ -78,7 +77,6 @@ def merge_two_2(pred_1, pred_2, cutoff=21):
 def aggregate_helix_2(x, y, z, truth=None, merge_func=merge_two_2):
     rc = np.sqrt(x * x + y * y)  # radius in xy plane
     ac = np.arctan2(y, x)  # angle in xy plane
-
 
 
 def aggregate_helix_1(x, y, z, truth=None, merge_func=merge_two_1):
