@@ -61,6 +61,12 @@ def subroutine_2(df, n=20):
 
 
 def subroutine_3(df):
+    def calculate_momentum(sub_df):
+        return np.sqrt(sub_df.tpx ** 2 + sub_df.tpy ** 2 + sub_df.tpz ** 2)
+
+    df["tp"] = calculate_momentum(df)
+    print(df[["tpx", "tpy", "tpz", "tp"]].describe())
+
     """
     h1: `rc=np.sqrt(x*x+y*y)` is increasing with respect to `np.abs(z)` within a track
     """
@@ -83,9 +89,8 @@ def subroutine_3(df):
         returns the spearman correlation coefficient and the size of the data
         """
         spearman_corr = sub_df["rc"].corr(sub_df["abs_z"], method="spearman")
-        tp = np.mean(np.sqrt(sub_df.tpx ** 2 + sub_df.tpy ** 2 + sub_df.tpz ** 2))
         return pd.Series(
-            (spearman_corr, sub_df["x"].count(), tp)
+            (spearman_corr, sub_df["x"].count(), np.mean(calculate_momentum(sub_df)))
         )
 
     # spearman correlation coefficient between rc and abs_z
@@ -94,7 +99,7 @@ def subroutine_3(df):
     print("number of tracks violating h1: ", sum(res.spearman < 1.0 - 1e-12))
     print("total number of tracks: ", res.shape[0])
     # plt.hist(res["spearman"])  # plot histogram
-    plt.scatter(x=res.momentum, y=res.spearman)
+    plt.scatter(x=np.log1p(res.momentum), y=res.spearman)
     plt.xlabel("particle momentum")
     plt.ylabel("spearman between rc and abs_z")
 
