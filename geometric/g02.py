@@ -36,7 +36,9 @@ def subroutine_1(df):
     for az_center in np.arange(0, 181, 5):
         print("angle-z center: ", az_center)
         az_margin = 2
-        lo, hi = np.deg2rad(az_center - az_margin), np.deg2rad(az_center + az_margin)
+        az_center_rad, az_margin_rad = np.deg2rad(az_center), np.deg2rad(az_margin)
+
+        lo, hi = az_center_rad - az_margin_rad, az_center_rad + az_margin_rad
         idx = (df.az >= lo) & (df.az < hi)
 
         def transform_dummy(sub_df):
@@ -44,13 +46,18 @@ def subroutine_1(df):
 
         def transform_1(sub_df):
             # ret = scale(np.column_stack((sub_df.ac, sub_df.az, np.zeros(sub_df.shape[0]))))
-            ret = scale(np.column_stack([sub_df.x / sub_df.rs, sub_df.y / sub_df.rs, sub_df.rc / sub_df.z]))
+            ret = np.column_stack([
+                sub_df.x / sub_df.rc,
+                sub_df.y / sub_df.rc,
+                (sub_df.az - az_center_rad) / az_margin_rad
+            ])
+            # ret = scale(ret)
             return ret
 
         plot_track_3d(
             df.loc[idx, :],
             [transform_dummy, transform_1],
-            [DBSCAN(eps=0.05, min_samples=1)], n_tracks=40)
+            [DBSCAN(eps=0.02, min_samples=1)], n_tracks=40)
 
         if False:
             res = -np.ones(df.shape[0])

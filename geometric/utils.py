@@ -29,6 +29,8 @@ def merge_naive(pred_1, pred_2, cutoff=20):
     naive cluster merging:
     iterate over hits; if a hit belongs to a larger cluster in pred_2, it is reassigned
     """
+    if pred_1 is None:
+        return pred_2
     c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
     n1, n2 = np.vectorize(c1.__getitem__)(pred_1), np.vectorize(c2.__getitem__)(pred_2)  # hit id -> track size
     pred = pred_1.copy()
@@ -43,6 +45,8 @@ def merge_discreet(pred_1, pred_2, cutoff=21):
     iterate over clusters in pred_2; np.sum(n1[idx]) < c2[track]**2 -> pred[idx] = d + track
     this is self-documenting
     """
+    if pred_1 is None:
+        return pred_2
     c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
     n1, n2 = np.vectorize(c1.__getitem__)(pred_1), np.vectorize(c2.__getitem__)(pred_2)  # hit id -> track size
     pred = reassign_noise(pred_1, n1 > cutoff)
