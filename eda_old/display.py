@@ -10,6 +10,8 @@ by Tianyi Miao
 """
 
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
 import numpy as np
 import pandas as pd
 from sklearn.cluster import DBSCAN
@@ -40,10 +42,10 @@ def plot_track_3d(df, transformer_list, clusterer_list=(), n_tracks=10, cutoff=3
     :param verbose: if set to True, print the particle id and the coordinate matrix in the console.
     """
 
-    if all("t"+s in df.columns for s in ("x", "y", "z")):
-        xyz_cols = ["tx", "ty", "tz"]
-    elif all(s in df.columns for s in ("x", "y", "z")):
+    if all(s in df.columns for s in ("x", "y", "z")):
         xyz_cols = ["x", "y", "z"]
+    elif all("t" + s in df.columns for s in ("x", "y", "z")):
+        xyz_cols = ["tx", "ty", "tz"]
     else:
         raise ValueError("input DataFrame does not contain valid coordinate columns (tx, ty, tz) or (x, y, z)")
 
