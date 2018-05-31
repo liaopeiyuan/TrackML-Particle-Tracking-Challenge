@@ -9,26 +9,22 @@ import pandas as pd
 from sklearn.preprocessing import scale
 from sklearn.cluster import dbscan, DBSCAN
 
-from eda_old.display import plot_track_3d
+from geometric.display import plot_track_3d
 from geometric.session import Session
 from geometric.utils import label_encode, reassign_noise, merge_discreet, merge_naive
 from trackml.score import score_event
 
 
-def transform_1(df):
-    return df[["ac", "az", "rc"]]
-
-
 def subroutine_1(df):
     # feature engineering
     df.loc[:, "rc"] = np.sqrt(df.x ** 2 + df.y ** 2)  # radius in cylindrical coordinate
-    df.loc[:, "rs"] = np.sqrt(df.x ** 2 + df.y ** 2 + df.z ** 2)  # radius in spherical coordinate
+    # df.loc[:, "rs"] = np.sqrt(df.x ** 2 + df.y ** 2 + df.z ** 2)  # radius in spherical coordinate
     df.loc[:, "ac"] = np.arctan2(df.y, df.x)  # from -pi to pi
     df.loc[:, "az"] = np.arctan2(df.rc, df.z)  # from 0 to pi
 
-    df.loc[:, "v1"] = df.x / df.rs
-    df.loc[:, "v2"] = df.y / df.rs
-    df.loc[:, "v3"] = df.z / df.rc
+    # df.loc[:, "u1"] = df.x / df.rs
+    # df.loc[:, "u2"] = df.y / df.rs
+    df.loc[:, "u3"] = df.z / df.rc
 
     pred = np.arange(df.shape[0])
 
@@ -38,7 +34,13 @@ def subroutine_1(df):
         lo, hi = np.deg2rad(az_center - az_margin), np.deg2rad(az_center + az_margin)
         idx = (df.az >= lo) & (df.az < hi)
 
-        plot_track_3d(df.loc[idx, :], [transform_1], [DBSCAN(eps=0.008, min_samples=1)])
+        plot_track_3d(
+            df.loc[idx, :],
+            [
+                lambda df2: scale(df2.loc[:, ["x", "y", "z"]]),
+                lambda df2: scale(df2.loc[:, ["ac", "az", "u3"]])
+             ],
+            [DBSCAN(eps=0.008, min_samples=1)], n_tracks=20)
 
         if False:
             res = -np.ones(df.shape[0])

@@ -20,7 +20,7 @@ def reassign_noise(labels: np.ndarray, idx):
     assign noisy points (labeled with key_value such as -1 or 0) to their own clusters of size 1
     """
     ret = labels.copy()
-    ret[idx] = np.array(list(range(int(np.sum(idx))))) + np.max(ret) + 1
+    ret[idx] = np.arange(np.sum(idx)) + np.max(ret) + 1
     return ret
 
 
@@ -75,6 +75,7 @@ def hit_completeness(df, idx, track_size):
 def track_completeness(df, idx):
     """
     (number of tracks with all hits in the region) / (number of tracks that have at least 1 hit in the region)
+    idx is a boolean mask over the region
     """
     all_particles = df.loc[idx, "particle_id"].unique().tolist()
     if 0 in all_particles:

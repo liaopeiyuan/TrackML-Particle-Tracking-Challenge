@@ -235,47 +235,48 @@ def run_multiple_cluster(xyz_array, eps=0.00715, n_theta=20):
     return None
 
 
-# TODO: important parameter
-flag_plot = True
-if flag_plot:
-    print("PLOTTING mode")
-else:
-    print("CLUSTERING mode")
-
-TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = \
-    get_directories("E:/TrackMLData/") if flag_plot else get_directories()
-
-n_event = 40  # TODO:important parameter
-n_train = 1 if flag_plot else 20  # TODO:important parameter
-event_id_list = np.random.choice(TRAIN_EVENT_ID_LIST, size=n_event, replace=False)
-train_id_list = event_id_list[:n_train]  # training set
-val_id_list = event_id_list[n_train:]  # validation set
-
-
-for event_id in train_id_list:
-    print('='*120)
-    truth, = load_event(TRAIN_DIR + get_event_name(event_id), [TRUTH])
-
-    print(pd.Series(np.sqrt(truth["tx"] ** 2 + truth["ty"] ** 2)).describe())
-    print(pd.Series(np.sqrt(truth["tx"] ** 2 + truth["ty"] ** 2+ truth["tz"] ** 2)).describe())
-
+if __name__ == "__main__":
+    flag_plot = True
     if flag_plot:
-        plot_track_3d(
-            truth,
-            # truth.loc[(truth.tpz > 2), :],
-            transformer_list=[
-                # lambda df: transform_dummy(df, scaling=False),
-                lambda df: transform_1(df, scaling=True),
-                # transform_dummy,
-                # transform_1
-            ],
-            # clusterer_list=[DBSCAN(eps=0.01, min_samples=1, algorithm='auto', n_jobs=-1)],
-            n_tracks=150, cutoff=3)
+        print("PLOTTING mode")
     else:
-        run_multiple_cluster(truth[["tx", "ty", "tz"]].values, n_theta=50)
+        print("CLUSTERING mode")
 
-        # test_dbscan(
-        # (0.001, 0.003, 0.008, 0.01, 0.02, 0.03, 0.07, 0.1, 0.3),
-        # (0.01, 0.03, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6),
-        # hit_id=truth.hit_id, data=transform_3(truth), truth=truth, scaling=False)
+    TRAIN_DIR, TEST_DIR, DETECTORS_DIR, SAMPLE_SUBMISSION_DIR, TRAIN_EVENT_ID_LIST, TEST_EVENT_ID_LIST = \
+        get_directories("E:/TrackMLData/") if flag_plot else get_directories()
+
+    n_event = 40  # TODO:important parameter
+    n_train = 1 if flag_plot else 20  # TODO:important parameter
+    event_id_list = np.random.choice(TRAIN_EVENT_ID_LIST, size=n_event, replace=False)
+    train_id_list = event_id_list[:n_train]  # training set
+    val_id_list = event_id_list[n_train:]  # validation set
+
+    for event_id in train_id_list:
+        print('=' * 120)
+        truth, = load_event(TRAIN_DIR + get_event_name(event_id), [TRUTH])
+
+        print(pd.Series(np.sqrt(truth["tx"] ** 2 + truth["ty"] ** 2)).describe())
+        print(pd.Series(np.sqrt(truth["tx"] ** 2 + truth["ty"] ** 2 + truth["tz"] ** 2)).describe())
+
+        if flag_plot:
+            plot_track_3d(
+                truth,
+                # truth.loc[(truth.tpz > 2), :],
+                transformer_list=[
+                    # lambda df: transform_dummy(df, scaling=False),
+                    lambda df: transform_1(df, scaling=True),
+                    # transform_dummy,
+                    # transform_1
+                ],
+                # clusterer_list=[DBSCAN(eps=0.01, min_samples=1, algorithm='auto', n_jobs=-1)],
+                n_tracks=150, cutoff=3)
+        else:
+            run_multiple_cluster(truth[["tx", "ty", "tz"]].values, n_theta=50)
+
+            # test_dbscan(
+            # (0.001, 0.003, 0.008, 0.01, 0.02, 0.03, 0.07, 0.1, 0.3),
+            # (0.01, 0.03, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6),
+            # hit_id=truth.hit_id, data=transform_3(truth), truth=truth, scaling=False)
+
+
 
