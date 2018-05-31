@@ -3,6 +3,8 @@ g03.py
 current best solution
 """
 
+from itertools import product
+
 import numpy as np
 import pandas as pd
 
@@ -27,7 +29,7 @@ def sionkowski_43(df, verbose=False):
 
     pred = None
 
-    for i in range(301):
+    for i in range(101):
         mm *= -1
         dz = mm * (dz0 + i * stepdz)
         df.loc[:, "a1"] = df.a0 + dz * np.abs(df.z)
@@ -53,6 +55,47 @@ def subroutine_1(df):
     sionkowski_43(df, verbose=True)
     return 0
 
+
+def sionkowski_search(df, feature_weight, p_minkowski=2):
+    df = df.copy()
+    df.loc[:, "rt"] = np.sqrt(df.x ** 2 + df.y ** 2)
+    df.loc[:, "a0"] = np.arctan2(df.y, df.x)
+    df.loc[:, "z1"] = df.z / df.rt
+    df.loc[:, "x2"] = df.rt / df.z  # = 1 / df.z1
+    dz0 = -7e-4
+    stepdz = 1e-5
+    stepeps = 5e-6
+    mm = 1
+
+    score_list = []
+    pred = None
+
+    for i in range(150):
+        mm *= -1
+        dz = mm * (dz0 + i * stepdz)
+        df.loc[:, "a1"] = df.a0 + dz * np.abs(df.z)
+        df.loc[:, "sina1"] = np.sin(df.a1)
+        df.loc[:, "cosa1"] = np.cos(df.a1)
+        df.loc[:, "x1"] = df.a1 / df.z1
+        dfs = scale(df.loc[:, ["sina1", "cosa1", "z1", "x1", "x2"]])
+        dfs *= feature_weight
+        res = dbscan(X=dfs, eps=0.0035 + i * stepeps, min_samples=1, n_jobs=-1, metric="minkowski", p=p_minkowski)[1]
+
+        pred = merge_naive(pred, res, cutoff=20)
+
+        official_score = score_event(
+            truth=df,
+            submission=pd.DataFrame({"hit_id": df.hit_id, "track_id": pred})
+        )
+        score_list.append(official_score)
+    return score_list
+
+
+def subroutine_2(df):
+    """
+    find the best possible feature weight
+    """
+    product(np.arange(0.05, 1 + 1e-12, 0.05), repeat=5)
 
 if __name__ == "__main__":
     print("start running script g03.py")
