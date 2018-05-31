@@ -91,15 +91,32 @@ def sionkowski_search(df, feature_weight, p_minkowski=2):
     return score_list
 
 
-def subroutine_2(df):
-    """
-    find the best possible feature weight
-    """
-    product(np.arange(0.05, 1 + 1e-12, 0.05), repeat=5)
-
 if __name__ == "__main__":
     print("start running script g03.py")
     s1 = Session(parent_dir="E:/TrackMLData/")
+
+    result_record = pd.DataFrame(columns=['w1', 'w2', 'w3', 'w4', 'w5', 'best_n', 'best_score'])
+
+    n_events = 30
+
+    i = 0
+
+    feature_weight_list = product(np.arange(0.05, 1 + 1e-12, 0.05), repeat=5)
+
+    for feature_weight in feature_weight_list:
+        result_record.loc[i, ['w1', 'w2', 'w3', 'w4', 'w5']] = feature_weight
+        score_per_step = 0
+        for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
+            score_per_step += np.array(
+                sionkowski_search(hits.merge(truth, how="left", on="hit_id"), feature_weight, p_minkowski=2)
+            )
+        score_per_step /= n_events
+        result_record.loc[i, 'best_n'] = np.argmax(score_per_step)
+        result_record.loc[i, 'best_score'] = np.max(score_per_step)
+        i += 1
+        if i % 1000 == 0:
+            print(result_record.loc[result_record.best_score > result_record.best_score.quantile(0.98), ["best_n", "best_score"]])
+
     for hits, truth in s1.remove_train_events(n=10, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")

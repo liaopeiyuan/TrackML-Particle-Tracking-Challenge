@@ -71,7 +71,7 @@ class Session(object):
 
         event_names = [Session.get_event_name(event_id) for event_id in event_ids]
         return event_names, \
-               (load_event(self._parent_dir + self._train_dir + event_name, content) for event_name in event_names)
+            (load_event(self._parent_dir + self._train_dir + event_name, content) for event_name in event_names)
 
     def remove_train_events(self, n=10, content=(HITS, TRUTH), randomness=True):
         """
