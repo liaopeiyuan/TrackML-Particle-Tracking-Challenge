@@ -27,6 +27,8 @@ def plot_track_3d(df, transformer_list, clusterer_list=(), n_tracks=20, cutoff=3
         if c not in df.columns:
             raise ValueError("[plot_track_3d] input DataFrame does not contain {}".format(c))
 
+    df = df.copy()
+
     def plot_track(sub_df):
         sub_df = sub_df.sort_values(by="z")
         ax.plot(sub_df.v1.values, sub_df.v2.values, sub_df.v3.values, ".-")

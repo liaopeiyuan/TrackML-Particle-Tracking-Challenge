@@ -1,6 +1,10 @@
 """
 g02.py
 try cone scanning
+
+Notes:
+in clustering, cartesian coordinates (x/y) sometimes behave better than polar coordinate (angle/radius),
+ because there's always a discontinuity between pi and -pi, 0 and 2pi, etc.
 """
 
 import numpy as np
@@ -16,9 +20,10 @@ from trackml.score import score_event
 
 
 def subroutine_1(df):
+    df = df.copy()
     # feature engineering
     df.loc[:, "rc"] = np.sqrt(df.x ** 2 + df.y ** 2)  # radius in cylindrical coordinate
-    # df.loc[:, "rs"] = np.sqrt(df.x ** 2 + df.y ** 2 + df.z ** 2)  # radius in spherical coordinate
+    df.loc[:, "rs"] = np.sqrt(df.x ** 2 + df.y ** 2 + df.z ** 2)  # radius in spherical coordinate
     df.loc[:, "ac"] = np.arctan2(df.y, df.x)  # from -pi to pi
     df.loc[:, "az"] = np.arctan2(df.rc, df.z)  # from 0 to pi
 
@@ -34,13 +39,18 @@ def subroutine_1(df):
         lo, hi = np.deg2rad(az_center - az_margin), np.deg2rad(az_center + az_margin)
         idx = (df.az >= lo) & (df.az < hi)
 
+        def transform_dummy(sub_df):
+            return scale(sub_df.loc[:, ["x", "y", "z"]])
+
+        def transform_1(sub_df):
+            # ret = scale(np.column_stack((sub_df.ac, sub_df.az, np.zeros(sub_df.shape[0]))))
+            ret = scale(np.column_stack([sub_df.x / sub_df.rs, sub_df.y / sub_df.rs, sub_df.rc / sub_df.z]))
+            return ret
+
         plot_track_3d(
             df.loc[idx, :],
-            [
-                lambda df2: scale(df2.loc[:, ["x", "y", "z"]]),
-                lambda df2: scale(df2.loc[:, ["ac", "az", "u3"]])
-             ],
-            [DBSCAN(eps=0.008, min_samples=1)], n_tracks=20)
+            [transform_dummy, transform_1],
+            [DBSCAN(eps=0.05, min_samples=1)], n_tracks=40)
 
         if False:
             res = -np.ones(df.shape[0])

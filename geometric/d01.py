@@ -57,7 +57,6 @@ def subroutine_2(df, n=20):
         sub_df = sub_df.sort_values(by="z")
         ax.plot(sub_df.x.values, sub_df.y.values, sub_df.z.values, ".-")
         return sub_df
-    df_agg.apply(plot_track)
 
     noise_df = df.loc[df.particle_id == 0].sample(n=200, replace=False)
     ax.plot(noise_df.x.values, noise_df.y.values, noise_df.z.values, ".", color="grey")
