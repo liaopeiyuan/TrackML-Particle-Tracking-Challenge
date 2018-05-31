@@ -75,6 +75,16 @@ def subroutine_2(df):
     """
 
 
+def subroutine_3(df):
+    res = df.groupby("particle_id")["z"].agg(["min", "max"]).values
+    idx = (res[:, 0] < 0) & (res[:, 1] > 0)  # min z < 0 and max z > 0, the track crosses the xy-plane
+    print(np.sum(idx), len(res))
+    plt.hist2d(x=res[idx, 0], y=res[idx, 1], bins=50)
+    plt.xlabel("minimum z"), plt.ylabel("maximum z")
+
+    plt.show()
+
+
 if __name__ == "__main__":
     print("start running script d01.py")
 
@@ -82,4 +92,4 @@ if __name__ == "__main__":
     for hits, truth in s1.remove_train_events(n=10, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
-        subroutine_2(hits)
+        subroutine_3(hits)

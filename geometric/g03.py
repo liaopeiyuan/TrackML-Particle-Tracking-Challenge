@@ -27,7 +27,7 @@ def sionkowski_43(df, verbose=False):
 
     pred = None
 
-    for i in range(101):
+    for i in range(301):
         mm *= -1
         dz = mm * (dz0 + i * stepdz)
         df.loc[:, "a1"] = df.a0 + dz * np.abs(df.z)
@@ -50,7 +50,7 @@ def sionkowski_43(df, verbose=False):
 
 
 def subroutine_1(df):
-    sionkowski_43(df)
+    sionkowski_43(df, verbose=True)
     return 0
 
 
