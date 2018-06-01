@@ -83,7 +83,7 @@ class RecursiveClusterer(object):
         df.loc[:, "z1"] = df.z / df.rt
         df.loc[:, "x2"] = df.rt / df.z  # = 1 / df.z1
 
-        stepeps = self.stepdz * beta
+        stepeps = self.stepdz * self.beta
         mm = 1
         pred = None
         score_list = []
