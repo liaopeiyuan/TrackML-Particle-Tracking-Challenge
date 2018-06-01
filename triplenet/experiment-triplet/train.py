@@ -162,7 +162,7 @@ def run_train():
     batch_size  = 2
     valid_size  = 2
 
-    num_iters   = 200
+    num_iters   = 100
     iter_smooth = 20
     iter_log    = 50
     iter_valid  = 100
