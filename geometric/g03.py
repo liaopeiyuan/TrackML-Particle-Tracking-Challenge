@@ -118,14 +118,14 @@ class RecursiveClusterer(object):
 if __name__ == "__main__":
     print("start running script g03.py")
     s1 = Session(parent_dir="E:/TrackMLData/")
-    n_events = 30
+    n_events = 20
     h1 = RecursiveClusterer(
-        p=1,
+        p=2,
         dz0=-7e-4,
         stepdz=1e-5,
         eps0=0.0035,
         beta=0.5,
-        max_step=300,
+        max_step=140,
         feature_weight=np.array([1, 1, 0.75, 0.5, 0.5]),
         merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
     )
