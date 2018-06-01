@@ -76,7 +76,7 @@ class RecursiveClusterer(object):
         self.feature_weight = feature_weight
         self.merge_func = merge_func
 
-    def fit_predict(self, df, score=False):
+    def fit_predict(self, df, score=False, verbose=False):
         df = df.copy()
         df.loc[:, "rt"] = np.sqrt(df.x ** 2 + df.y ** 2)
         df.loc[:, "a0"] = np.arctan2(df.y, df.x)
@@ -107,7 +107,8 @@ class RecursiveClusterer(object):
                     submission=pd.DataFrame({"hit_id": df.hit_id, "track_id": pred})
                 )
                 score_list.append(official_score)
-                print("score: {:.6f}".format(official_score))
+                if verbose:
+                    print(str(i).rjust(3) + ": {:.6f}".format(official_score))
         return pred, np.array(score_list)
 
 
@@ -120,16 +121,25 @@ if __name__ == "__main__":
         stepdz=1e-5,
         eps0=0.0035,
         beta=0.5,
-        max_step=200,
+        max_step=160,
         feature_weight=np.array([1, 1, 0.75, 0.5, 0.5]),
         merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
     )
     n_events = 30
-    step_score = 0
+    step_score_list = []
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
-        step_score += h1.fit_predict(hits, score=True)[1]
+        step_score_list.append(h1.fit_predict(hits, score=True, verbose=True)[1])
+    step_score_mean = np.mean(step_score_list, axis=0)
+    step_score_var = np.var(step_score_list, axis=0)
+    print("*"*100)
+    print("final score summary: ")
+    print("best number of steps: ", np.argmax(step_score_mean))
+    print("best score: ", np.max(step_score_mean))
+    print("step score mean: ", step_score_mean)
+    print("step score var:", step_score_var)
+
 
 
     """
