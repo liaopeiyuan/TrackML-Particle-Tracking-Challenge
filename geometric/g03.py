@@ -115,6 +115,7 @@ class RecursiveClusterer(object):
 if __name__ == "__main__":
     print("start running script g03.py")
     s1 = Session(parent_dir="E:/TrackMLData/")
+    n_events = 30
     h1 = RecursiveClusterer(
         p=2,
         dz0=-7e-4,
@@ -125,7 +126,6 @@ if __name__ == "__main__":
         feature_weight=np.array([1, 1, 0.75, 0.5, 0.5]),
         merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
     )
-    n_events = 30
     step_score_list = []
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         print("=" * 120)
@@ -139,8 +139,6 @@ if __name__ == "__main__":
     print("best score: ", np.max(step_score_mean))
     print("step score mean: ", step_score_mean)
     print("step score var:", step_score_var)
-
-
 
     """
     result_record = pd.DataFrame(columns=['w1', 'w2', 'w3', 'w4', 'w5', 'best_n', 'best_score'])
