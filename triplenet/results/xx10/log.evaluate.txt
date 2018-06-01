@@ -45,3 +45,16 @@
 
 ** dataset setting **
 
+
+--- [START 2018-05-28_22-08-07] ----------------------------------------------------------------
+
+** some experiment setting **
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/experiment-triplet
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/xx10
+
+<class 'model.TripletNet'>
+
+
+** dataset setting **
+
