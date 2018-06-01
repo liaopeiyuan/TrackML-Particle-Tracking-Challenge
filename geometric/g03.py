@@ -56,45 +56,83 @@ def subroutine_1(df):
     return 0
 
 
-def sionkowski_search(df, feature_weight, p_minkowski=2):
-    df = df.copy()
-    df.loc[:, "rt"] = np.sqrt(df.x ** 2 + df.y ** 2)
-    df.loc[:, "a0"] = np.arctan2(df.y, df.x)
-    df.loc[:, "z1"] = df.z / df.rt
-    df.loc[:, "x2"] = df.rt / df.z  # = 1 / df.z1
-    dz0 = -7e-4
-    stepdz = 1e-5
-    stepeps = 5e-6
-    mm = 1
+class RecursiveClusterer(object):
+    def __init__(self,
+                 p=2,
+                 dz0=-7e-4,
+                 stepdz=1e-5,
+                 eps0=0.0035,
+                 beta=0.5,
+                 max_step=200,
+                 feature_weight=np.array([1, 1, 0.75, 0.5, 0.5]),
+                 merge_func=lambda a, b: merge_naive(a, b, cutoff=20)):
+        self.p = p  # parameter for minkowski distance
+        self.dz0 = dz0  # initial dz
+        self.stepdz = stepdz  # dz step size
+        self.eps0 = eps0  # initial epsilon
+        self.beta = beta  # beta is the ratio: stepeps / stepdz
+        # self.stepeps = self.stepdz * beta
+        self.max_step = max_step
+        self.feature_weight = feature_weight
+        self.merge_func = merge_func
 
-    score_list = []
-    pred = None
+    def fit_predict(self, df, score=False):
+        df = df.copy()
+        df.loc[:, "rt"] = np.sqrt(df.x ** 2 + df.y ** 2)
+        df.loc[:, "a0"] = np.arctan2(df.y, df.x)
+        df.loc[:, "z1"] = df.z / df.rt
+        df.loc[:, "x2"] = df.rt / df.z  # = 1 / df.z1
 
-    for i in range(150):
-        mm *= -1
-        dz = mm * (dz0 + i * stepdz)
-        df.loc[:, "a1"] = df.a0 + dz * np.abs(df.z)
-        df.loc[:, "sina1"] = np.sin(df.a1)
-        df.loc[:, "cosa1"] = np.cos(df.a1)
-        df.loc[:, "x1"] = df.a1 / df.z1
-        dfs = scale(df.loc[:, ["sina1", "cosa1", "z1", "x1", "x2"]])
-        dfs *= feature_weight
-        res = dbscan(X=dfs, eps=0.0035 + i * stepeps, min_samples=1, n_jobs=-1, metric="minkowski", p=p_minkowski)[1]
+        stepeps = self.stepdz * beta
+        mm = 1
+        pred = None
+        score_list = []
+        for i in range(self.max_step):
+            mm *= -1
 
-        pred = merge_naive(pred, res, cutoff=20)
-
-        official_score = score_event(
-            truth=df,
-            submission=pd.DataFrame({"hit_id": df.hit_id, "track_id": pred})
-        )
-        score_list.append(official_score)
-    return score_list
+            dz = mm * (self.dz0 + i * self.stepdz)
+            df.loc[:, "a1"] = df.a0 + dz * np.abs(df.z)
+            df.loc[:, "sina1"] = np.sin(df.a1)
+            df.loc[:, "cosa1"] = np.cos(df.a1)
+            df.loc[:, "x1"] = df.a1 / df.z1
+            dfs = scale(df.loc[:, ["sina1", "cosa1", "z1", "x1", "x2"]])
+            dfs *= self.feature_weight
+            res = dbscan(X=dfs,
+                         eps=self.eps0 + i * stepeps,
+                         min_samples=1, n_jobs=-1, metric="minkowski", p=self.p)[1]
+            pred = self.merge_func(pred, res)
+            if score:
+                official_score = score_event(
+                    truth=df,
+                    submission=pd.DataFrame({"hit_id": df.hit_id, "track_id": pred})
+                )
+                score_list.append(official_score)
+                print("score: {:.6f}".format(official_score))
+        return pred, np.array(score_list)
 
 
 if __name__ == "__main__":
     print("start running script g03.py")
     s1 = Session(parent_dir="E:/TrackMLData/")
+    h1 = RecursiveClusterer(
+        p=2,
+        dz0=-7e-4,
+        stepdz=1e-5,
+        eps0=0.0035,
+        beta=0.5,
+        max_step=200,
+        feature_weight=np.array([1, 1, 0.75, 0.5, 0.5]),
+        merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
+    )
+    n_events = 30
+    step_score = 0
+    for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
+        print("=" * 120)
+        hits = hits.merge(truth, how="left", on="hit_id")
+        step_score += h1.fit_predict(hits, score=True)[1]
 
+
+    """
     result_record = pd.DataFrame(columns=['w1', 'w2', 'w3', 'w4', 'w5', 'best_n', 'best_score'])
 
     n_events = 30
@@ -121,4 +159,4 @@ if __name__ == "__main__":
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
         subroutine_1(hits)
-
+    """
