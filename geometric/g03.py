@@ -78,7 +78,10 @@ class RecursiveClusterer(object):
 
     def fit_predict(self, df, score=False, verbose=False):
         df = df.copy()
-        df.loc[:, "rt"] = np.sqrt(df.x ** 2 + df.y ** 2)
+        df.loc[:, "r3"] = np.sqrt(df.x ** 2 + df.y ** 2 + df.z ** 2)  # radius in spherical coordinate
+        # TODO: I use r3 instead of r, because I might add weights to x^2, y^2, z^2 above
+
+        df.loc[:, "rt"] = np.sqrt(df.x ** 2 + df.y ** 2)  # radius in cylindrical coordinate
         df.loc[:, "a0"] = np.arctan2(df.y, df.x)
         df.loc[:, "z1"] = df.z / df.rt
         df.loc[:, "x2"] = df.rt / df.z  # = 1 / df.z1
@@ -89,9 +92,9 @@ class RecursiveClusterer(object):
         score_list = []
         for i in range(self.max_step):
             mm *= -1
-
             dz = mm * (self.dz0 + i * self.stepdz)
-            df.loc[:, "a1"] = df.a0 + dz * np.abs(df.z)
+            # df.loc[:, "a1"] = df.a0 + dz * np.abs(df.z)  # TODO: original high-scoring solution
+            df.loc[:, "a1"] = df.a0 + dz * df.r3  # TODO: modification, use df.r3 rather than np.abs(df.z)
             df.loc[:, "sina1"] = np.sin(df.a1)
             df.loc[:, "cosa1"] = np.cos(df.a1)
             df.loc[:, "x1"] = df.a1 / df.z1
