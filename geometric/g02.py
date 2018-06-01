@@ -13,9 +13,14 @@ import pandas as pd
 from sklearn.preprocessing import scale
 from sklearn.cluster import dbscan, DBSCAN
 
-from geometric.display import plot_track_3d
-from geometric.session import Session
-from geometric.utils import label_encode, reassign_noise, merge_discreet, merge_naive
+#from geometric.display import plot_track_3d
+#from geometric.session import Session
+#from geometric.utils import label_encode, reassign_noise, merge_discreet, merge_naive
+
+from display import plot_track_3d
+from session import Session
+from utils import label_encode, reassign_noise, merge_discreet, merge_naive
+
 from trackml.score import score_event
 
 
@@ -74,7 +79,7 @@ def subroutine_1(df):
 
 if __name__ == "__main__":
     print("start running script g02.py")
-    s1 = Session(parent_dir="E:/TrackMLData/")
+    s1 = Session(parent_dir="/home/alexanderliao/data/Kaggle/competitions/trackml-particle-identification")
     for hits, truth in s1.remove_train_events(n=10, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
