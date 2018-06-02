@@ -16,6 +16,15 @@ from trackml.dataset import load_event
 
 
 class Session(object):
+    """
+    Precondition: the parent directory is organized as follows:
+    - train (directory)
+        - event#####-hits.csv
+    - test (directory)
+        - event#####-hits.csv
+    - detectors.csv
+    - sample_submission.csv
+    """
     HITS = "hits"
     CELLS = "cells"
     PARTICLES = "particles"
@@ -106,6 +115,11 @@ class Session(object):
         return event_names, \
             (load_event(self._parent_dir + self._test_dir + event_name, content) for event_name in event_names)
 
+    def make_submission(self, predictor, path):
+        """
+        :param predictor:
+        :param path: file path for submission file
+        """
 
 if __name__ == "__main__":
     s1 = Session(parent_dir="E:/TrackMLData/")

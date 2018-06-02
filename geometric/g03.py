@@ -64,14 +64,13 @@ class RecursiveClusterer(object):
                  eps0=0.0035,
                  beta=0.5,
                  max_step=200,
-                 feature_weight=np.array([1, 1, 0.75, 0.5, 0.5]),
+                 feature_weight=np.array([1, 1, 0.5]),
                  merge_func=lambda a, b: merge_naive(a, b, cutoff=20)):
         self.p = p  # parameter for minkowski distance
         self.dz0 = dz0  # initial dz
         self.stepdz = stepdz  # dz step size
         self.eps0 = eps0  # initial epsilon
         self.beta = beta  # beta is the ratio: stepeps / stepdz
-        # self.stepeps = self.stepdz * beta
         self.max_step = max_step
         self.feature_weight = feature_weight
         self.merge_func = merge_func
@@ -79,12 +78,11 @@ class RecursiveClusterer(object):
     def fit_predict(self, df, score=False, verbose=False):
         df = df.copy()
         df.loc[:, "r3"] = np.sqrt(df.x ** 2 + df.y ** 2 + df.z ** 2)  # radius in spherical coordinate
-        # TODO: I use r3 instead of r, because I might add weights to x^2, y^2, z^2 above
+        # TODO: I might add weights to x^2, y^2, z^2 above; or even nonlinear transformations
 
         df.loc[:, "rt"] = np.sqrt(df.x ** 2 + df.y ** 2)  # radius in cylindrical coordinate
         df.loc[:, "a0"] = np.arctan2(df.y, df.x)
         df.loc[:, "z1"] = df.z / df.rt
-        df.loc[:, "x2"] = df.rt / df.z  # = 1 / df.z1
 
         stepeps = self.stepdz * self.beta
         mm = 1
@@ -93,12 +91,10 @@ class RecursiveClusterer(object):
         for i in range(self.max_step):
             mm *= -1
             dz = mm * (self.dz0 + i * self.stepdz)
-            # df.loc[:, "a1"] = df.a0 + dz * np.abs(df.z)  # TODO: original high-scoring solution
-            df.loc[:, "a1"] = df.a0 + dz * df.r3  # TODO: modification, use df.r3 rather than np.abs(df.z)
+            df.loc[:, "a1"] = df.a0 + dz * df.r3  # rotation
             df.loc[:, "sina1"] = np.sin(df.a1)
             df.loc[:, "cosa1"] = np.cos(df.a1)
-            df.loc[:, "x1"] = df.a1 / df.z1
-            dfs = scale(df.loc[:, ["sina1", "cosa1", "z1", "x1", "x2"]])
+            dfs = scale(df.loc[:, ["sina1", "cosa1", "z1"]])
             dfs *= self.feature_weight
             res = dbscan(X=dfs,
                          eps=self.eps0 + i * stepeps,
@@ -117,6 +113,7 @@ class RecursiveClusterer(object):
 
 if __name__ == "__main__":
     print("start running script g03.py")
+    np.random.seed()  # restart random number generator
     s1 = Session(parent_dir="E:/TrackMLData/")
     n_events = 20
     h1 = RecursiveClusterer(
@@ -126,7 +123,7 @@ if __name__ == "__main__":
         eps0=0.0035,
         beta=0.5,
         max_step=140,
-        feature_weight=np.array([1, 1, 0.75, 0.5, 0.5]),
+        feature_weight=np.array([1, 1, 0.75]),
         merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
     )
     step_score_list = []
