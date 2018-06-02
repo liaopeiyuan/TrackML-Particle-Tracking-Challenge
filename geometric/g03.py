@@ -12,7 +12,7 @@ from sklearn.cluster import dbscan
 from sklearn.preprocessing import scale
 
 from geometric.utils import merge_naive, merge_discreet
-from geometric.session import Session
+from utils.session import Session
 from trackml.score import score_event
 
 

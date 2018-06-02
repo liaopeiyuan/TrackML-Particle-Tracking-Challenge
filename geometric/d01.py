@@ -14,7 +14,7 @@ ac = np.arctan2(y, x)
 az = np.arctan2(rc, z)  # the angle between [a ray from origin to the point] and [z-axis]
 """
 
-from geometric.session import Session
+from utils.session import Session
 
 import numpy as np
 import pandas as pd
