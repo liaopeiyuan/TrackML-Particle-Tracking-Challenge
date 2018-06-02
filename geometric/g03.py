@@ -114,7 +114,7 @@ class RecursiveClusterer(object):
 
 if __name__ == "__main__":
     print("start running script g03.py")
-    s1 = Session(parent_dir="E:/TrackMLData/")
+    s1 = Session(parent_dir="~/.kaggle/competitions/trackml-particle-identification/")
     h1 = RecursiveClusterer(
         p=2,
         dz0=-7e-4,
