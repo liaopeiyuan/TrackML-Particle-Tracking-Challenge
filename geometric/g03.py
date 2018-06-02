@@ -11,7 +11,7 @@ import pandas as pd
 from sklearn.cluster import dbscan
 from sklearn.preprocessing import scale
 
-from geometric.utils import merge_naive, merge_discreet
+from geometric.tools import merge_naive, merge_discreet
 from utils.session import Session
 from trackml.score import score_event
 
@@ -123,7 +123,7 @@ if __name__ == "__main__":
         eps0=0.0035,
         beta=0.5,
         max_step=140,
-        feature_weight=np.array([1, 1, 0.75]),
+        feature_weight=np.array([1.2, 1.2, 0.6]),
         merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
     )
     step_score_list = []
