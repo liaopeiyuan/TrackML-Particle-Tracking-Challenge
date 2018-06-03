@@ -76,6 +76,7 @@ class HelixUnroll(object):
                     print(str(i).rjust(3) + ": {:.6f}".format(step_score))
         return pred, np.array(score_list)
 
+
 if __name__ == "__main__":
     h2 = HelixUnroll(
         r3_func=lambda x, y, z: np.sqrt(x ** 2 + y ** 2 + z ** 2),

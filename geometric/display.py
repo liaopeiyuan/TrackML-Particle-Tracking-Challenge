@@ -66,3 +66,34 @@ def plot_track_3d(df, transformer_list, clusterer_list=(), n_tracks=20, cutoff=3
             ax.set_xlabel("v1"), ax.set_ylabel("v2"), ax.set_zlabel("v3")
             i += 1
     plt.show()
+
+
+def plot_track_fast(df, transformer_list, n_tracks=20, cutoff=3):
+    df = df.copy()
+
+    def plot_track(sub_df):
+        sub_df = sub_df.sort_values(by="z")
+        ax.plot(sub_df.v1.values, sub_df.v2.values, sub_df.v3.values, ".-")
+        return sub_df
+
+    track_size = df.groupby("particle_id", sort=False)["x"].agg("count")  # particle id -> track size
+    track_size.drop(0, axis=0, inplace=True)  # ignore noisy track
+    particle_list = track_size[track_size > cutoff].index  # ignore small tracks (track size <= cutoff)
+    particle_list = np.random.choice(particle_list, size=min(n_tracks, particle_list.size), replace=False)
+
+    selected_idx = df.particle_id.isin(particle_list)  # get boolean mask
+
+    for transformer in transformer_list:  # iterate over transformers
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1, projection='3d')
+        # transform the dataset using transformer
+        new_array = transformer(df)
+        df.loc[:, "v1"] = new_array[:, 0]
+        df.loc[:, "v2"] = new_array[:, 1]
+        df.loc[:, "v3"] = new_array[:, 2]
+
+        df_agg = df.loc[selected_idx, :].groupby("particle_id", sort=False)  # aggregate selected df by particle id
+        df_agg.apply(plot_track)
+        ax.set_xlabel("v1"), ax.set_ylabel("v2"), ax.set_zlabel("v3")
+
+        plt.show()
