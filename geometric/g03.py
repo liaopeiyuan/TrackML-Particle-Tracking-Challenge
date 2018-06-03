@@ -75,7 +75,7 @@ class RecursiveClusterer(object):
         self.feature_weight = feature_weight
         self.merge_func = merge_func
 
-    def fit_predict(self, df, score=False, verbose=False):
+    def fit_predict(self, df, score_func=None, verbose=False):
         df = df.copy()
         df.loc[:, "r3"] = np.sqrt(df.x ** 2 + df.y ** 2 + df.z ** 2)  # radius in spherical coordinate
         # TODO: I might add weights to x^2, y^2, z^2 above; or even nonlinear transformations
@@ -100,14 +100,11 @@ class RecursiveClusterer(object):
                          eps=self.eps0 + i * stepeps,
                          min_samples=1, n_jobs=-1, metric="minkowski", p=self.p)[1]
             pred = self.merge_func(pred, res)
-            if score:
-                official_score = score_event(
-                    truth=df,
-                    submission=pd.DataFrame({"hit_id": df.hit_id, "track_id": pred})
-                )
-                score_list.append(official_score)
+            if score_func is not None:
+                step_score = score_func(pred)
+                score_list.append(step_score)
                 if verbose:
-                    print(str(i).rjust(3) + ": {:.6f}".format(official_score))
+                    print(str(i).rjust(3) + ": {:.6f}".format(step_score))
         return pred, np.array(score_list)
 
 

@@ -44,15 +44,21 @@ def subroutine_psi_slice(df, lo, hi):
     print("psi=[{}, {}), best possible score={:.6f}".format(lo, hi, best_score))
     h1 = RecursiveClusterer(
         p=2,
-        dz0=-7e-4,
+        dz0=0.0,
         stepdz=1e-5,
-        eps0=0.0035,
+        eps0=3.5e-3,
         beta=0.5,
         max_step=140,
         feature_weight=np.array([1.0, 1.0, 0.75]),
         merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
     )
-    h1.fit_predict(df.loc[idx, :], score=True)
+
+    def temp_score_func(pred):
+        full_pred = best_cluster.copy()
+        full_pred[idx] = pred
+        return fast_score(df, full_pred)
+
+    h1.fit_predict(df.loc[idx, :], score_func=temp_score_func, verbose=True)
 
 
 if __name__ == "__main__":
