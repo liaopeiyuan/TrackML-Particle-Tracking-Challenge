@@ -22,7 +22,7 @@ from sklearn.preprocessing import scale, LabelEncoder
 from sklearn.cluster import dbscan
 from sklearn.metrics import homogeneity_completeness_v_measure
 
-from geometric.session import Session
+from utils.session import Session
 from trackml.score import score_event
 
 

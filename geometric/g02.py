@@ -13,6 +13,7 @@ import pandas as pd
 from sklearn.preprocessing import scale
 from sklearn.cluster import dbscan, DBSCAN
 
+<<<<<<< HEAD
 #from geometric.display import plot_track_3d
 #from geometric.session import Session
 #from geometric.utils import label_encode, reassign_noise, merge_discreet, merge_naive
@@ -21,6 +22,11 @@ from display import plot_track_3d
 from session import Session
 from utils import label_encode, reassign_noise, merge_discreet, merge_naive
 
+=======
+from geometric.display import plot_track_3d
+from utils.session import Session
+from geometric.tools import label_encode, reassign_noise, merge_discreet, merge_naive
+>>>>>>> a2c52697f3c1f1c727298ae8808b5b03f8df20da
 from trackml.score import score_event
 
 
