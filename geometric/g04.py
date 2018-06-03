@@ -12,7 +12,7 @@ from trackml.score import score_event
 
 from utils.session import Session
 from geometric.helix import HelixUnroll
-from geometric.tools import merge_naive, reassign_noise, label_encode
+from geometric.tools import merge_naive, reassign_noise, label_encode, hit_completeness
 
 
 def fast_score(df, pred):
@@ -43,13 +43,24 @@ def subroutine_psi_slice(df, lo, hi):
     best_score = fast_score(df, best_cluster)  # the best possible score achievable by the helix unrolling algorithm
     print("psi=[{}, {}), best possible score={:.6f}".format(lo, hi, best_score))
 
-    h3 = HelixUnroll(
+    hu_0_10 = HelixUnroll(
         r3_func=lambda x, y, z: np.sqrt(x ** 2 + y ** 2 + z ** 2),
         dz_func=lambda i: (-1) ** (i + 1) * (-7e-4 + i * 1e-5),
         n_steps=120,
-        hidden_transform=lambda x: x * np.array([1.0, 1.0, 1.0]),
+        hidden_transform=lambda x: x * np.array([1.1, 1.1, 0.6]),
         merge_func=merge_naive,
         eps_func=lambda i: 3.5e-3 + 5e-6 * i,
+        p=2,
+        dbscan_n_jobs=-1
+    )
+
+    hu_70_90 = HelixUnroll(
+        r3_func=lambda x, y, z: np.sqrt(x ** 2 + y ** 2 + z ** 2),
+        dz_func=lambda i: (-1) ** (i + 1) * (i**2 * 1e-5),
+        n_steps=300,
+        hidden_transform=lambda x: x * np.array([1.1, 1.1, 0.6]),
+        merge_func=merge_naive,
+        eps_func=lambda i: 3.5e-3 + 5e-5 * i,
         p=2,
         dbscan_n_jobs=-1
     )
@@ -57,9 +68,9 @@ def subroutine_psi_slice(df, lo, hi):
     def temp_score_func(pred):
         full_pred = best_cluster.copy()
         full_pred[idx] = pred
-        return fast_score(df, full_pred)
+        return fast_score(df, full_pred)  # / best_score
 
-    h3.fit_predict(df.loc[idx, :], score_func=temp_score_func, verbose=True)
+    hu_70_90.fit_predict(df.loc[idx, :], score_func=temp_score_func, verbose=True)
 
 
 if __name__ == "__main__":
@@ -71,6 +82,8 @@ if __name__ == "__main__":
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
-        subroutine_psi_slice(hits, 0, 10)
+        subroutine_psi_slice(hits, 70, 90)
+
+
 
 

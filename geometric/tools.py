@@ -63,11 +63,13 @@ def merge_discreet(pred_1, pred_2, cutoff=21):
     return label_encode(pred)
 
 
-def hit_completeness(df, idx, track_size):
+def hit_completeness(df, idx, track_size=None):
     """
     (the number of non-noisy hits in the idx) / (the total number of hits from all particles
     that have at least 1 hit in the idx)
     """
+    if track_size is None:
+        track_size = df.groupby("particle_id")["x"].agg("count")
     num = (df.loc[idx, "particle_id"] != 0).sum()
     all_particles = df.loc[idx, "particle_id"].unique().tolist()
     if 0 in all_particles:
