@@ -8,10 +8,39 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
+from trackml.score import score_event
+
 from utils.session import Session
 from geometric.g03 import RecursiveClusterer
-from geometric.tools import merge_naive
+from geometric.tools import merge_naive, reassign_noise, label_encode
 
+
+def fast_score(df, pred):
+    return score_event(
+        truth=df,
+        submission=pd.DataFrame({"hit_id": df.hit_id, "track_id": pred})
+    )
+
+
+def subroutine_show_psi(df):
+    print("plot histogram for the distribution of psi")
+    # from 0 to pi/2; closer to 0 -> closer to vertical track; closer to pi/2 -> closer to horizontal track
+    df.loc[:, "psi"] = np.arctan2(np.sqrt(df.x ** 2 + df.y ** 2), np.abs(df.z))
+    # all hits
+    plt.hist(np.rad2deg(df.psi), bins=30, alpha=0.5, color='b', range=(0, 90.0))
+    # non-noisy hits
+    plt.hist(np.rad2deg(df.loc[df.particle_id != 0, "psi"]), bins=30, alpha=0.5, color="g", range=(0, 90.0))
+    plt.xticks(np.linspace(0.0, 90.0, 10))
+    plt.xlabel("angle r/z (degrees)")
+    plt.title("Note: smaller angle corresponds to larger momentum in z-direction (tpz)")
+    plt.show()
+
+
+def subroutine_psi_slice(df, lo, hi):
+    df.loc[:, "psi"] = np.arctan2(np.sqrt(df.x ** 2 + df.y ** 2), np.abs(df.z))
+    idx = (df.psi >= np.deg2rad(lo)) & (df.psi < np.deg2rad(hi))
+    best_cluster = label_encode(reassign_noise(df.particle_id, ~idx))
+    return fast_score(df, best_cluster)
 
 if __name__ == "__main__":
     print("start running script g04.py; cone slicing - exploration and running")
@@ -29,12 +58,14 @@ if __name__ == "__main__":
         merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
     )
 
+    res = [[] for _ in range(9)]
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
+        for i in range(9):
+            res[i].append(subroutine_psi_slice(hits, 10*i, 10*(i+1)))
 
-        hits.loc[:, "psi"] = np.arctan2(np.sqrt(hits.x ** 2 + hits.y ** 2), np.abs(hits.z))
-        # from 0 to pi/2; closer to 0 -> closer to vertical track; closer to pi/2 -> closer to horizontal track
-        plt.hist(np.rad2deg(hits.psi), bins=30)
-        plt.show()
+    for i, row in enumerate(res):
+        print("psi=[{}, {}), best possible score={:.6f}".format(i*10, (i+1)*10, np.mean(row)))
+
 
