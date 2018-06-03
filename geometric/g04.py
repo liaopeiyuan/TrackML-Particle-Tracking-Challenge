@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 from trackml.score import score_event
 
 from utils.session import Session
-from geometric.g03 import RecursiveClusterer
+from geometric.helix import HelixUnroll
 from geometric.tools import merge_naive, reassign_noise, label_encode
 
 
@@ -42,15 +42,16 @@ def subroutine_psi_slice(df, lo, hi):
     best_cluster = label_encode(reassign_noise(df.particle_id, ~idx))
     best_score = fast_score(df, best_cluster)  # the best possible score achievable by the helix unrolling algorithm
     print("psi=[{}, {}), best possible score={:.6f}".format(lo, hi, best_score))
-    h1 = RecursiveClusterer(
+
+    h3 = HelixUnroll(
+        r3_func=lambda x, y, z: np.sqrt(x ** 2 + y ** 2 + z ** 2),
+        dz_func=lambda i: (-1) ** (i + 1) * (-7e-4 + i * 1e-5),
+        n_steps=120,
+        hidden_transform=lambda x: x * np.array([1.0, 1.0, 0.75]),
+        merge_func=merge_naive,
+        eps_func=lambda i: 3.5e-3 + 5e-6 * i,
         p=2,
-        dz0=0.0,
-        stepdz=1e-5,
-        eps0=8e-3,
-        beta=0.1,
-        max_step=140,
-        feature_weight=np.array([1.0, 1.0, 1.0]),
-        merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
+        dbscan_n_jobs=-1
     )
 
     def temp_score_func(pred):
@@ -58,7 +59,7 @@ def subroutine_psi_slice(df, lo, hi):
         full_pred[idx] = pred
         return fast_score(df, full_pred)
 
-    h1.fit_predict(df.loc[idx, :], score_func=temp_score_func, verbose=True)
+    h3.fit_predict(df.loc[idx, :], score_func=temp_score_func, verbose=True)
 
 
 if __name__ == "__main__":
