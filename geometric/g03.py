@@ -11,14 +11,9 @@ import pandas as pd
 from sklearn.cluster import dbscan
 from sklearn.preprocessing import scale
 
-<<<<<<< HEAD
-from utils import merge_naive, merge_discreet
-from session import Session
-=======
 from geometric.tools import merge_naive, merge_discreet
 from geometric.helix import HelixUnroll
 from utils.session import Session
->>>>>>> a2c52697f3c1f1c727298ae8808b5b03f8df20da
 from trackml.score import score_event
 
 
@@ -116,14 +111,9 @@ class RecursiveClusterer(object):
 
 if __name__ == "__main__":
     print("start running script g03.py")
-<<<<<<< HEAD
-    s1 = Session(parent_dir="/Users/alexanderliao/Documents/GitHub/Kaggle-TrackML/portable-dataset/")
-    #s1=Session()
-=======
     np.random.seed()  # restart random number generator
-    s1 = Session(parent_dir="E:/TrackMLData/")
+    s1 = Session(parent_dir="/Users/alexanderliao/Documents/GitHub/Kaggle-TrackML/portable-dataset/")
     n_events = 20
->>>>>>> a2c52697f3c1f1c727298ae8808b5b03f8df20da
     h1 = RecursiveClusterer(
         p=2,
         dz0=-7e-4,
