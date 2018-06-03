@@ -5,6 +5,7 @@ Author: Peiyuan (Alexander) Liao
 
 """
 import numpy as np
+import scipy.linalg as la
 
 def helixfit(x,y,z):
     
@@ -43,9 +44,39 @@ def helixfit(x,y,z):
 
     #ZtZ=np.dot(Z,np.transpose(Z))
     [_,singular,right_singular]=np.linalg.svd(Z)
-    S=np.amin(singular)
+    right_singular=-10*np.transpose(right_singular)
+    S_vec=right_singular[:,np.argmin(singular),]
+    S = np.zeros((4,4))
+    
+    S[0,0]=S_vec[0]
+    S[0,1]=S_vec[1]
+    S[0,2]=S_vec[2]
+    S[0,3]=S_vec[3]
+    
+    S[1,0]=S_vec[1]
+    S[1,1]=S_vec[4]
+    S[1,2]=S_vec[5]
+    S[1,3]=S_vec[6]
 
-    return singular,right_singular
+    S[2,0]=S_vec[2]
+    S[2,1]=S_vec[5]
+    S[2,2]=S_vec[7]
+    S[2,3]=S_vec[8]
+
+    S[3,0]=S_vec[3]
+    S[3,1]=S_vec[6]
+    S[3,2]=S_vec[8]
+    S[3,3]=S_vec[9]
+
+    det=np.linalg.det(S)
+
+    if det==0:
+        print(1)
+    else:
+        [eig_vals,eig_vecs]=np.linalg.eig(S)
+
+    
+    return eig_vals,eig_vecs
 
 x=np.array([62,82,93,94,65,12,48,77,85,89])
 y=np.array([397,347,288,266,163,102,138,187,209,316])
@@ -54,9 +85,13 @@ z=np.array([103,107,120,128,169,198,180,157,149,112])
 #print(x)
 #y=np.random.rand(5,1)
 #z=np.random.rand(5,1)
+
 [a,b]=helixfit(x,y,z)
 print(a)
 print(b)
+
+#print(helixfit(x,y,z))
+
 #[a,b,c]=helixfit(x,y,z)
 #print(a)
 #print(b)
