@@ -47,8 +47,8 @@ class HelixUnroll(object):
 
         # df.loc[:, "rs"] = np.sqrt(df.x ** 2 + df.y ** 2 + df.z ** 2)  # radius in spherical coordinate system
         df.loc[:, "rt"] = np.sqrt(df.x ** 2 + df.y ** 2)  # radius in cylindrical coordinate system
-        df.loc[:, "a0"] = np.arctan2(df.y, df.x)
-        df.loc[:, "z1"] = df.z / df.rt
+        df.loc[:, "a0"] = np.arctan2(df.y, df.x)  # angle in cylindrical coordinate system
+        df.loc[:, "z1"] = df.z / df.rt  # monotonic with cot(psi)
         # df.loc[:, "z2"] = df.z / df.rs TODO: 4 feature maybe? [1, 1, 0.4, 0.4]
 
         pred = None
@@ -56,15 +56,20 @@ class HelixUnroll(object):
 
         for i in range(self.n_steps):
             dz = self.dz_func(i)
-            df.loc[:, "a1"] = df.a0 + dz * df.r3  # rotation
+            df.loc[:, "a1"] = df.a0 + dz * df.r3  # rotation, points with higher r3 are rotated to a larger degree
+            # convert angle to sin/cos -> more intuitive in Euclidean distance
+            # e.g. 2pi and 0 should be very close
             df.loc[:, "sina1"] = np.sin(df.a1)
             df.loc[:, "cosa1"] = np.cos(df.a1)
+            # scale the space
             dfs = scale(df.loc[:, ["sina1", "cosa1", "z1"]])
+            # use hidden transformation methods to re-weight the features. Consider nonlinear transformations later.
             dfs = self.hidden_transform(dfs)
             res = dbscan(X=dfs, eps=self.eps_func(i), min_samples=1, metric="minkowski", p=self.p, n_jobs=self.dbscan_n_jobs)[1]
             pred = self.merge_func(pred, res)
 
             if score_func is not None:
+                # use a callback to customize scoring
                 step_score = score_func(pred)
                 score_list.append(step_score)
                 if verbose:
@@ -82,6 +87,6 @@ if __name__ == "__main__":
         p=2,
         dbscan_n_jobs=-1
     )
-    # this version of HelixUnroll can give a score up to 0.468
+    # this benchmark version of HelixUnroll can give a score up to 0.468
     # I save the hyperparameters here. Do not change.
 
