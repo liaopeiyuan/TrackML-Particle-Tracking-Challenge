@@ -40,13 +40,8 @@ def subroutine_psi_slice(df, lo, hi):
     df.loc[:, "psi"] = np.arctan2(np.sqrt(df.x ** 2 + df.y ** 2), np.abs(df.z))
     idx = (df.psi >= np.deg2rad(lo)) & (df.psi < np.deg2rad(hi))
     best_cluster = label_encode(reassign_noise(df.particle_id, ~idx))
-    return fast_score(df, best_cluster)
-
-if __name__ == "__main__":
-    print("start running script g04.py; cone slicing - exploration and running")
-    np.random.seed()  # restart random number generator
-    s1 = Session(parent_dir="E:/TrackMLData/")
-    n_events = 20
+    best_score = fast_score(df, best_cluster)  # the best possible score achievable by the helix unrolling algorithm
+    print("psi=[{}, {}), best possible score={:.6f}".format(lo, hi, best_cluster))
     h1 = RecursiveClusterer(
         p=2,
         dz0=-7e-4,
@@ -57,15 +52,18 @@ if __name__ == "__main__":
         feature_weight=np.array([1.0, 1.0, 0.75]),
         merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
     )
+    h1.fit_predict(df.loc[idx, :], score=True)
 
-    res = [[] for _ in range(9)]
+
+if __name__ == "__main__":
+    print("start running script g04.py; cone slicing - exploration and running")
+    np.random.seed()  # restart random number generator
+    s1 = Session(parent_dir="E:/TrackMLData/")
+    n_events = 20
+
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
-        for i in range(9):
-            res[i].append(subroutine_psi_slice(hits, 10*i, 10*(i+1)))
-
-    for i, row in enumerate(res):
-        print("psi=[{}, {}), best possible score={:.6f}".format(i*10, (i+1)*10, np.mean(row)))
+        subroutine_psi_slice(hits, 0, 10)
 
 
