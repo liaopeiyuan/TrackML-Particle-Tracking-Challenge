@@ -41,7 +41,7 @@ def subroutine_psi_slice(df, lo, hi):
     idx = (df.psi >= np.deg2rad(lo)) & (df.psi < np.deg2rad(hi))
     best_cluster = label_encode(reassign_noise(df.particle_id, ~idx))
     best_score = fast_score(df, best_cluster)  # the best possible score achievable by the helix unrolling algorithm
-    print("psi=[{}, {}), best possible score={:.6f}".format(lo, hi, best_cluster))
+    print("psi=[{}, {}), best possible score={:.6f}".format(lo, hi, best_score))
     h1 = RecursiveClusterer(
         p=2,
         dz0=-7e-4,
