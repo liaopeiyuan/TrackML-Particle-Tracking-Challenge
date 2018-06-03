@@ -11,8 +11,8 @@ import pandas as pd
 from sklearn.cluster import dbscan
 from sklearn.preprocessing import scale
 
-from geometric.utils import merge_naive, merge_discreet
-from geometric.session import Session
+from utils import merge_naive, merge_discreet
+from session import Session
 from trackml.score import score_event
 
 
@@ -114,7 +114,8 @@ class RecursiveClusterer(object):
 
 if __name__ == "__main__":
     print("start running script g03.py")
-    s1 = Session(parent_dir="~/.kaggle/competitions/trackml-particle-identification/")
+    s1 = Session(parent_dir="/Users/alexanderliao/Documents/GitHub/Kaggle-TrackML/portable-dataset/")
+    #s1=Session()
     h1 = RecursiveClusterer(
         p=2,
         dz0=-7e-4,
