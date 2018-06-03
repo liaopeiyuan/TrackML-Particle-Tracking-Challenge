@@ -24,13 +24,18 @@ def subroutine_plot_unroll(df):
     df.loc[:, "psi"] = np.arctan2(np.sqrt(df.x ** 2 + df.y ** 2), np.abs(df.z))
     idx = df.psi > np.deg2rad(70)
 
-    def tf1(df, dz):
-        df.loc[:, "a1"] = df.a0 + dz * df.r3
-        df.loc[:, "x_new"] = np.cos(df.a1) * df.rt
-        df.loc[:, "y_new"] = np.sin(df.a1) * df.rt
-        return df[["x_new", "y_new", "z"]].values
+    class tf1:
+        def __init__(self, dz):
+            self.dz = dz
 
-    plot_track_fast(df, [lambda x: tf1(x, dz) for dz in np.arange(0.0, 5e-3, 1e-4)], n_tracks=50)
+        def __call__(self, df):
+            df = df[["a0", "r3", "z", "rt"]].copy()
+            df.loc[:, "a1"] = df.a0 + self.dz * df.r3
+            df.loc[:, "x_new"] = np.cos(df.a1)  # * df.rt
+            df.loc[:, "y_new"] = np.sin(df.a1)  # * df.rt
+            return df[["x_new", "y_new", "z"]].values
+
+    plot_track_fast(df.loc[idx, :], [tf1(dz) for dz in np.arange(-1e-3, 2e-3, 1e-4)], n_tracks=50)
 
 
 if __name__ == "__main__":
