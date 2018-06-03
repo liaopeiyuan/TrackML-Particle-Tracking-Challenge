@@ -65,7 +65,7 @@ class RecursiveClusterer(object):
                  eps0=0.0035,
                  beta=0.5,
                  max_step=200,
-                 feature_weight=np.array([1, 1, 0.5]),
+                 feature_weight=np.array([1, 1, 0.75]),
                  merge_func=lambda a, b: merge_naive(a, b, cutoff=20)):
         self.p = p  # parameter for minkowski distance
         self.dz0 = dz0  # initial dz
@@ -121,7 +121,7 @@ if __name__ == "__main__":
         eps0=0.0035,
         beta=0.5,
         max_step=140,
-        feature_weight=np.array([1.2, 1.2, 0.6]),
+        feature_weight=np.array([1.0, 1.0, 0.75]),  # TODO: the problem was here; change weights so that they are equal
         merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
     )
     h2 = HelixUnroll(
