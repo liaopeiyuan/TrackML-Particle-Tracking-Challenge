@@ -12,6 +12,7 @@ from sklearn.cluster import dbscan
 from sklearn.preprocessing import scale
 
 from geometric.tools import merge_naive, merge_discreet
+from geometric.helix import HelixUnroll
 from utils.session import Session
 from trackml.score import score_event
 
@@ -123,11 +124,28 @@ if __name__ == "__main__":
         feature_weight=np.array([1.2, 1.2, 0.6]),
         merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
     )
+    h2 = HelixUnroll(
+        r3_func=lambda x, y, z: np.sqrt(x ** 2 + y ** 2 + z ** 2),
+        dz_func=lambda i: (-1)**(i+1) * (-7e-4 + i * 1e-5),
+        n_steps=150,
+        feature_weight=np.array([1.0, 1.0, 0.75]),
+        merge_func=merge_naive,
+        eps_func=lambda i: 3.5e-3 + 5e-6 * i,
+        p=2,
+        dbscan_n_jobs=-1
+    )
     step_score_list = []
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
-        step_score_list.append(h1.fit_predict(hits, score=True, verbose=True)[1])
+
+        def temp_score_func(pred):
+            return score_event(
+                truth=hits,
+                submission=pd.DataFrame({"hit_id": hits.hit_id, "track_id": pred})
+            )
+        step_score_list.append(h1.fit_predict(hits, score_func=temp_score_func, verbose=True)[1])
+        step_score_list.append(h2.fit_predict(hits, score_func=temp_score_func, verbose=True)[1])
     step_score_mean = np.mean(step_score_list, axis=0)
     step_score_var = np.var(step_score_list, axis=0)
     print("*"*100)

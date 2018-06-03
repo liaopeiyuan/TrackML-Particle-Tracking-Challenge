@@ -46,10 +46,10 @@ def subroutine_psi_slice(df, lo, hi):
         p=2,
         dz0=0.0,
         stepdz=1e-5,
-        eps0=3.5e-3,
-        beta=0.5,
+        eps0=8e-3,
+        beta=0.1,
         max_step=140,
-        feature_weight=np.array([1.0, 1.0, 0.75]),
+        feature_weight=np.array([1.0, 1.0, 1.0]),
         merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
     )
 
