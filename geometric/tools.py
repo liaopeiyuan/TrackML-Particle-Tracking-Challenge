@@ -96,10 +96,10 @@ def track_completeness(df, idx):
 
 
 
-def helix_error(x,y,z,x0,y0,damp,iter,left,verbose=False):
+def helix_error(x,y,z,x0,y0,damp,iter,verbose=False):
     
-    a=2
-    b=6
+    a=np.random.rand()
+    b=np.random.rand()
 
     for i in range(iter):
         x_est = a * np.cos(b * z)+x0
@@ -108,7 +108,7 @@ def helix_error(x,y,z,x0,y0,damp,iter,left,verbose=False):
         errx = (x.flatten() - x_est)
         erry = (y.flatten() - y_est)
         
-        if np.mean(errx)<1e-5 and np.mean(erry)<1e-5:
+        if np.mean(errx)<1e-3 and np.mean(erry)<1e-3:
             break
 
         Jxa = np.cos(b * z)
@@ -123,7 +123,8 @@ def helix_error(x,y,z,x0,y0,damp,iter,left,verbose=False):
         #print(Jx)
         #print(np.dot(np.linalg.inv(np.dot(Jx,Jx.T)),Jx).T)
         gradx = np.dot( np.dot(np.linalg.inv(np.dot(Jx,Jx.T)),Jx),errx)
-        
+        #print(gradx)
+
         a = a + damp*gradx[0]
         b = b + damp*gradx[1]
         
@@ -162,7 +163,7 @@ def helix_error(x,y,z,x0,y0,damp,iter,left,verbose=False):
 x=np.array([1.46,-0.62,-2.21,-2.07,-0.31,1.7])
 y=np.array([1.9,2.31,0.92,-1.20,-2.38,-1.69])
 z=np.array([1,2,3,4,5,6])
-[a,b,errx,erry]=helix_error(x,y,z,0,0,0.00005,500,1,verbose=True)
+[a,b,errx,erry]=helix_error(x,y,z,0,0,0.005,25,verbose=False)
 print(a)
 print(b)
 print(errx)
