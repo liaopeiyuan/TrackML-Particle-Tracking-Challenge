@@ -105,8 +105,8 @@ def helix_error(x,y,z,x0,y0,damp,iter,verbose=False):
         x_est = a * np.cos(b * z)+x0
         y_est = a * np.sin(b * z)+y0
         
-        errx = (x.flatten() - x_est)
-        erry = (y.flatten() - y_est)
+        errx = (x.flatten() - x_est)**2
+        erry = (y.flatten() - y_est)**2
         
         if np.mean(errx)<1e-3 and np.mean(erry)<1e-3:
             break
@@ -155,15 +155,15 @@ def helix_error(x,y,z,x0,y0,damp,iter,verbose=False):
     x_est = a * np.cos(b * z)+x0
     y_est = a * np.sin(b * z)+y0
         
-    errx = (x.flatten() - x_est)
-    erry = (y.flatten() - y_est)
+    errx = (x.flatten() - x_est)**2
+    erry = (y.flatten() - y_est)**2
     
     return a,b,errx,erry
 
 x=np.array([1.46,-0.62,-2.21,-2.07,-0.31,1.7])
 y=np.array([1.9,2.31,0.92,-1.20,-2.38,-1.69])
 z=np.array([1,2,3,4,5,6])
-[a,b,errx,erry]=helix_error(x,y,z,0,0,0.005,25,verbose=False)
+[a,b,errx,erry]=helix_error(x,y,z,0,0,0.0001,250,verbose=False)
 print(a)
 print(b)
 print(errx)
