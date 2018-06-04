@@ -87,6 +87,7 @@ if __name__ == "__main__":
     # y=np.random.rand(5,1)
     # z=np.random.rand(5,1)
 
+    print("helixfit.py is called as main")
     [a, b] = helixfit(x, y, z)
     print(a)
     print(b)

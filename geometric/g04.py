@@ -63,7 +63,7 @@ def subroutine_psi_slice(df, lo, hi):
     hu_20_50 = HelixUnroll(
         r3_func=lambda x, y, z: np.sqrt(x ** 2 + y ** 2 + z ** 2),
         dz_func=lambda i: (-1) ** (i + 1) * (-7e-4 + i * 1e-5),
-        n_steps=200,
+        n_steps=400,  # TODO
         hidden_transform=lambda x: x * np.array([1.1, 1.1, 0.3]),
         merge_func=merge_naive,
         eps_func=lambda i: 3.5e-3 + 5e-6 * i,
@@ -75,7 +75,7 @@ def subroutine_psi_slice(df, lo, hi):
         r3_func=lambda x, y, z: np.sqrt(x ** 2 + y ** 2 + z ** 2),
         dz_func=lambda i: (-1) ** (i + 1) * (-7e-4 + 1e-5 * i),
         n_steps=1000,
-        hidden_transform=lambda x: x * np.array([1.2, 1.2, 0.4]),
+        hidden_transform=lambda x: x * np.array([1.2, 1.2, 0.25]),
         merge_func=merge_naive,
         eps_func=lambda i: 3.5e-3 + 5e-6 * i,
         p=2,
@@ -87,7 +87,7 @@ def subroutine_psi_slice(df, lo, hi):
         full_pred[idx] = pred
         return fast_score(df, full_pred)  # / best_score
 
-    hu_50_70.fit_predict(df.loc[idx, :], score_func=temp_score_func, verbose=True)
+    hu_20_50.fit_predict(df.loc[idx, :], score_func=temp_score_func, verbose=True)
 
 
 if __name__ == "__main__":
