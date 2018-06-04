@@ -54,6 +54,17 @@ def subroutine_psi_slice(df, lo, hi):
         dbscan_n_jobs=-1
     )
 
+    hu_50_70 = HelixUnroll(
+        r3_func=lambda x, y, z: np.sqrt(x ** 2 + y ** 2 + z ** 2),
+        dz_func=lambda i: (-1) ** (i + 1) * (-7e-4 + i * 1e-5),
+        n_steps=120,
+        hidden_transform=lambda x: x * np.array([1.1, 1.1, 0.6]),
+        merge_func=merge_naive,
+        eps_func=lambda i: 3.5e-3 + 5e-6 * i,
+        p=2,
+        dbscan_n_jobs=-1
+    )
+
     hu_70_90 = HelixUnroll(
         r3_func=lambda x, y, z: np.sqrt(x ** 2 + y ** 2 + z ** 2),
         dz_func=lambda i: (-1) ** (i + 1) * (-7e-4 + 1e-5 * i),
@@ -70,7 +81,7 @@ def subroutine_psi_slice(df, lo, hi):
         full_pred[idx] = pred
         return fast_score(df, full_pred)  # / best_score
 
-    hu_70_90.fit_predict(df.loc[idx, :], score_func=temp_score_func, verbose=True)
+    hu_50_70.fit_predict(df.loc[idx, :], score_func=temp_score_func, verbose=True)
 
 
 if __name__ == "__main__":
@@ -82,7 +93,7 @@ if __name__ == "__main__":
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
-        subroutine_psi_slice(hits, 70, 90)
+        subroutine_psi_slice(hits, 50, 90)
 
 
 

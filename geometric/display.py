@@ -95,5 +95,5 @@ def plot_track_fast(df, transformer_list, n_tracks=20, cutoff=3):
         df_agg = df.loc[selected_idx, :].groupby("particle_id", sort=False)  # aggregate selected df by particle id
         df_agg.apply(plot_track)
         ax.set_xlabel("v1"), ax.set_ylabel("v2"), ax.set_zlabel("v3")
-
+        ax.set_title(str(transformer))
         plt.show()
