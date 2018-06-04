@@ -1,7 +1,9 @@
-# Alexander's Linux environment
-DATA_DIR ='/home/alexanderliao/data/Kaggle/competitions/trackml-particle-identification'
-TEST_DIR = '/home/alexanderliao/data/GitHub/Kaggle-TrackML/portable-dataset'
-RESULTS_DIR = '/home/alexanderliao/data/GitHub/Kaggle-TrackML/neural_network/results'
+# edit settings here
+ROOT_DIR ='/home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet'
+
+
+DATA_DIR    = ROOT_DIR + '/data'
+RESULTS_DIR = ROOT_DIR + '/results'
 
 ##---------------------------------------------------------------------
 import os
@@ -10,11 +12,6 @@ PROJECT_PATH = os.path.dirname(os.path.realpath(__file__))
 IDENTIFIER   = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
 #numerical libs
-"""
- Everything you need for neural network
-
- Author: Peiyuan (Alexander) Liao
-"""
 import math
 import numpy as np
 import random
@@ -26,8 +23,9 @@ matplotlib.use('TkAgg')
 #matplotlib.use('WXAgg')
 #matplotlib.use('Qt4Agg')
 #matplotlib.use('Qt5Agg') #Qt4Agg
+print(matplotlib.get_backend())
 
-# Pytorch Libraries
+# torch libs
 import torch
 import torchvision.transforms as transforms
 from torch.utils.data.dataset import Dataset
@@ -41,7 +39,7 @@ import torch.optim as optim
 from torch.nn.parallel.data_parallel import data_parallel
 
 
-# Standard  Libraries
+# std libs
 import collections
 import copy
 import numbers
@@ -60,27 +58,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 import sklearn.preprocessing
-from sklearn.cluster import dbscan
-from sklearn.preprocessing import scale
-
-from trackml.score import score_event
 
 
-
-# KAIL libraries
-from utils.session import Session
-from geometric.helix import HelixUnroll
-from geometric.tools import merge_naive, reassign_noise, label_encode, hit_completeness
-
-
-
-from geometric.tools import merge_naive, merge_discreet
-from geometric.helix import HelixUnroll
-from utils.session import Session
-
-
-
-
+#---------------------------------------------------------------------------------
 
 # https://stackoverflow.com/questions/34968722/how-to-implement-the-softmax-function-in-python
 def np_softmax(x):
@@ -101,25 +81,14 @@ def save_pickle_file(pickle_file, x):
     with open(pickle_file, 'wb') as f:
         pickle.dump(x, f, pickle.HIGHEST_PROTOCOL)
 
-def fast_score(df, pred):
-    return score_event(
-        truth=df,
-        submission=pd.DataFrame({"hit_id": df.hit_id, "track_id": pred})
-    )
 
 
-def get_psi_slice(df, lo, hi):
-    df.loc[:, "psi"] = np.arctan2(np.sqrt(df.x ** 2 + df.y ** 2), np.abs(df.z))
-    idx = (df.psi >= np.deg2rad(lo)) & (df.psi < np.deg2rad(hi))
-    best_cluster = label_encode(reassign_noise(df.particle_id, ~idx))
-    best_score = fast_score(df, best_cluster)  # the best possible score achievable by the helix unrolling algorithm
-    print("psi=[{}, {}), best possible score={:.6f}".format(lo, hi, best_score))
+#---------------------------------------------------------------------------------
+print('@%s:  ' % os.path.basename(__file__))
 
 
-if __name__ == "__main__":
-    print ('matplotlib backend is : {}'.format(matplotlib.get_backend()))
-
-    SEED = int(time.time()) 
+if 1:
+    SEED = 35202 #1510302253  #int(time.time()) #
     random.seed(SEED)
     np.random.seed(SEED)
     torch.manual_seed(SEED)
@@ -127,13 +96,24 @@ if __name__ == "__main__":
     print ('\tset random seed')
     print ('\t\tSEED=%d'%SEED)
 
-
-    torch.backends.cudnn.benchmark = True
+if 1:
+    torch.backends.cudnn.benchmark = True  ##uses the inbuilt cudnn auto-tuner to find the fastest convolution algorithms. -
     torch.backends.cudnn.enabled   = True
     print ('\tset cuda environment')
     print ('\t\ttorch.__version__              =', torch.__version__)
     print ('\t\ttorch.version.cuda             =', torch.version.cuda)
     print ('\t\ttorch.backends.cudnn.version() =', torch.backends.cudnn.version())
+    try:
+        print ('\t\tos[\'CUDA_VISIBLE_DEVICES\']     =',os.environ['CUDA_VISIBLE_DEVICES'])
+        NUM_CUDA_DEVICES = len(os.environ['CUDA_VISIBLE_DEVICES'].split(','))
+    except Exception:
+        print ('\t\tos[\'CUDA_VISIBLE_DEVICES\']     =','None')
+        NUM_CUDA_DEVICES = 1
 
     print ('\t\ttorch.cuda.device_count()      =', torch.cuda.device_count())
     print ('\t\ttorch.cuda.current_device()    =', torch.cuda.current_device())
+
+
+print('')
+
+#---------------------------------------------------------------------------------
