@@ -4,3 +4,4 @@ __*
 triplenet/data
 *.pickle
 **/*.pickle
+portable-dataset/sample-submission.csv.zip
