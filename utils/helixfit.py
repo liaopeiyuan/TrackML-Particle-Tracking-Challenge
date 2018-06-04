@@ -1,5 +1,5 @@
 """
-fitting a set of points to a helix
+fitting a set of points to a helix (unfinished)
 
 Author: Peiyuan (Alexander) Liao
 
