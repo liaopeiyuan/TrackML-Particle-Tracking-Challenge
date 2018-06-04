@@ -49,6 +49,7 @@ def subroutine_plot_unroll(df):
 
 def subroutine_plot_z1_range(df):
     idx = df.particle_id != 0
+
     df.loc[:, "psi"] = np.arctan2(np.sqrt(df.x ** 2 + df.y ** 2), np.abs(df.z))
     df.loc[:, "rc"] = np.sqrt(df.x ** 2 + df.y ** 2)
     df.loc[:, "z1"] = df.z / df.rc
@@ -58,9 +59,11 @@ def subroutine_plot_z1_range(df):
         return sub_df.z1.max() - sub_df.z1.min()
 
     def get_psi_stats(sub_df):
-        return sub_df.psi.mean()
+        return sub_df.psi.max() - sub_df.psi.min()
 
-    plt.scatter(x=df_agg.apply(get_psi_stats).values, y=df_agg.apply(get_z1_stats).values)
+    plt.hist2d(x=df_agg.apply(get_psi_stats).values, y=df_agg.apply(get_z1_stats).values, bins=20, normed=True)
+    plt.xlabel("psi range")
+    plt.ylabel("z1 range")
     plt.show()
 
 
