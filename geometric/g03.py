@@ -11,8 +11,9 @@ import pandas as pd
 from sklearn.cluster import dbscan
 from sklearn.preprocessing import scale
 
-from geometric.utils import merge_naive, merge_discreet
-from geometric.session import Session
+from geometric.tools import merge_naive, merge_discreet
+from geometric.helix import HelixUnroll
+from utils.session import Session
 from trackml.score import score_event
 
 
@@ -56,45 +57,109 @@ def subroutine_1(df):
     return 0
 
 
-def sionkowski_search(df, feature_weight, p_minkowski=2):
-    df = df.copy()
-    df.loc[:, "rt"] = np.sqrt(df.x ** 2 + df.y ** 2)
-    df.loc[:, "a0"] = np.arctan2(df.y, df.x)
-    df.loc[:, "z1"] = df.z / df.rt
-    df.loc[:, "x2"] = df.rt / df.z  # = 1 / df.z1
-    dz0 = -7e-4
-    stepdz = 1e-5
-    stepeps = 5e-6
-    mm = 1
+class RecursiveClusterer(object):
+    def __init__(self,
+                 p=2,
+                 dz0=-7e-4,
+                 stepdz=1e-5,
+                 eps0=0.0035,
+                 beta=0.5,
+                 max_step=200,
+                 feature_weight=np.array([1, 1, 0.75]),
+                 merge_func=lambda a, b: merge_naive(a, b, cutoff=20)):
+        self.p = p  # parameter for minkowski distance
+        self.dz0 = dz0  # initial dz
+        self.stepdz = stepdz  # dz step size
+        self.eps0 = eps0  # initial epsilon
+        self.beta = beta  # beta is the ratio: stepeps / stepdz
+        self.max_step = max_step
+        self.feature_weight = feature_weight
+        self.merge_func = merge_func
 
-    score_list = []
-    pred = None
+    def fit_predict(self, df, score_func=None, verbose=False):
+        df = df.copy()
+        df.loc[:, "r3"] = np.sqrt(df.x ** 2 + df.y ** 2 + df.z ** 2)  # radius in spherical coordinate
+        # TODO: I might add weights to x^2, y^2, z^2 above; or even nonlinear transformations
 
-    for i in range(150):
-        mm *= -1
-        dz = mm * (dz0 + i * stepdz)
-        df.loc[:, "a1"] = df.a0 + dz * np.abs(df.z)
-        df.loc[:, "sina1"] = np.sin(df.a1)
-        df.loc[:, "cosa1"] = np.cos(df.a1)
-        df.loc[:, "x1"] = df.a1 / df.z1
-        dfs = scale(df.loc[:, ["sina1", "cosa1", "z1", "x1", "x2"]])
-        dfs *= feature_weight
-        res = dbscan(X=dfs, eps=0.0035 + i * stepeps, min_samples=1, n_jobs=-1, metric="minkowski", p=p_minkowski)[1]
+        df.loc[:, "rt"] = np.sqrt(df.x ** 2 + df.y ** 2)  # radius in cylindrical coordinate
+        df.loc[:, "a0"] = np.arctan2(df.y, df.x)
+        df.loc[:, "z1"] = df.z / df.rt
 
-        pred = merge_naive(pred, res, cutoff=20)
-
-        official_score = score_event(
-            truth=df,
-            submission=pd.DataFrame({"hit_id": df.hit_id, "track_id": pred})
-        )
-        score_list.append(official_score)
-    return score_list
+        stepeps = self.stepdz * self.beta
+        mm = 1
+        pred = None
+        score_list = []
+        for i in range(self.max_step):
+            mm *= -1
+            dz = mm * (self.dz0 + i * self.stepdz)
+            df.loc[:, "a1"] = df.a0 + dz * df.r3  # rotation
+            df.loc[:, "sina1"] = np.sin(df.a1)
+            df.loc[:, "cosa1"] = np.cos(df.a1)
+            dfs = scale(df.loc[:, ["sina1", "cosa1", "z1"]])
+            dfs *= self.feature_weight
+            res = dbscan(X=dfs,
+                         eps=self.eps0 + i * stepeps,
+                         min_samples=1, n_jobs=-1, metric="minkowski", p=self.p)[1]
+            pred = self.merge_func(pred, res)
+            if score_func is not None:
+                step_score = score_func(pred)
+                score_list.append(step_score)
+                if verbose:
+                    print(str(i).rjust(3) + ": {:.6f}".format(step_score))
+        return pred, np.array(score_list)
 
 
 if __name__ == "__main__":
     print("start running script g03.py")
+    np.random.seed()  # restart random number generator
     s1 = Session(parent_dir="E:/TrackMLData/")
+    n_events = 20
+    """
+    h1 = RecursiveClusterer(
+        p=2,
+        dz0=-7e-4,
+        stepdz=1e-5,
+        eps0=0.0035,
+        beta=0.5,
+        max_step=120,
+        feature_weight=np.array([1.0, 1.0, 0.75]),
+        merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
+    )
+    """
+    h2 = HelixUnroll(
+        r3_func=lambda x, y, z: np.sqrt(x**2 + y**2 + 0.8 * z**2),  # TODO: change here
+        dz_func=lambda i: (-1) ** (i + 1) * (-7e-4 + i * 1e-5),
+        n_steps=120,
+        hidden_transform=lambda x: x * np.array([1.0, 1.0, 0.75]),
+        merge_func=merge_naive,
+        eps_func=lambda i: 3.5e-3 + 5e-6 * i,
+        p=2,
+        dbscan_n_jobs=-1
+    )
+    step_score_list = []
+    for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
+        print("=" * 120)
+        hits = hits.merge(truth, how="left", on="hit_id")
 
+
+        def temp_score_func(pred):
+            return score_event(
+                truth=hits,
+                submission=pd.DataFrame({"hit_id": hits.hit_id, "track_id": pred})
+            )
+        # step_score_list.append(h1.fit_predict(hits, score_func=temp_score_func, verbose=True)[1])
+        step_score_list.append(h2.fit_predict(hits, score_func=temp_score_func, verbose=True)[1])
+    step_score_mean = np.mean(step_score_list, axis=0)
+    step_score_var = np.var(step_score_list, axis=0)
+
+    print("*"*100)
+    print("final score summary: ")
+    print("best number of steps: ", np.argmax(step_score_mean))
+    print("best score: ", np.max(step_score_mean))
+    print("step score mean: ", step_score_mean)
+    print("step score var:", step_score_var)
+
+    """
     result_record = pd.DataFrame(columns=['w1', 'w2', 'w3', 'w4', 'w5', 'best_n', 'best_score'])
 
     n_events = 30
@@ -121,4 +186,4 @@ if __name__ == "__main__":
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
         subroutine_1(hits)
-
+    """

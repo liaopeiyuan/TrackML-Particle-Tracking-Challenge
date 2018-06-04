@@ -15,8 +15,8 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from sklearn.cluster import dbscan, DBSCAN
 
-from geometric.session import Session
-from geometric.utils import label_encode, reassign_noise, track_completeness, hit_completeness
+from utils.session import Session
+from geometric.tools import label_encode, reassign_noise, track_completeness, hit_completeness
 from trackml.score import score_event
 
 
