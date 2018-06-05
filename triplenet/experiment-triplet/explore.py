@@ -7,6 +7,8 @@ from dataset.trackml.randomize import shuffle_hits
 from dataset.trackml.score import score_event
 from dataset.others import *
 
+from init import get_psi_slice
+
 
 #------------------------------------------------------
 
@@ -43,7 +45,8 @@ def run_explore():
         hits   = pd.read_csv(data_dir + '/train/event%s-hits.csv'%event)
         truth  = pd.read_csv(data_dir + '/train/event%s-truth.csv'%event)
         truth  = truth.merge(hits, on=['hit_id'], how='left')
-
+        truth  = get_psi_slice(truth,80,90)
+        
         # ----------------
 
         h = truth.loc[
