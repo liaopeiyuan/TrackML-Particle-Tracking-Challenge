@@ -32,7 +32,8 @@ def merge_naive(pred_1, pred_2, cutoff=20):
     if pred_1 is None:
         return pred_2
     c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
-    n1, n2 = np.vectorize(c1.__getitem__)(pred_1), np.vectorize(c2.__getitem__)(pred_2)  # hit id -> track size
+    n1, n2 = np.vectorize(c1.__getitem__)(pred_1), np.vectorize(
+        c2.__getitem__)(pred_2)  # hit id -> track size
     pred = pred_1.copy()
     idx = (n2 > n1) & (n2 < cutoff)
     pred[idx] = max(pred_1) + 1 + pred_2[idx]
@@ -48,7 +49,8 @@ def merge_discreet(pred_1, pred_2, cutoff=21):
     if pred_1 is None:
         return pred_2
     c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
-    n1, n2 = np.vectorize(c1.__getitem__)(pred_1), np.vectorize(c2.__getitem__)(pred_2)  # hit id -> track size
+    n1, n2 = np.vectorize(c1.__getitem__)(pred_1), np.vectorize(
+        c2.__getitem__)(pred_2)  # hit id -> track size
     pred = reassign_noise(pred_1, n1 > cutoff)
     pred_2 = reassign_noise(pred_2, n2 > cutoff)
     n1[n1 > cutoff] = 1
@@ -63,11 +65,13 @@ def merge_discreet(pred_1, pred_2, cutoff=21):
     return label_encode(pred)
 
 
-def hit_completeness(df, idx, track_size):
+def hit_completeness(df, idx, track_size=None):
     """
     (the number of non-noisy hits in the idx) / (the total number of hits from all particles
     that have at least 1 hit in the idx)
     """
+    if track_size is None:
+        track_size = df.groupby("particle_id")["x"].agg("count")
     num = (df.loc[idx, "particle_id"] != 0).sum()
     all_particles = df.loc[idx, "particle_id"].unique().tolist()
     if 0 in all_particles:
@@ -88,5 +92,84 @@ def track_completeness(df, idx):
     agg_1 = df.loc[idx, :].groupby("particle_id", sort=True)["x"].agg("count")
     if 0 in agg_1:
         agg_1.drop(0, inplace=True)
-    agg_2 = df.loc[df.particle_id.isin(all_particles), :].groupby("particle_id", sort=True)["x"].agg("count")
+    agg_2 = df.loc[df.particle_id.isin(all_particles), :].groupby(
+        "particle_id", sort=True)["x"].agg("count")
     return np.mean(agg_1 == agg_2)
+
+
+def helix_error_gn(x, y, z, x0, y0, damp, iter, verbose=False):
+
+    a = np.random.rand()
+    b = np.random.rand()
+    print(a)
+    print(b)
+
+    for i in range(iter):
+        x_est = a * np.cos(b * z)+x0
+        y_est = a * np.sin(b * z)+y0
+
+        errx = (x.flatten() - x_est)
+        erry = (y.flatten() - y_est)
+
+        if np.mean(errx) < 1e-3 and np.mean(erry) < 1e-3:
+            break
+
+        Jxa = np.cos(b * z)
+
+        # print(np.dot(z,np.sin(b*z)))
+        Jxb = -1*a * z * np.sin(b * z)
+
+        # print(Jxa.shape)
+        # print(Jxb.shape)
+
+        Jx = np.vstack((Jxa, Jxb))
+        # print(Jx)
+        # print(np.dot(np.linalg.inv(np.dot(Jx,Jx.T)),Jx).T)
+        gradx = np.dot(np.dot(np.linalg.inv(np.dot(Jx, Jx.T)), Jx), errx)
+        # print(gradx)
+
+        a = a - damp*gradx[0]
+        b = b - damp*gradx[1]
+
+        if verbose:
+            print('a update wrt x on iter {}: {}'.format(i, a))
+            print('b update wrt x on iter {}: {}'.format(i, b))
+
+        Jya = np.sin(b * z)
+        Jyb = a*z*np.cos(b*z)
+        Jy = np.vstack((Jya, Jyb))
+        grady = np.dot(np.dot(np.linalg.inv(np.dot(Jy, Jy.T)), Jy), erry)
+
+        a = a - damp*grady[0]
+        b = b - damp*grady[1]
+
+        if verbose:
+            print('a update wrt y on iter {}: {}'.format(i, a))
+            print('b update wrt y on iter {}: {}'.format(i, b))
+
+        """
+        J=np.zeros((2,2))
+        J[0,0]=np.sin(b*z)
+        J[0,1]=
+        J[1,0]=
+        J[1,1]=
+        """
+
+    x_est = a * np.cos(b * z)+x0
+    y_est = a * np.sin(b * z)+y0
+
+    errx = (x.flatten() - x_est)
+    erry = (y.flatten() - y_est)
+
+    return a, b, errx, erry
+
+
+if __name__ == "__main__":
+    x = np.array([0, 0.5403, -0.4161, -0.9900, -0.6536, 0.2837, 0.9602])
+    y = np.array([0, 0.8415, 0.9093, 0.1411, -0.7568, -0.9589, -0.2794])
+    z = np.array([0, 1, 2, 3, 4, 5, 6])
+    [a, b, errx, erry] = helix_error_gn(x, y, z, 0, 0, 0.01, 60, verbose=False)
+    print(a)
+    print(b)
+    print(np.mean(errx))
+    print(np.mean(erry))

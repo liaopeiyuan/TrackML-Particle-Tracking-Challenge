@@ -70,7 +70,7 @@ class RecursiveClusterer(object):
                  eps0=0.0035,
                  beta=0.5,
                  max_step=200,
-                 feature_weight=np.array([1, 1, 0.5]),
+                 feature_weight=np.array([1, 1, 0.75]),
                  merge_func=lambda a, b: merge_naive(a, b, cutoff=20)):
         self.p = p  # parameter for minkowski distance
         self.dz0 = dz0  # initial dz
@@ -123,22 +123,27 @@ if __name__ == "__main__":
     np.random.seed()  # restart random number generator
     s1 = Session(parent_dir="E:/TrackMLData/")
     n_events = 20
+<<<<<<< HEAD
 >>>>>>> a2c52697f3c1f1c727298ae8808b5b03f8df20da
+=======
+    """
+>>>>>>> 022ca4b952764727239ba64790fc726b801b6d1b
     h1 = RecursiveClusterer(
         p=2,
         dz0=-7e-4,
         stepdz=1e-5,
         eps0=0.0035,
         beta=0.5,
-        max_step=140,
-        feature_weight=np.array([1.2, 1.2, 0.6]),
+        max_step=120,
+        feature_weight=np.array([1.0, 1.0, 0.75]),
         merge_func=lambda a, b: merge_naive(a, b, cutoff=20)
     )
+    """
     h2 = HelixUnroll(
-        r3_func=lambda x, y, z: np.sqrt(x ** 2 + y ** 2 + z ** 2),
-        dz_func=lambda i: (-1)**(i+1) * (-7e-4 + i * 1e-5),
-        n_steps=150,
-        feature_weight=np.array([1.0, 1.0, 0.75]),
+        r3_func=lambda x, y, z: np.sqrt(x**2 + y**2 + 0.8 * z**2),  # TODO: change here
+        dz_func=lambda i: (-1) ** (i + 1) * (-7e-4 + i * 1e-5),
+        n_steps=120,
+        hidden_transform=lambda x: x * np.array([1.0, 1.0, 0.75]),
         merge_func=merge_naive,
         eps_func=lambda i: 3.5e-3 + 5e-6 * i,
         p=2,
@@ -149,15 +154,17 @@ if __name__ == "__main__":
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
 
+
         def temp_score_func(pred):
             return score_event(
                 truth=hits,
                 submission=pd.DataFrame({"hit_id": hits.hit_id, "track_id": pred})
             )
-        step_score_list.append(h1.fit_predict(hits, score_func=temp_score_func, verbose=True)[1])
+        # step_score_list.append(h1.fit_predict(hits, score_func=temp_score_func, verbose=True)[1])
         step_score_list.append(h2.fit_predict(hits, score_func=temp_score_func, verbose=True)[1])
     step_score_mean = np.mean(step_score_list, axis=0)
     step_score_var = np.var(step_score_list, axis=0)
+
     print("*"*100)
     print("final score summary: ")
     print("best number of steps: ", np.argmax(step_score_mean))
