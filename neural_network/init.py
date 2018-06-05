@@ -78,6 +78,8 @@ from geometric.tools import merge_naive, merge_discreet
 from geometric.helix import HelixUnroll
 from utils.session import Session
 
+from geometric import display
+
 
 
 
@@ -110,10 +112,8 @@ def fast_score(df, pred):
 
 def get_psi_slice(df, lo, hi):
     df.loc[:, "psi"] = np.arctan2(np.sqrt(df.x ** 2 + df.y ** 2), np.abs(df.z))
-    idx = (df.psi >= np.deg2rad(lo)) & (df.psi < np.deg2rad(hi))
-    best_cluster = label_encode(reassign_noise(df.particle_id, ~idx))
-    best_score = fast_score(df, best_cluster)  # the best possible score achievable by the helix unrolling algorithm
-    print("psi=[{}, {}), best possible score={:.6f}".format(lo, hi, best_score))
+    df = df[(df.psi >= np.deg2rad(lo)) & (df.psi < np.deg2rad(hi))]
+    return df
 
 
 if __name__ == "__main__":
@@ -137,3 +137,16 @@ if __name__ == "__main__":
 
     print ('\t\ttorch.cuda.device_count()      =', torch.cuda.device_count())
     print ('\t\ttorch.cuda.current_device()    =', torch.cuda.current_device())
+
+    print("start running script g04.py; cone slicing - exploration and running")
+    np.random.seed()  # restart random number generator
+    s1 = Session(parent_dir="/home/alexanderliao/data/GitHub/Kaggle-TrackML/portable-dataset/")
+    n_events = 2
+
+    for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
+        print("=" * 120)
+        hits = hits.merge(truth, how="left", on="hit_id")
+        df=get_psi_slice(hits, 50, 90)
+        display.plot_track_3d(df)
+
+
