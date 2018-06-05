@@ -7,12 +7,12 @@ from dataset.trackml.randomize import shuffle_hits
 from dataset.trackml.score import score_event
 from dataset.others import *
 
-from init import get_psi_slice
-
-
 #------------------------------------------------------
 
-
+def get_psi_slice(df, lo, hi):
+    df.loc[:, "psi"] = np.arctan2(np.sqrt(df.x ** 2 + df.y ** 2), np.abs(df.z))
+    df = df[(df.psi >= np.deg2rad(lo)) & (df.psi < np.deg2rad(hi))]
+    return df
 
 
 def run_explore():
@@ -46,12 +46,19 @@ def run_explore():
         truth  = pd.read_csv(data_dir + '/train/event%s-truth.csv'%event)
         truth  = truth.merge(hits, on=['hit_id'], how='left')
         truth  = get_psi_slice(truth,80,90)
-        
+
         # ----------------
 
+        #h = truth.loc[
+        #      (truth.volume_id.isin([9,])) & (truth.layer_id.isin([2,4,6,]))  & (truth.module_id.isin([1,]))
+        #]
+        #print(truth)
         h = truth.loc[
-              (truth.volume_id.isin([9,])) & (truth.layer_id.isin([2,4,6,]))  & (truth.module_id.isin([1,]))
+              (truth.volume_id.isin([8,])) & (truth.layer_id.isin([2,4,6,]))  & (truth.module_id<350)
         ]
+        #h.to_csv('h.csv', encoding='utf-8', index=False)
+        #print(h)
+
         num_hits =len(h)
         hit_id = h.hit_id.values
         particle_id = h.particle_id.values
@@ -160,9 +167,9 @@ def run_explore():
 
                 #plt.pause(0.01)
 
-        ax.set_xlim(0,-100), ax.set_xlabel('x', fontsize=16)
-        ax.set_ylim(-20,20), ax.set_ylabel('y', fontsize=16)
-        ax.set_zlim(500,1000), ax.set_zlabel('z', fontsize=16)
+        ax.set_xlim(-100,-100), ax.set_xlabel('x', fontsize=16)
+        ax.set_ylim(-50,50), ax.set_ylabel('y', fontsize=16)
+        ax.set_zlim(-500,500), ax.set_zlabel('z', fontsize=16)
         #plt.show()
         plt.pause(0.01)
         #input('Press any key to continue.')
