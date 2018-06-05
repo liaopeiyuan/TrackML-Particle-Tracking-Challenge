@@ -87,12 +87,13 @@ def subroutine_psi_slice(df, lo, hi):
 if __name__ == "__main__":
     print("start running script g04.py; cone slicing - exploration and running")
     np.random.seed()  # restart random number generator
-    s1 = Session(parent_dir="E:/TrackMLData/")
+    s1 = Session(parent_dir="/home/alexanderliao/data/GitHub/Kaggle-TrackML/portable-dataset/")
     n_events = 20
 
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
+        subroutine_show_psi(hits)
         subroutine_psi_slice(hits, 50, 90)
 
 

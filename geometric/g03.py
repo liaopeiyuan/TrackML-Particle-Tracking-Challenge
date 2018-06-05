@@ -111,7 +111,7 @@ class RecursiveClusterer(object):
 
 if __name__ == "__main__":
     print("start running script g03.py")
-    s1 = Session(parent_dir="/Users/alexanderliao/Documents/GitHub/Kaggle-TrackML/portable-dataset/")
+    s1 = Session(parent_dir="/home/alexanderliao/data/GitHub/Kaggle-TrackML/portable-dataset/")
     #s1=Session()
     np.random.seed()  # restart random number generator
     n_events = 20
