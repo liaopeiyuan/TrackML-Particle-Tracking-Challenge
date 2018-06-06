@@ -39,8 +39,11 @@ class HelixUnrollWithRadius(HelixUnroll):
             # e.g. 2pi and 0 should be very close
             df.loc[:, "sina1"] = np.sin(df.a1)
             df.loc[:, "cosa1"] = np.cos(df.a1)
+            df.loc[:, "z_new"] = df.z1  # old HelixUnroll method
+            # df.loc[:, "z_new"] = df.z / (df.rc + dz * df.r3 * 500)
+
             # scale the space
-            dfs = scale(df.loc[:, ["sina1", "cosa1", "z1"]])
+            dfs = scale(df.loc[:, ["sina1", "cosa1", "z_new"]])
             # use hidden transformation methods to re-weight the features. Consider nonlinear transformations later.
             dfs = self.hidden_transform(dfs)
             res = \
@@ -126,9 +129,9 @@ def subroutine_psi_slice(df, lo, hi):
 
     hu_now = HelixUnrollWithRadius(
         r3_func=lambda x, y, z: np.sqrt(x ** 2 + y ** 2 + z ** 2),
-        dz_func=lambda i: (-1) ** (i + 1) * (-7e-4 + 1e-5 * i),
-        n_steps=1000,
-        hidden_transform=lambda x: x * np.array([1.1, 1.1, 0.6]),
+        dz_func=lambda i: (-1) ** (i + 1) * (-7e-4 + i * 1e-5),
+        n_steps=160,
+        hidden_transform=lambda x: x * np.array([1.2, 1.2, 0.35]),
         merge_func=merge_naive,
         eps_func=lambda i: 3.5e-3 + 5e-6 * i,
         p=2,
@@ -152,5 +155,5 @@ if __name__ == "__main__":
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
-        subroutine_psi_slice(hits, 0, 90)
+        subroutine_psi_slice(hits, 60, 90)
 
