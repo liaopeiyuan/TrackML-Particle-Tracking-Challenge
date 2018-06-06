@@ -46,9 +46,9 @@ class HelixUnroll(object):
         df.loc[:, "r3"] = self.r3_func(df.x, df.y, df.z)
 
         # df.loc[:, "rs"] = np.sqrt(df.x ** 2 + df.y ** 2 + df.z ** 2)  # radius in spherical coordinate system
-        df.loc[:, "rt"] = np.sqrt(df.x ** 2 + df.y ** 2)  # radius in cylindrical coordinate system
+        df.loc[:, "rc"] = np.sqrt(df.x ** 2 + df.y ** 2)  # radius in cylindrical coordinate system
         df.loc[:, "a0"] = np.arctan2(df.y, df.x)  # angle in cylindrical coordinate system
-        df.loc[:, "z1"] = df.z / df.rt  # monotonic with cot(psi)
+        df.loc[:, "z1"] = df.z / df.rc  # monotonic with cot(psi)
         # df.loc[:, "z2"] = df.z / df.rs TODO: 4 feature maybe? [1, 1, 0.4, 0.4]
 
         pred = None

@@ -19,27 +19,28 @@ def subroutine_plot_unroll(df):
 
     df.loc[:, "rs"] = np.sqrt(df.x ** 2 + df.y ** 2 + df.z ** 2)
     df.loc[:, "r3"] = df.rs
-    df.loc[:, "rt"] = np.sqrt(df.x ** 2 + df.y ** 2)
+    df.loc[:, "rc"] = np.sqrt(df.x ** 2 + df.y ** 2)
     df.loc[:, "a0"] = np.arctan2(df.y, df.x)
-    df.loc[:, "z1"] = df.z / df.rt
+    df.loc[:, "z1"] = df.z / df.rc
     # df.loc[:, "z2"] = df.z / df.rs
 
     df.loc[:, "psi"] = np.arctan2(np.sqrt(df.x ** 2 + df.y ** 2), np.abs(df.z))
 
-    idx = df.psi > np.deg2rad(70)
-    # idx = df.psi < np.deg2rad(15)
+    # idx = (df.psi < np.deg2rad(70)) & (df.psi > np.deg2rad(50))
+    idx = df.psi > np.deg2rad(60)
 
     class tf1:
         def __init__(self, dz):
             self.dz = dz
 
         def __call__(self, df):
-            # df = df[["a0", "r3", "z", "rt", "z1"]].copy()
-            # df.loc[:, "a1"] = df.a0 + self.dz * df.r3
-            df.loc[:, "a1"] = df.a0 + self.dz * df.rt
-            df.loc[:, "x_new"] = np.cos(df.a1) * df.rt
-            df.loc[:, "y_new"] = np.sin(df.a1) * df.rt
-            return df[["x_new", "y_new", "z1"]].values
+            # df = df[["a0", "r3", "z", "rc", "z1"]].copy()
+            df.loc[:, "a1"] = df.a0 + self.dz * df.r3
+            # df.loc[:, "a1"] = df.a0 + self.dz * df.rc
+            df.loc[:, "x_new"] = np.cos(df.a1)
+            df.loc[:, "y_new"] = np.sin(df.a1)
+            df.loc[:, "z_new"] = df.z / (df.rc + self.dz * df.rc)
+            return df[["x_new", "y_new", "z_new"]].values
 
         def __str__(self):
             return "helix unroll dz = {:.4e}".format(self.dz)
@@ -76,6 +77,6 @@ if __name__ == "__main__":
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         print("=" * 120)
         hits = hits.merge(truth, how="left", on="hit_id")
-        subroutine_plot_z1_range(hits)
-        # subroutine_plot_unroll(hits)
+        # subroutine_plot_z1_range(hits)
+        subroutine_plot_unroll(hits)
 
