@@ -64,9 +64,9 @@ def train_collate(batch):
 def load_one_train_data(event_id,):
 
     data_dir  = '/mydisk/TrackML-Data'
-    particles = pd.read_csv(data_dir + '/train_100_events/event%s-particles.csv'%event_id)
-    hits  = pd.read_csv(data_dir + '/train_100_events/event%s-hits.csv' %event_id)
-    truth = pd.read_csv(data_dir + '/train_100_events/event%s-truth.csv'%event_id)
+    particles = pd.read_csv(data_dir + '/train_1/event%s-particles.csv'%event_id)
+    hits  = pd.read_csv(data_dir + '/train_1/event%s-hits.csv' %event_id)
+    truth = pd.read_csv(data_dir + '/train_1/event%s-truth.csv'%event_id)
     #cells = pd.read_csv(data_dir + '/train_100_events/event%s-cells.csv'%event_id)
 
     truth = truth.merge(hits,       on=['hit_id'],      how='left')
@@ -261,7 +261,7 @@ def run_train():
     log.write(' LR=%s\n\n'%str(LR) )
 
     #log.write(' samples_per_epoch = %d\n\n'%len(train_dataset))
-    log.write(' rate    iter   epoch  num   | valid_loss               | train_loss               | batch_loss               |  time          \n')
+    log.write(' rate    iter   epoch  num   | valid_loss    | train_loss               | batch_loss               |  time          \n')
     log.write('-------------------------------------------------------------------------------------------------------------------------------\n')
 
     train_loss  = np.zeros(6,np.float32)
