@@ -15,14 +15,14 @@ from dataset.others import *
 
 def run_explore():
 
-    data_dir  = '/root/share/project/kaggle/cern/data/__download__'
+    data_dir  = '/mydisk/TrackML-Data'
     detectors = pd.read_csv(data_dir + '/detectors.csv')
 
-    # events = [
-    #     '000001025','000001026','000001027','000001028','000001029',#
-    #     '000001030','000001031','000001032','000001033','000001034',
-    # ]
-    events = glob.glob('/root/share/project/kaggle/cern/data/__download__/train_100_events/event*-truth.csv')
+    events = [
+        '000001025','000001026','000001027','000001028','000001029',#
+        '000001030','000001031','000001032','000001033','000001034',
+    ]
+    events = glob.glob(data_dir+'/train_100_events/event*-truth.csv')
     sorted(events)
     events = [e.split('/')[-1].replace('event','').replace('-truth.csv','') for e in events]
     #events = ['000001093']
@@ -168,8 +168,8 @@ def run_explore():
 
 
     #pickle_file = '/root/share/project/kaggle/cern/data/samples_more.pickle'
-    save_pickle_file('/root/share/project/kaggle/cern/data/samples_train.pickle', samples[:-2])
-    save_pickle_file('/root/share/project/kaggle/cern/data/samples_valid.pickle', samples[-2:])
+    save_pickle_file(data_dir+'/LSTM_user_data/samples_train.pickle', samples[:-2])
+    save_pickle_file(data_dir+'/LSTM_user_data/samples_valid.pickle', samples[-2:])
     zz=0
 
 

@@ -1,73 +1,30 @@
 from common import *
 
 
+# https://indico.cern.ch/event/658267/contributions/2881175/attachments/1621912/2581064/Farrell_heptrkx_ctd2018.pdf
+class LstmNet(nn.Module):
+    def __init__(self, in_channels=3, num_estimate=2 ):
+        super(LstmNet, self).__init__()
+        self.lstm   = nn.LSTM(in_channels, 24, batch_first=True)
+        self.linear = nn.Linear(24, num_estimate)
 
 
-## block ## -------------------------------------
+    def forward(self, point):
+        batch_size, num_point, dim = point.size()
 
-class Linear_Bn(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super(Linear_Bn, self).__init__()
-        self.linear = nn.Linear(in_channels, out_channels,bias=False)
-        self.bn   = nn.BatchNorm1d(out_channels)
-
-    def forward(self, x):
+        x,(hidden, cell) = self.lstm(point)
         x = self.linear(x)
-        x = self.bn(x)
+
         return x
 
 
-## net  ## -------------------------------------
-class TripletNet(nn.Module):
-    def __init__(self):
-        super(TripletNet, self).__init__()
-        num_points = 3
+    def criterion(self, estimate, truth):
+        estimate = estimate.view(-1)
+        truth = truth.view(-1)
+        loss  = F.mse_loss(estimate, truth, size_average=True)
+        return loss
 
 
-        self.feature = nn.Sequential(
-            Linear_Bn(3*num_points, 64),
-            nn.ReLU(inplace=True),
-            Linear_Bn( 64,  128),
-            nn.ReLU(inplace=True),
-            Linear_Bn(128,  256),
-            nn.ReLU(inplace=True),
-            Linear_Bn(256,  512),
-            nn.ReLU(inplace=True),
-            Linear_Bn(512,  1024),
-            nn.ReLU(inplace=True),
-
-            Linear_Bn(1024, 2048),
-            nn.ReLU(inplace=True),
-            Linear_Bn(2048, 1024),
-            nn.ReLU(inplace=True),
-
-            Linear_Bn(1024, 512),
-            nn.ReLU(inplace=True),
-            Linear_Bn(512,  256),
-            nn.ReLU(inplace=True),
-            Linear_Bn(256,  128),
-            nn.ReLU(inplace=True),
-            Linear_Bn(128,   64),
-            nn.ReLU(inplace=True),
-        )
-
-        self.logit = nn.Sequential(
-            nn.Linear(64, 1)
-        )
-        # self.target = nn.Sequential(
-        #     nn.Linear(64, 3)
-        # )
-
-
-    def forward(self, x):
-
-        batch_size  = x.size(0)
-        x = x.view(batch_size,-1)
-
-        x      = self.feature(x)
-        logit  = self.logit(x).view(-1)
-
-        return logit
 
 
     def set_mode(self, mode ):
@@ -80,28 +37,39 @@ class TripletNet(nn.Module):
             raise NotImplementedError
 
 
+
+
+
+
+
+
 ### run ##############################################################################
 
 
 def run_check_net():
 
     #create dummy data
-    batch_size  = 5
-    num_points  = 100
-    tracklet = torch.randn((batch_size,num_points,3))
-    tracklet = tracklet.cuda()
+    batch_size   = 10
+    num_point    = 20
+    dim          = 3
+    point        = np.random.uniform(-1,1,(batch_size,num_point,dim)).astype(np.float32)
 
-    net = TripletNet().cuda()
-    logit = net(tracklet)
-
-    # print(type(net))
-    # print(net,'\n')
-
-    print(logit,'\n')
-    print(logit.size(),'\n')
+    ##----------------------------------------------
+    point = torch.from_numpy(point).cuda()
 
 
-    print('')
+
+    net = LstmNet().cuda()
+    estimate = net(point)
+    #print(estimate)
+    print(estimate.size())
+
+    truth = np.random.uniform(-1,1,(batch_size,num_point,2)).astype(np.float32)
+    truth = torch.from_numpy(truth).cuda()
+
+    loss = net.criterion(estimate,truth)
+    print(loss)
+
 
 
 
@@ -112,5 +80,6 @@ if __name__ == '__main__':
     print( '%s: calling main function ... ' % os.path.basename(__file__))
 
     run_check_net()
+
 
     print( 'sucessful!')

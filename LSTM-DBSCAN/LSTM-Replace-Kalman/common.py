@@ -1,5 +1,5 @@
 # edit settings here
-ROOT_DIR ='/root/share/project/kaggle/cern'
+ROOT_DIR ='/mydisk/Programming/CERN'
 
 
 DATA_DIR    = ROOT_DIR + '/data'

@@ -1,19 +1,14 @@
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'  #'3,2' #'3,2,1,0'
 
-from dataset.others import *
-
-from reader import *
-from model import TripletNet as Net
-
 from common import *
 from utility.file import *
 from net.rate   import *
 from net.metric import *
+from dataset.others import *
 
+from model import LstmNet as Net
 
-
-# -------------------------------------------------------------------------------------
 
 def train_augment(data, combination, label, index):
 
@@ -51,8 +46,6 @@ def train_augment(data, combination, label, index):
     return tracklet, truth, data, label, length, index
 
 
-
-
 def train_collate(batch):
     batch_size = len(batch)
     i = 0
@@ -68,47 +61,101 @@ def train_collate(batch):
     return [tracklets, truths,  datas, labels, lengths, indices]
 
 
+def load_one_train_data(event_id,):
+
+    data_dir  = '/mydisk/TrackML-Data'
+    particles = pd.read_csv(data_dir + '/train_100_events/event%s-particles.csv'%event_id)
+    hits  = pd.read_csv(data_dir + '/train_100_events/event%s-hits.csv' %event_id)
+    truth = pd.read_csv(data_dir + '/train_100_events/event%s-truth.csv'%event_id)
+    #cells = pd.read_csv(data_dir + '/train_100_events/event%s-cells.csv'%event_id)
+
+    truth = truth.merge(hits,       on=['hit_id'],      how='left')
+    truth = truth.merge(particles,  on=['particle_id'], how='left')
+
+    #--------------------------------------------------------
+    df = truth
+    return (df)
+
+
+def make_train_one_batch(df): #4096
+
+    # ..........................................
+    # use volume feature in "x,y,z > 0" only
+    df = df.copy()
+    df = df.loc[ (df.x>0) & (df.y>0) & (df.z>0) ]
+    df = df.assign(r   = np.sqrt( df.x**2 + df.y**2))
+    df = df.assign(d   = np.sqrt( df.x**2 + df.y**2 + df.z**2 ))
+    df = df.assign(a   = np.arctan2(df.y, df.x))
+    df = df.assign(cosa= np.cos(df.a))
+    df = df.assign(sina= np.sin(df.a))
+    df = df.assign(phi = np.arctan2(df.z, df.r))
+    N  = len(df)
+
+    a,r,z = df[['a', 'r', 'z' ]].values.astype(np.float32).T
+    p = df['particle_id'].values.astype(np.int64)
+
+
+
+    #print('N=%d'%N)
+    particle_ids = list(df.particle_id.unique())
+    num_particle_ids = len(particle_ids)
+
+    input  = np.column_stack((r/1000,a,z/3000))
+    tracks = []
+    for particle_id in particle_ids:
+        if particle_id==0: continue
+        t = np.where(p==particle_id)[0]
+        t = t[np.argsort(r[t])]
+
+        if len(t)<10: continue
+        track = input[t[:10]]
+        tracks.append(track)
+
+    tracks = np.array(tracks)
+    input  = tracks
+    truth  = tracks[:,:,:3]
+    #<debug only>---------------------------------------------------------
+
+    input  = torch.from_numpy(input).cuda()
+    truth  = torch.from_numpy(truth).cuda()
+
+
+    return (df, input, truth)
+
+make_test_one_batch=make_train_one_batch
+
+
+
+
+
+
 ### training ##############################################################
-# def evaluate( net, test_loader ):
-#
-#     test_num  = 0
-#     test_loss = np.zeros(6,np.float32)
-#     return test_loss
-#
-#     for i, (inputs, foregrounds_truth, cuts_truth, images, masks_truth, indices) in enumerate(test_loader, 0):
-#
-#         with torch.no_grad():
-#             inputs            = Variable(inputs).cuda()
-#             foregrounds_truth = Variable(foregrounds_truth).cuda()
-#             cuts_truth        = Variable(cuts_truth).cuda()
-#
-#             net.forward( inputs )
-#             net.criterion( foregrounds_truth, cuts_truth )
-#
-#         batch_size = len(indices)
-#         test_loss += batch_size*np.array((
-#                            net.loss.cpu().data.numpy(),
-#                            net.foreground_loss.cpu().data.numpy(),
-#                            net.cut_loss.cpu().data.numpy(),
-#                            0,
-#                            0,
-#                            0,
-#                          ))
-#         test_num  += batch_size
-#
-#     assert(test_num == len(test_loader.sampler))
-#     test_loss = test_loss/test_num
-#     return test_loss
+
+
+# draw background ------------------
+def draw_background(df,x,y,z,a,r,ax,ax1):
+    ax.clear()
+    ax1.clear()
+    ax.plot(a,r,'.',color = [0.75,0.75,0.75], markersize=5)
+    ax1.plot(x,y,z,'.',color = [0.75,0.75,0.75], markersize=5)
+    particle_ids = list(df.particle_id.unique())
+    num_particle_ids = len(particle_ids)
+    p = df['particle_id'].values.astype(np.int64)
+
+    for particle_id in particle_ids:
+        if particle_id==0: continue
+        t = np.where(p==particle_id)[0]
+        t = t[np.argsort(z[t])]
+        ax.plot(a[t],r[t],'.-',color = [0.75,0.75,0.75], markersize=5)
+        ax1.plot(x[t],y[t],z[t],'.-',color = [0.75,0.75,0.75], markersize=5)
 
 
 
-#--------------------------------------------------------------
 def run_train():
 
-    out_dir = RESULTS_DIR + '/xx10'
+    out_dir = RESULTS_DIR + '/set53'
     initial_checkpoint = \
-        RESULTS_DIR + '/xx10/checkpoint/00002200_model.pth'
-        #None #
+       None # RESULTS_DIR + '/set53/checkpoint/00008400_model.pth'
 
     pretrain_file =  None
     skip = [ ]
@@ -128,20 +175,22 @@ def run_train():
     log.write('\n')
 
 
-    # fig = plt.figure(figsize=(5,5))
-    # ax  = fig.add_subplot(111, projection='3d')
+    fig = plt.figure(figsize=(7,7))
+    ax  = fig.add_subplot(111)
+    fig.patch.set_facecolor('white')
 
-    fig1 = plt.figure(figsize=(5,5))
+    fig1 = plt.figure(figsize=(8,8))
     ax1  = fig1.add_subplot(111, projection='3d')
+    fig1.patch.set_facecolor('white')
 
-    fig2 = plt.figure(figsize=(5,5))
-    ax2  = fig2.add_subplot(111, projection='3d')
+    # fig2 = plt.figure(figsize=(5,5))
+    # ax2  = fig2.add_subplot(111, projection='3d')
 
 
 
     ## net ----------------------
     log.write('** net setting **\n')
-    net = Net().cuda()
+    net = Net(3,3).cuda()
 
     if initial_checkpoint is not None:
         log.write('\tinitial_checkpoint = %s\n' % initial_checkpoint)
@@ -159,19 +208,19 @@ def run_train():
 
     ## optimiser ----------------------------------
     iter_accum  = 1
-    batch_size  = 8
+    batch_size  = 1
 
     num_iters   = 1000  *1000
     iter_smooth = 20
     iter_log    = 50
     iter_valid  = 100
     iter_save   = [0, num_iters-1]\
-                   + list(range(0,num_iters,200))#1*1000
+                   + list(range(0,num_iters,100))#1*1000
 
 
     LR = None  #LR = StepLR([ (0, 0.01),  (200, 0.001),  (300, -1)])
     optimizer = optim.SGD(filter(lambda p: p.requires_grad, net.parameters()),
-                          lr=0.001/iter_accum, momentum=0.9, weight_decay=0.0001)
+                          lr=0.01/iter_accum, momentum=0.9, weight_decay=0.0001)
 
     start_iter = 0
     start_epoch= 0.
@@ -188,74 +237,21 @@ def run_train():
 
     ## dataset ----------------------------------------
     log.write('** dataset setting **\n')
+    train_dataset = [] #<todo> replace this with a data iterator !!!!
+    train_loader = DataLoader(
+        train_dataset,
+        sampler=RandomSampler(train_dataset),
+        # sampler = SequentialSampler(train_dataset),
+        batch_size=batch_size,
+        drop_last=True,
+        num_workers=4,
+        pin_memory=True,
+        collate_fn=train_collate)
 
-    train_dataset = DummyDataset(
-                            'samples_train',
-                            mode='<not_used>',transform = train_augment)
-
-    train_loader  = DataLoader(
-                        train_dataset,
-                        sampler = RandomSampler(train_dataset),
-                        #sampler = SequentialSampler(train_dataset),
-                        batch_size  = batch_size,
-                        drop_last   = True,
-                        num_workers = 4,
-                        pin_memory  = True,
-                        collate_fn  = train_collate)
-
-
-
-    # log.write('\ttrain_dataset.split = %s\n'%(train_dataset.split))
-    # log.write('\tvalid_dataset.split = %s\n'%(valid_dataset.split))
-    log.write('\tlen(train_dataset)  = %d\n'%(len(train_dataset)))
-    # log.write('\tlen(valid_dataset)  = %d\n'%(len(valid_dataset)))
-    # log.write('\tlen(train_loader)   = %d\n'%(len(train_loader)))
-    # log.write('\tlen(valid_loader)   = %d\n'%(len(valid_loader)))
-    log.write('\tbatch_size  = %d\n'%(batch_size))
-    log.write('\titer_accum  = %d\n'%(iter_accum))
-    log.write('\tbatch_size*iter_accum  = %d\n'%(batch_size*iter_accum))
-    log.write('\n')
-
-    #<debug>========================================================================================
-    if 0:
-        #fig = plt.figure(figsize=(5,5))
-        #ax  = fig.add_subplot(111, projection='3d')
-
-        for tracklets, truths, datas, labels, lengths, indices in train_loader:
-
-            batch_size = len(indices)
-            print('batch_size=%d'%batch_size)
-
-            tracklets = tracklets.data.cpu().numpy()
-            truths = truths.data.cpu().numpy()
-            split  = np.cumsum(lengths)
-            tracklets = np.split(tracklets,split)
-            truths    = np.split(truths,split)
-
-            for b in range(batch_size):
-                ax.clear()
-
-                data = datas[b]
-                x = data.x.values
-                y = data.y.values
-                z = data.z.values
-                ax.plot(x,y,z,'.',color = [0.75,0.75,0.75], markersize=3)
-
-                tracklet = tracklets[b].reshape(-1,3,3)
-                truth = truths[b]
-
-                pos = np.where(truth==1)[0]
-                for i in pos:
-                    t = tracklet[i]
-                    color = np.random.uniform(0,1,(3))
-                    ax.plot(t[:,0],t[:,1],t[:,2],'.-',color = color, markersize=6)
-
-                set_figure(ax,x_limit=(0,-100),y_limit=(-20,20),z_limit=(500,1000))
-                plt.pause(0.01)
-        plt.show()
-
-
-    #<debug>========================================================================================
+    event_ids = ['000001025',]  #000001029
+    for event_id in event_ids:
+        df = load_one_train_data(event_id)
+        train_dataset.append(df)
 
 
     ## start training here! ##############################################
@@ -264,7 +260,7 @@ def run_train():
     log.write(' momentum=%f\n'% optimizer.param_groups[0]['momentum'])
     log.write(' LR=%s\n\n'%str(LR) )
 
-    log.write(' images_per_epoch = %d\n\n'%len(train_dataset))
+    #log.write(' samples_per_epoch = %d\n\n'%len(train_dataset))
     log.write(' rate    iter   epoch  num   | valid_loss               | train_loss               | batch_loss               |  time          \n')
     log.write('-------------------------------------------------------------------------------------------------------------------------------\n')
 
@@ -282,15 +278,31 @@ def run_train():
         sum_train_loss = np.zeros(6,np.float32)
         sum = 0
 
-        net.set_mode('train')
+
         optimizer.zero_grad()
+        if 1: #<todo> replace this with a data iterator !!!!
+            net.set_mode('train')
 
-        for tracklets, truths, datas, labels, lengths, indices in train_loader:
+            df = train_dataset[0]
+            df1,  input, truth = make_train_one_batch(df) #32
 
-            batch_size = len(indices)
+
+            #check data============================================
+
+            # if 0:
+            #     input = input.data.cpu().numpy()
+
+
+            #======================================================
+
+
+
+            #------------------------------------------------------------------------------------------
+            len_train_dataset = 100000000  #len(train_dataset)
+            batch_size = len(input)   #len(indices)
             i = j/iter_accum + start_iter
-            epoch = (i-start_iter)*batch_size*iter_accum/len(train_dataset) + start_epoch
-            num_products = epoch*len(train_dataset)
+            epoch = (i-start_iter)*batch_size*iter_accum/len_train_dataset + start_epoch
+            num_products = epoch*len_train_dataset
 
             if i % iter_valid==0:
                 net.set_mode('valid')
@@ -298,7 +310,7 @@ def run_train():
                 net.set_mode('train')
 
                 print('\r',end='',flush=True)
-                log.write('%0.4f %5.1f k %6.1f %4.1f m |  %0.3f  |  %0.3f  |  %0.3f  | %s\n' % (\
+                log.write('%0.4f %5.1f k %6.1f %4.1f m |  %0.3f  |  %0.3f  |  %0.5f  | %s\n' % (\
                          rate, i/1000, epoch, num_products/1000000,
                          valid_loss[0], #valid_loss[1], valid_loss[2], valid_loss[3], #valid_loss[4], valid_loss[5],#valid_acc,
                          train_loss[0], #train_loss[1], train_loss[2], train_loss[3], #train_loss[4], train_loss[5],#train_acc,
@@ -324,13 +336,8 @@ def run_train():
 
 
             # one iteration update  -------------
-            tracklets = tracklets.cuda()
-            truths    = truths.cuda()
-
-            logits = net.forward( tracklets )
-            loss = F.binary_cross_entropy_with_logits(logits,truths)
-
-
+            estimate = net(input)
+            loss  = net.criterion(estimate,truth)
 
             # accumulated update
             loss.backward()
@@ -357,74 +364,86 @@ def run_train():
                 sum = 0
 
 
-            print('\r%0.4f %5.1f k %6.1f %4.1f m |  %0.3f  |  %0.3f  |  %0.3f  | %s  %d,%d,%s' % (\
+            print('\r%0.4f %5.1f k %6.1f %4.1f m |  %0.3f  |  %0.3f  |  %0.5f  | %s  %d,%d,%s' % (\
                          rate, i/1000, epoch, num_products/1000000,
                          valid_loss[0], #valid_loss[1], valid_loss[2], valid_loss[3], #valid_loss[4], valid_loss[5],#valid_acc,
                          train_loss[0], #train_loss[1], train_loss[2], train_loss[3], #train_loss[4], train_loss[5],#train_acc,
                          batch_loss[0], #batch_loss[1], batch_loss[2], batch_loss[3], #batch_loss[4], batch_loss[5],#batch_acc,
                          time_to_str((timer() - start)/60) ,i,j, ''), end='',flush=True)#str(inputs.size()))
+
             j=j+1
 
             #<debug> ===================================================================
-            if 1:
-            #if i%200==0:
-                net.set_mode('test')
-                with torch.no_grad():
-                    logits  = net.forward( tracklets )
 
-                tracklets  = tracklets.data.cpu().numpy()
-                probs  = np_sigmoid(logits.data.cpu().numpy())
-                truths = truths.data.cpu().numpy()
+            # if i%20==0 and i!=0:
+            #     # if i%200==0:
+            #     # print('show estimate ....')
+            #     net.set_mode('test')
+            #     with torch.no_grad():
+            #         logit = net(input)
+            #         prob = F.sigmoid(logit)
+            #
+            #     input = input.data.cpu().numpy()
+            #     #query = input.query.cpu().numpy()
+            #     prob = prob.data.cpu().numpy()
+            #     #truth = truth.data.cpu().numpy()
+            #
+            #     ax1.clear()
+            #     x, y, z = input[0].T
+            #     ax1.plot(x, y, z, '.', color=[0.75, 0.75, 0.75], markersize=5, linewidth=0)
+            #
+            #     N = len(prob)
+            #     for n in range(N):
+            #         p = prob[n]
+            #         idx = np.where(prob[n] > 0.6)[0]
+            #
+            #         if len(idx) > 0:
+            #             color = np.random.uniform(0, 1, 3)
+            #             ax1.plot(x[idx], y[idx], z[idx], '.', color=color, markersize=10, linewidth=0)
+            #
+            #             # ax1.plot([0,],[0,],[0,],'.',color = [0,0,0], markersize=10, linewidth=0)
+            #
+            #             plt.pause(0.01)
+            #
 
-                batch_size = len(indices)
-                split     = np.cumsum(lengths)
-                tracklets = np.split(tracklets,split)
-                probs     = np.split(probs,split)
-                truths    = np.split(truths,split)
-
-                for b in range(batch_size):
-                    ax1.clear()
-                    ax2.clear()
-
-                    data = datas[b]
-                    x = data.x.values
-                    y = data.y.values
-                    z = data.z.values
-                    ax1.plot(x,y,z,'.',color = [0.75,0.75,0.75], markersize=3)
-                    ax2.plot(x,y,z,'.',color = [0.75,0.75,0.75], markersize=3)
-
-                    tracklet = tracklets[b]
-                    prob     = probs[b]
-                    truth    = truths[b]
-
-                    #idx = np.where(prob>0.5)[0]
-                    #for i in idx:
-                    threshold=0.5
-                    for i in range(len(truth)):
-                        t = tracklet[i].reshape(-1,3)
-
-                        if prob[i]>threshold and truth[i]>0.5:  #hit
-                            color=np.random.uniform(0,1,(3))
-                            ax1.plot(t[:,0],t[:,1],t[:,2],'.-',color = color, markersize=6)
-
-                        if prob[i]>threshold and truth[i]<0.5:  #fp
-                            ax2.plot(t[:,0],t[:,1],t[:,2],'.-',color = [0,0,0], markersize=6)
-                        if prob[i]<threshold and truth[i]>0.5:  #miss
-                            ax2.plot(t[:,0],t[:,1],t[:,2],'.-',color = [1,0,0], markersize=6)
-
-                    set_figure(ax1, title='hit   @sample%d'%indices[b],x_limit=(0,-100),y_limit=(-20,20),z_limit=(500,1000))
-                    set_figure(ax2, title='error @sample%d'%indices[b],x_limit=(0,-100),y_limit=(-20,20),z_limit=(500,1000))
-                    plt.pause(0.01)
-                    #fig.savefig(out_dir +'/train/%05d.png'%indices[b])
-                pass
+            # for triplets, truths, logits, labels, lengths, indices in train_loader:
+            #     x,y,z,a,r = input.T
+            #     draw_background(df1,x,y,z,a,r,ax,ax1)
+            #
+            #     num_windows = (len(triplets))
+            #
+            #     triplet = triplets[n].data.cpu().numpy()
+            #     truths = truths[n].data.cpu().numpy()
+            #     logit = logits[n].data.cpu().numpy()
+            #     prob  = np_sigmoid(logit)
+            #
+            #     split = np.cumsum(lengths)
+            #     triplets = np.split(triplets,split)
+            #     truths = np.split(truths, split)
+            #
+            #     for b in range(batch_size):
+            #         ax.clear()
+            #
+            #         data = logits[b]
+            #         x = data.x.values
+            #         y = data.y.values
+            #         z = data.z.values
+            #
+            #         ax.plot(x,y,z,'.',color=[])
+            #          #draw estimate ---
+            #          T = np.where(prob>0.8)[0]
+            #          #T = np.where(truth>0.5)[0]
+            #          for t in T:
+            #              idx = triplet[t]
+            #              ax.plot (a[idx],r[idx],'.-',color = [1,0,0], markersize=8)
+            #              ax1.plot(x[idx],y[idx],z[idx],'.-',color = [1,0,0], markersize=8)
+            #     # plt.waitforbuttonpress(5)
+            #      plt.pause(0.01)
+            #
+            #     plt.show()
 
 
-                net.set_mode('train')
-            #<debug> ===================================================================
-
-
-        pass  #-- end of one data loader --
-    pass #-- end of all iterations --
+            net.set_mode('train')
 
 
     if 1: #save last
@@ -441,16 +460,19 @@ def run_train():
 # main #################################################################
 
 
-def run_predict():
+def run_valid():
 
-    out_dir = RESULTS_DIR + '/xx10'
-    initial_checkpoint = \
-        RESULTS_DIR + '/xx10/checkpoint/00002200_model.pth'
-        #None #
+    out_dir = RESULTS_DIR + '/set53'
+    initial_checkpoint = None
+        #RESULTS_DIR + '/set53/checkpoint/00009800_model.pth'
 
+    # out_dir = RESULTS_DIR + '/set11'
+    # initial_checkpoint = \
+    #     RESULTS_DIR + '/set11/checkpoint/00002200_model.pth'
 
     #start experiments here!
     os.makedirs(out_dir +'/backup', exist_ok=True)
+    os.makedirs(out_dir +'/valid', exist_ok=True)
     backup_project_as_zip(PROJECT_PATH, out_dir +'/backup/code.%s.zip'%IDENTIFIER)
 
     log = Logger()
@@ -462,13 +484,20 @@ def run_predict():
     log.write('\tout_dir      = %s\n' % out_dir)
     log.write('\n')
 
-    fig1 = plt.figure(figsize=(5,5))
+    fig = plt.figure(figsize=(7,7))
+    ax  = fig.add_subplot(111, )
+    fig.patch.set_facecolor('white')
+
+    fig1 = plt.figure(figsize=(8,8))
     ax1  = fig1.add_subplot(111, projection='3d')
-    fig2 = plt.figure(figsize=(5,5))
+    fig1.patch.set_facecolor('white')
+
+    fig2 = plt.figure(figsize=(8,8))
     ax2  = fig2.add_subplot(111, projection='3d')
+    fig2.patch.set_facecolor('white')
 
     ## net ------------------------------
-    net = Net().cuda()
+    net = Net(3,3).cuda()
 
     if initial_checkpoint is not None:
         log.write('\tinitial_checkpoint = %s\n' % initial_checkpoint)
@@ -481,94 +510,54 @@ def run_predict():
 
     ## dataset ----------------------------------------
     log.write('** dataset setting **\n')
-    dataset = DummyDataset(
-        'samples_valid',  #'samples_train',
-        mode='<not_used>',transform = None,
-    )
-
-    log.write('\n')
+    event_ids = ['000001029',]  #'000001029',  000001025
 
 
-    for n in range(len(dataset)):
+    for event_id in event_ids:
+        df = load_one_train_data(event_id)
 
-        data, combination, label, index = dataset[n]
-        num_combination = len(combination)
-        estimate = np.zeros(num_combination,np.float32)
 
+        estimates=[]
         if 1:
-            ax1.clear()
-            ax2.clear()
-            x = data.x.values
-            y = data.y.values
-            z = data.z.values
-            ax1.plot(x,y,z,'.',color = [0.75,0.75,0.75], markersize=3)
-            ax2.plot(x,y,z,'.',color = [0.75,0.75,0.75], markersize=3)
-
-
-
-
-        for j in range(0, num_combination, 512):
-            batch_size = min(j+512,num_combination)- j
-
-            truth     = label[j:j+batch_size]
-            tracklets = combination[j:j+batch_size,:,0:3].reshape(-1,9)
-            tracklets = np.vstack(tracklets)
-            tracklets = torch.from_numpy(tracklets).float()
+            #<todo> cut the volume, etc
+            df1, input, truths = make_test_one_batch(df)
 
             net.set_mode('test')
             with torch.no_grad():
-                tracklets = tracklets.cuda()
-                logits = net.forward( tracklets )
+                estimate = net.forward(input)
 
-            tracklet = tracklets.data.cpu().numpy()
-            prob = np_sigmoid(logits.data.cpu().numpy())
-            estimate[j:j+batch_size] = prob
+            #-------------------------------------------------
+            input     = input.data.cpu().numpy()
+            estimate  = estimate.data.cpu().numpy()
+
+            batch_size = len(estimate)
+            for n in range(0,batch_size,2):
+
+                a,r,z = input[n].T
+                x = r*np.cos(a)
+                y = r*np.sin(a)
+
+                ea,er,ez = estimate[n].T
+                ex = er*np.cos(ea)
+                ey = er*np.sin(ea)
 
 
-            #draw results -------------------------------------------------------------
-            if 1:
-                threshold = 0.5
-                for i in range(batch_size):
-                    #print(j,i)
-                    t = tracklet[i].reshape(-1,3)
+                color = np.random.uniform(0,1,3)
+                ax1.plot(ex,ey,ez,'.-',color = [0.75,0.75,0.75], markersize=10)
+                ax1.plot(x,y,z,'.-',color = color, markersize=5)
+                ax2.plot(ea,er,ez,'.-',color = [0.75,0.75,0.75], markersize=10)
+                ax2.plot(a,r,z,'.-',color = color, markersize=5)
+                if n==50: plt.show(1)
 
-                    if prob[i]>threshold and truth[i]>0.5:  #hit
-                        print('*',end='',flush=True)
-                        color=np.random.uniform(0,1,(3))
-                        ax1.plot(t[:,0],t[:,1],t[:,2],'.-',color = color, markersize=6)
+            #plt.waitforbuttonpress(5)
+            #plt.pause(0.01)
 
-                    if prob[i]>threshold and truth[i]<0.5:  #fp
-                        ax2.plot(t[:,0],t[:,1],t[:,2],'.-',color = [0,0,0], markersize=6)
-                    if prob[i]<threshold and truth[i]>0.5:  #miss
-                        ax2.plot(t[:,0],t[:,1],t[:,2],'.-',color = [1,0,0], markersize=6)
 
-                    set_figure(ax1, title='hit   @sample%d'%index,x_limit=(0,-100),y_limit=(-20,20),z_limit=(500,1000))
-                    set_figure(ax2, title='error @sample%d'%index,x_limit=(0,-100),y_limit=(-20,20),z_limit=(500,1000))
-                    #plt.pause(0.01)
+            #plt.pause(0.01)
+            plt.show()
 
-        estimate=(estimate>0.5)
-        label   =(label>0.5)
-        print('\n@sample%d :'%index)
-        print('\t total  = %d '%(len(label)))
-        print('\t hit  = %d (%0.2f)'%((estimate*label).sum(), (estimate*label).sum()/label.sum()))
-        print('\t miss = %d (%0.2f)'%((~estimate*label).sum(), (~estimate*label).sum()/label.sum()))
-        print('\t fp   = %d (%0.2f)'%((estimate*(~label)).sum(), (estimate*(~label)).sum()/estimate.sum()))
 
-        #plt.show()
-        plt.pause(5)
-    plt.show()
     pass
-
-
-
-
-    #assert(test_num == len(test_loader.sampler))
-    log.write('-------------\n')
-    log.write('initial_checkpoint  = %s\n'%(initial_checkpoint))
-    #log.write('tag=%s\n'%tag)
-    log.write('\n')
-
-
 
 
 
@@ -578,13 +567,13 @@ if __name__ == '__main__':
     print( '%s: calling main function ... ' % os.path.basename(__file__))
 
     #run_train()
-    run_predict()
+    run_train()
 
 
-    print('\nsucess!')
+    print('\nsucess!')#
 
 
 
 #  ffmpeg -f image2  -pattern_type glob -r 33 -i "iterations/*.png" -c:v libx264  iterations.mp4
-#
+#  convert *.png animated.gif
 #

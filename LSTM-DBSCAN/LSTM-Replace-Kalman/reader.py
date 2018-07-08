@@ -19,7 +19,7 @@ class DummyDataset(Dataset):
         self.mode=mode
         self.split=split
         self.samples = load_pickle_file(
-            '/root/share/project/kaggle/cern/data/%s.pickle'%split
+            '/mydisk/TrackML-Data/user_data/%s.pickle'%split
         )
 
 

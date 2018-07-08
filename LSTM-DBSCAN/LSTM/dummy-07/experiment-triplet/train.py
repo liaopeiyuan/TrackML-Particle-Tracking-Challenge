@@ -5,7 +5,6 @@ from dataset.others import *
 
 from reader import *
 from model import TripletNet as Net
-
 from common import *
 from utility.file import *
 from net.rate   import *
@@ -106,8 +105,8 @@ def train_collate(batch):
 def run_train():
 
     out_dir = RESULTS_DIR + '/xx10'
-    initial_checkpoint = \
-        RESULTS_DIR + '/xx10/checkpoint/00002200_model.pth'
+    initial_checkpoint = None
+        #RESULTS_DIR + '/xx10/checkpoint/00002200_model.pth'
         #None #
 
     pretrain_file =  None
@@ -217,42 +216,42 @@ def run_train():
     log.write('\n')
 
     #<debug>========================================================================================
-    if 0:
-        #fig = plt.figure(figsize=(5,5))
-        #ax  = fig.add_subplot(111, projection='3d')
-
-        for tracklets, truths, datas, labels, lengths, indices in train_loader:
-
-            batch_size = len(indices)
-            print('batch_size=%d'%batch_size)
-
-            tracklets = tracklets.data.cpu().numpy()
-            truths = truths.data.cpu().numpy()
-            split  = np.cumsum(lengths)
-            tracklets = np.split(tracklets,split)
-            truths    = np.split(truths,split)
-
-            for b in range(batch_size):
-                ax.clear()
-
-                data = datas[b]
-                x = data.x.values
-                y = data.y.values
-                z = data.z.values
-                ax.plot(x,y,z,'.',color = [0.75,0.75,0.75], markersize=3)
-
-                tracklet = tracklets[b].reshape(-1,3,3)
-                truth = truths[b]
-
-                pos = np.where(truth==1)[0]
-                for i in pos:
-                    t = tracklet[i]
-                    color = np.random.uniform(0,1,(3))
-                    ax.plot(t[:,0],t[:,1],t[:,2],'.-',color = color, markersize=6)
-
-                set_figure(ax,x_limit=(0,-100),y_limit=(-20,20),z_limit=(500,1000))
-                plt.pause(0.01)
-        plt.show()
+    # if 1:
+    #     fig = plt.figure(figsize=(5,5))
+    #     ax  = fig.add_subplot(111, projection='3d')
+    #
+    #     for tracklets, truths, datas, labels, lengths, indices in train_loader:
+    #
+    #         batch_size = len(indices)
+    #         print('batch_size=%d'%batch_size)
+    #
+    #         tracklets = tracklets.data.cpu().numpy()
+    #         truths = truths.data.cpu().numpy()
+    #         split  = np.cumsum(lengths)
+    #         tracklets = np.split(tracklets,split)
+    #         truths    = np.split(truths,split)
+    #
+    #         for b in range(batch_size):
+    #             ax.clear()
+    #
+    #             data = datas[b]
+    #             x = data.x.values
+    #             y = data.y.values
+    #             z = data.z.values
+    #             ax.plot(x,y,z,'.',color = [0.75,0.75,0.75], markersize=3)
+    #
+    #             tracklet = tracklets[b].reshape(-1,3,3)
+    #             truth = truths[b]
+    #
+    #             pos = np.where(truth==1)[0]
+    #             for i in pos:
+    #                 t = tracklet[i]
+    #                 color = np.random.uniform(0,1,(3))
+    #                 ax.plot(t[:,0],t[:,1],t[:,2],'.-',color = color, markersize=6)
+    #
+    #             set_figure(ax,x_limit=(0,-100),y_limit=(-20,20),z_limit=(500,1000))
+    #             plt.pause(0.01)
+    #     plt.show()
 
 
     #<debug>========================================================================================
@@ -415,6 +414,7 @@ def run_train():
                     set_figure(ax1, title='hit   @sample%d'%indices[b],x_limit=(0,-100),y_limit=(-20,20),z_limit=(500,1000))
                     set_figure(ax2, title='error @sample%d'%indices[b],x_limit=(0,-100),y_limit=(-20,20),z_limit=(500,1000))
                     plt.pause(0.01)
+                    plt.show()
                     #fig.savefig(out_dir +'/train/%05d.png'%indices[b])
                 pass
 
@@ -578,7 +578,7 @@ if __name__ == '__main__':
     print( '%s: calling main function ... ' % os.path.basename(__file__))
 
     #run_train()
-    run_predict()
+    run_train()
 
 
     print('\nsucess!')
