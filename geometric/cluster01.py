@@ -25,7 +25,7 @@ def get_quadric_features(df):
     return df
 
 
-def get_lr_result(sub_df, cols=("x", "y", "x2", "y2", "z2", "xy", "xz", "yz")):
+def get_lr_weight(sub_df, cols=("x", "y", "x2", "y2", "z2", "xy", "xz", "yz")):
     m = linear_model.LinearRegression(fit_intercept=True, normalize=False)
     # m.fit(sub_df, np.ones(sub_df.shape[0]))
     # return mean_squared_error(y_true=np.ones(sub_df.shape[0]), y_pred=m.predict(sub_df))
@@ -35,15 +35,21 @@ def get_lr_result(sub_df, cols=("x", "y", "x2", "y2", "z2", "xy", "xz", "yz")):
     # return mean_squared_error(y_true=sub_df["z"], y_pred=m.predict(sub_df[["x", "y"]]))
 
 
+def get_lr_r2(sub_df, cols=("x", "y", "x2", "y2", "z2", "xy", "xz", "yz")):
+    m = linear_model.LinearRegression(fit_intercept=True, normalize=False)
+    m.fit(sub_df[list(cols)], sub_df["z"])
+    return m.score(sub_df[list(cols)], sub_df["z"])
+
+
 def plot_cdf(data, bins=100):
     values, base = np.histogram(data, bins=bins)
     cumulative = np.cumsum(values) / len(data)
     plt.plot(base[:-1], cumulative)
 
 
-def plot_track_subroutine(sub_df):
+def plot_track_subroutine(sub_df, ax):
     sub_df = sub_df.sort_values(by="z")
-    plt.plot(sub_df.v1.values, sub_df.v2.values, sub_df.v3.values, ".-")
+    ax.plot(sub_df["x"].values, sub_df["y"].values, sub_df["z"].values, ".-")
     return sub_df
 
 
@@ -53,16 +59,10 @@ if __name__ == "__main__":
     s1 = Session(parent_dir="E:/TrackMLData/")
     n_events = 1
 
-    # prepare for 3d plotting
-    # fig = plt.figure()
-    # ax = fig.add_subplot(1, 1, 1, projection='3d')
-    from itertools import chain, combinations
-
     all_cols = ["x", "y", "x2", "y2", "z2", "xy", "xz", "yz"]
+    selected_cols = ["x", "y"]
 
-    record_1 = {}
-    for selected_cols in chain(combinations(all_cols, r=len(all_cols)), combinations(all_cols, r=len(all_cols)-1)):
-        record_1[frozenset(selected_cols)] = []
+    tau = 0.99999
 
     count = 0
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
@@ -78,12 +78,22 @@ if __name__ == "__main__":
         # scale coordinate values
         # hits[["x", "y", "z"]] = scale(hits[["x", "y", "z"]])
         hits = get_quadric_features(hits)
-        res = hits.groupby("particle_id").apply(get_lr_result)
+        # weight = hits.groupby("particle_id").apply(lambda x: get_lr_weight(x, selected_cols))
+        r2 = hits.groupby("particle_id").apply(lambda x: get_lr_r2(x, selected_cols))
+        print(f"proportion of perfect explanations: {(r2 > tau).sum()}/{hits.shape[0]}")
 
-        print("preparing scatter matrix")
-        from pandas.plotting import scatter_matrix
-        scatter_matrix(res)
+        # prepare for 3d plotting
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1, projection='3d')
+
+        for p_id in np.random.choice(r2[r2 > tau].index, size=30, replace=False):
+            plot_track_subroutine(hits.loc[hits["particle_id"] == p_id], ax)
+
         plt.show()
+        # print("preparing scatter matrix")
+        # from pandas.plotting import scatter_matrix
+        # scatter_matrix(weight)
+        # plt.show()
 
         # print((res < 0.999).sum())
         # plot_cdf(res, bins=1000)
