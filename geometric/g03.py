@@ -127,7 +127,7 @@ if __name__ == "__main__":
     )
     """
     h2 = HelixUnroll(
-        r3_func=lambda x, y, z: np.sqrt(x**2 + y**2 + 0.8 * z**2),  # TODO: change here
+        r3_func=lambda x, y, z: np.sqrt(x**2 + y**2 + z**2),
         dz_func=lambda i: (-1) ** (i + 1) * (-7e-4 + i * 1e-5),
         n_steps=120,
         hidden_transform=lambda x: x * np.array([1.0, 1.0, 0.75]),
