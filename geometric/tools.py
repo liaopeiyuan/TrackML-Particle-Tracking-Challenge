@@ -24,7 +24,7 @@ def reassign_noise(labels: np.ndarray, idx):
     return ret
 
 
-def merge_naive(pred_1, pred_2, cutoff=20):
+def merge_naive(pred_1, pred_2, cutoff=3):
     """
     naive cluster merging:
     iterate over hits; if a hit belongs to a larger cluster in pred_2, it is reassigned
