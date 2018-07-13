@@ -25,6 +25,15 @@ def get_quadric_features(df):
     return df
 
 
+def get_lr(sub_df):
+    m = linear_model.LinearRegression(fit_intercept=True, normalize=False)
+    x_cols = ["z", "z2"]
+    y_cols = ["x", "y"]
+    m.fit(sub_df[x_cols], sub_df[y_cols])
+    return m.score(sub_df[x_cols], sub_df[y_cols])
+
+
+"""
 def get_lr_weight(sub_df, cols=("x", "y", "x2", "y2", "z2", "xy", "xz", "yz")):
     m = linear_model.LinearRegression(fit_intercept=True, normalize=False)
     # m.fit(sub_df, np.ones(sub_df.shape[0]))
@@ -39,7 +48,7 @@ def get_lr_r2(sub_df, cols=("x", "y", "x2", "y2", "z2", "xy", "xz", "yz")):
     m = linear_model.LinearRegression(fit_intercept=True, normalize=False)
     m.fit(sub_df[list(cols)], sub_df["z"])
     return m.score(sub_df[list(cols)], sub_df["z"])
-
+"""
 
 def plot_cdf(data, bins=100):
     values, base = np.histogram(data, bins=bins)
@@ -57,12 +66,12 @@ if __name__ == "__main__":
     print("start running clustering and regression")
     np.random.seed(1)  # restart random number generator
     s1 = Session(parent_dir="E:/TrackMLData/")
-    n_events = 1
+    n_events = 4
 
     all_cols = ["x", "y", "x2", "y2", "z2", "xy", "xz", "yz"]
-    selected_cols = ["x", "y"]
+    selected_cols = ["x", "y", "x2", "y2", "z2", "xy", "xz", "yz"]
 
-    tau = 0.99999
+    tau = 0.9
 
     count = 0
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
@@ -79,14 +88,16 @@ if __name__ == "__main__":
         # hits[["x", "y", "z"]] = scale(hits[["x", "y", "z"]])
         hits = get_quadric_features(hits)
         # weight = hits.groupby("particle_id").apply(lambda x: get_lr_weight(x, selected_cols))
-        r2 = hits.groupby("particle_id").apply(lambda x: get_lr_r2(x, selected_cols))
-        print(f"proportion of perfect explanations: {(r2 > tau).sum()}/{hits.shape[0]}")
+        r2 = hits.groupby("particle_id").apply(lambda x: get_lr(x))
+        print(f"proportion of perfect explanations: {(r2 > tau).sum()}/{hits.particle_id.nunique()}")
+        # plt.hist(r2, bins=2000)
+        # plt.show()
 
         # prepare for 3d plotting
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1, projection='3d')
 
-        for p_id in np.random.choice(r2[r2 > tau].index, size=30, replace=False):
+        for p_id in np.random.choice(r2[r2 < tau].index, size=30, replace=False):
             plot_track_subroutine(hits.loc[hits["particle_id"] == p_id], ax)
 
         plt.show()
