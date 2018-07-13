@@ -18,3 +18,4 @@ Team Members (in alphabetical order):
 - Tony Chen - Stevenson School
 - Alexander Liao - Kent School
 - Tianyi Miao - Indian Springs School
+- Aaron Mao - Kent School
