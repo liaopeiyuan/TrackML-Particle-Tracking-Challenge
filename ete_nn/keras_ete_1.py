@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 import keras
-from keras.layers import Input, Dense
+from keras.layers import Input, Dense, BatchNormalization, Dropout, PReLU
 from keras.models import Model
 
 
@@ -51,7 +51,7 @@ def join_hits_truth(hits, truth):
     hits.drop("hit_id", axis=1, inplace=True)
     return hits
 
-
+"""
 def get_basic_nn():
     nn_dict = {"main_input": Input(shape=(9,), name="main_input")}
     nn_dict["x1"] = Dense(64, activation="relu", name="x1")(nn_dict["main_input"])
@@ -62,25 +62,56 @@ def get_basic_nn():
     nn_dict["x6"] = Dense(128, activation="relu", name="x6")(nn_dict["x5"])
     nn_dict["x7"] = Dense(64, activation="relu", name="x7")(nn_dict["x6"])
     return nn_dict
+"""
+
+def get_basic_nn():
+    nn_list = [Input(shape=(9,))]
+    for layer in [
+        Dense(32), BatchNormalization(), PReLU(),
+        Dense(64), BatchNormalization(), PReLU(),
+        Dense(75), BatchNormalization(), PReLU(),
+        Dense(110), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
+        Dense(110), BatchNormalization(), PReLU(),
+        Dense(75), BatchNormalization(), PReLU(),
+        Dense(64), BatchNormalization(), PReLU(),
+    ]:
+        nn_list.append(layer(nn_list[-1]))
+    return nn_list
 
 
-if __name__ == "__main__":
+def train_nn(nn_list, fx, fy, basic_trainable=True, epochs=10, batch_size=64):
+    for layer in nn_list:
+        layer.trainable = basic_trainable
+    print(f"shape of fx: {fx.shape}")
+    print(f"shape of fy: {fy.shape}")
+    n_targets = fy.shape[1]
+    output_layer = Dense(n_targets, activation="softmax")(nn_list[-1])
+    temp_model = Model(inputs=nn_list[0], outputs=output_layer)
+    temp_model.compile(optimizer="adam", loss="categorical_crossentropy")
+    temp_model.fit(fx, fy, epochs=epochs, batch_size=batch_size, verbose=1)
+
+
+def main():
     print("start running basic neural network")
     np.random.seed(1)  # restart random number generator
     s1 = Session(parent_dir="E:/TrackMLData/")
     n_events = 4
     count = 0
-    nn_dict_basic = get_basic_nn()
+    nn_list_basic = get_basic_nn()
+
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         count += 1
         print(f"{count}/{n_events}")
         hits = join_hits_truth(hits, truth)
-        fx = get_feature(hits, 0.0, flip=False, quadratic=True)
         fy = get_target(hits)
-        print(f"shape of fx: {fx.shape}")
-        print(f"shape of fy: {fy.shape}")
-        n_targets = fy.shape[1]
-        output_layer = Dense(n_targets, activation="softmax", name="temp_output")(nn_dict_basic["x7"])
-        temp_model = Model(inputs=nn_dict_basic["main_input"], outputs=output_layer)
-        temp_model.compile(optimizer="adam", loss="categorical_crossentropy")
-        temp_model.fit(fx, fy, batch_size=32, verbose=1, validation_split=0.1)
+        fx = get_feature(hits, 0.0, flip=False, quadratic=True)
+        train_nn(nn_list_basic, fx, fy, basic_trainable=True, epochs=25, batch_size=64)
+
+
+if __name__ == "__main__":
+    main()
