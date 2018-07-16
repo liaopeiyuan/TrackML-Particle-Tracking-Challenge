@@ -1,3 +1,8 @@
+"""
+try to minimize the expected loss for the following:
+train_nn(nn_list_basic, get_feature(hits, theta=np.random.rand()*2*np.pi, flip=np.random.rand()<0.5), permute_target(fy), basic_trainable=True, epochs=..., batch_size=...)
+"""
+
 import numpy as np
 import pandas as pd
 
@@ -9,7 +14,7 @@ from keras.models import Model
 from utils.session import Session
 
 
-def get_quadratic_features(df):
+def _get_quadratic_features(df):
     df["x2"] = df["x"] ** 2
     df["y2"] = df["y"] ** 2
     df["z2"] = df["z"] ** 2
@@ -32,7 +37,7 @@ def get_feature(hits, theta, flip, quadratic=True):
     df.loc[:, "y"] = np.sin(a) * r
     if flip:
         df.loc[:, "z"] = -df["z"]
-    return (get_quadratic_features(df) if quadratic else df).values
+    return (_get_quadratic_features(df) if quadratic else df).values
 
 
 def get_target(hits):
@@ -51,19 +56,6 @@ def join_hits_truth(hits, truth):
     hits.drop("hit_id", axis=1, inplace=True)
     return hits
 
-"""
-def get_basic_nn():
-    nn_dict = {"main_input": Input(shape=(9,), name="main_input")}
-    nn_dict["x1"] = Dense(64, activation="relu", name="x1")(nn_dict["main_input"])
-    nn_dict["x2"] = Dense(128, activation="relu", name="x2")(nn_dict["x1"])
-    nn_dict["x3"] = Dense(256, activation="relu", name="x3")(nn_dict["x2"])
-    nn_dict["x4"] = Dense(256, activation="relu", name="x4")(nn_dict["x3"])
-    nn_dict["x5"] = Dense(256, activation="relu", name="x5")(nn_dict["x4"])
-    nn_dict["x6"] = Dense(128, activation="relu", name="x6")(nn_dict["x5"])
-    nn_dict["x7"] = Dense(64, activation="relu", name="x7")(nn_dict["x6"])
-    return nn_dict
-"""
-
 
 def get_basic_nn():
     nn_list = [Input(shape=(9,))]
@@ -71,13 +63,19 @@ def get_basic_nn():
         Dense(32), BatchNormalization(), PReLU(),
         Dense(64), BatchNormalization(), PReLU(),
         Dense(75), BatchNormalization(), PReLU(),
-        Dense(110), BatchNormalization(), PReLU(),
-        Dense(128), BatchNormalization(), PReLU(),
-        Dense(128), BatchNormalization(), PReLU(),
-        Dense(128), BatchNormalization(), PReLU(),
-        Dense(128), BatchNormalization(), PReLU(),
-        Dense(128), BatchNormalization(), PReLU(),
-        Dense(110), BatchNormalization(), PReLU(),
+        Dense(100), BatchNormalization(), PReLU(),
+        Dense(100), BatchNormalization(), PReLU(),
+        Dense(100), BatchNormalization(), PReLU(),
+        Dense(100), BatchNormalization(), PReLU(),
+        Dense(100), BatchNormalization(), PReLU(),
+        Dense(100), BatchNormalization(), PReLU(),
+        Dense(100), BatchNormalization(), PReLU(),
+        Dense(100), BatchNormalization(), PReLU(),
+        Dense(100), BatchNormalization(), PReLU(),
+        Dense(100), BatchNormalization(), PReLU(),
+        Dense(100), BatchNormalization(), PReLU(),
+        Dense(100), BatchNormalization(), PReLU(),
+        Dense(100), BatchNormalization(), PReLU(),
         Dense(75), BatchNormalization(), PReLU(),
         Dense(64), BatchNormalization(), PReLU(),
     ]:
