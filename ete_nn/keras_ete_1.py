@@ -57,25 +57,19 @@ def join_hits_truth(hits, truth):
     return hits
 
 
-def get_basic_nn():
-    nn_list = [Input(shape=(9,))]
+def get_basic_nn(input_size=9):
+    nn_list = [Input(shape=(input_size,))]
     for layer in [
         Dense(32), BatchNormalization(), PReLU(),
         Dense(64), BatchNormalization(), PReLU(),
         Dense(75), BatchNormalization(), PReLU(),
         Dense(100), BatchNormalization(), PReLU(),
-        Dense(100), BatchNormalization(), PReLU(),
-        Dense(100), BatchNormalization(), PReLU(),
-        Dense(100), BatchNormalization(), PReLU(),
-        Dense(100), BatchNormalization(), PReLU(),
-        Dense(100), BatchNormalization(), PReLU(),
-        Dense(100), BatchNormalization(), PReLU(),
-        Dense(100), BatchNormalization(), PReLU(),
-        Dense(100), BatchNormalization(), PReLU(),
-        Dense(100), BatchNormalization(), PReLU(),
-        Dense(100), BatchNormalization(), PReLU(),
-        Dense(100), BatchNormalization(), PReLU(),
-        Dense(100), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
+        Dense(110), BatchNormalization(), PReLU(),
         Dense(75), BatchNormalization(), PReLU(),
         Dense(64), BatchNormalization(), PReLU(),
     ]:
@@ -83,7 +77,7 @@ def get_basic_nn():
     return nn_list
 
 
-def train_nn(nn_list, fx, fy, basic_trainable=True, epochs=10, batch_size=64):
+def train_nn(nn_list, fx, fy, basic_trainable=True, epochs=10, batch_size=64, verbose=1):
     for layer in nn_list:
         layer.trainable = basic_trainable
     print(f"shape of fx: {fx.shape}")
@@ -92,25 +86,26 @@ def train_nn(nn_list, fx, fy, basic_trainable=True, epochs=10, batch_size=64):
     output_layer = Dense(n_targets, activation="softmax", trainable=True)(nn_list[-1])
     temp_model = Model(inputs=nn_list[0], outputs=output_layer)
     temp_model.compile(optimizer="adam", loss="categorical_crossentropy")
-    temp_model.fit(fx, fy, epochs=epochs, batch_size=batch_size, verbose=1)
+    temp_model.fit(fx, fy, epochs=epochs, batch_size=batch_size, verbose=verbose)
 
 
 def main():
     print("start running basic neural network")
     np.random.seed(1)  # restart random number generator
     s1 = Session(parent_dir="E:/TrackMLData/")
-    n_events = 4
+    n_events = 20
     count = 0
-    nn_list_basic = get_basic_nn()
+    nn_list_basic = get_basic_nn(9)
 
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         count += 1
         print(f"{count}/{n_events}")
         hits = join_hits_truth(hits, truth)
         fy = get_target(hits)
-        fx = get_feature(hits, 0.0, flip=False, quadratic=True)
-        for i in range(10):
-            train_nn(nn_list_basic, fx, permute_target(fy), basic_trainable=True, epochs=4, batch_size=128)
+        # fx = get_feature(hits, 0.0, flip=False, quadratic=True)
+        for i in range(100):
+            train_nn(nn_list_basic, get_feature(hits, theta=np.random.rand() * 2 * np.pi, flip=np.random.rand() < 0.5, quadratic=True), permute_target(fy), basic_trainable=True, epochs=5, batch_size=128, verbose=1)
+            # train_nn(nn_list_basic, fx, permute_target(fy), basic_trainable=True, epochs=4, batch_size=128, verbose=1)
 
 
 if __name__ == "__main__":
