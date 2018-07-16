@@ -64,6 +64,7 @@ def get_basic_nn():
     return nn_dict
 """
 
+
 def get_basic_nn():
     nn_list = [Input(shape=(9,))]
     for layer in [
@@ -90,7 +91,7 @@ def train_nn(nn_list, fx, fy, basic_trainable=True, epochs=10, batch_size=64):
     print(f"shape of fx: {fx.shape}")
     print(f"shape of fy: {fy.shape}")
     n_targets = fy.shape[1]
-    output_layer = Dense(n_targets, activation="softmax")(nn_list[-1])
+    output_layer = Dense(n_targets, activation="softmax", trainable=True)(nn_list[-1])
     temp_model = Model(inputs=nn_list[0], outputs=output_layer)
     temp_model.compile(optimizer="adam", loss="categorical_crossentropy")
     temp_model.fit(fx, fy, epochs=epochs, batch_size=batch_size, verbose=1)
@@ -110,7 +111,8 @@ def main():
         hits = join_hits_truth(hits, truth)
         fy = get_target(hits)
         fx = get_feature(hits, 0.0, flip=False, quadratic=True)
-        train_nn(nn_list_basic, fx, fy, basic_trainable=True, epochs=25, batch_size=64)
+        for i in range(10):
+            train_nn(nn_list_basic, fx, permute_target(fy), basic_trainable=True, epochs=4, batch_size=128)
 
 
 if __name__ == "__main__":
