@@ -10,6 +10,7 @@ import keras
 from keras.layers import Input, Dense, BatchNormalization, Dropout, PReLU
 from keras.models import Model
 
+from sklearn.preprocessing import scale
 
 from utils.session import Session
 
@@ -75,7 +76,17 @@ def get_basic_nn(input_size=9):
     ]:
         pass
     for layer in [
-        
+        Dense(16), BatchNormalization(), PReLU(),
+        Dense(16), BatchNormalization(), PReLU(),
+        Dense(32), BatchNormalization(), PReLU(),
+        Dense(32), BatchNormalization(), PReLU(),
+        Dense(64), BatchNormalization(), PReLU(),
+        Dense(64), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
+        Dense(128), BatchNormalization(), PReLU(),
     ]:
         nn_list.append(layer(nn_list[-1]))
     return nn_list
@@ -107,8 +118,22 @@ def main():
         hits = join_hits_truth(hits, truth)
         fy = get_target(hits)
         # fx = get_feature(hits, 0.0, flip=False, quadratic=True)
-        for i in range(8):
-            train_nn(nn_list_basic, get_feature(hits, theta=np.random.rand() * 2 * np.pi, flip=np.random.rand() < 0.5, quadratic=True), permute_target(fy), basic_trainable=True, epochs=5, batch_size=128, verbose=1)
+        if count > 0:
+            print("validation check")
+            try:
+                train_nn(nn_list_basic, get_feature(hits, theta=0, flip=False, quadratic=True), fy, basic_trainable=False, epochs=5, batch_size=128, verbose=1)
+            except KeyboardInterrupt:
+                pass
+        print("start actual training")
+        train_nn(nn_list_basic, get_feature(hits, theta=0, flip=False, quadratic=True), fy, basic_trainable=True, epochs=5, batch_size=128, verbose=1)
+        for i in range(5):
+            try:
+                train_nn(
+                    nn_list_basic,
+                    get_feature(hits, theta=np.random.rand() * 2 * np.pi, flip=np.random.rand() < 0.5, quadratic=True),
+                    permute_target(fy), basic_trainable=True, epochs=5, batch_size=128, verbose=1)
+            except KeyboardInterrupt:
+                continue
             # train_nn(nn_list_basic, fx, permute_target(fy), basic_trainable=True, epochs=4, batch_size=128, verbose=1)
 
 
