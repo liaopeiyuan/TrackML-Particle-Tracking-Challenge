@@ -73,6 +73,10 @@ def get_basic_nn(input_size=9):
         Dense(75), BatchNormalization(), PReLU(),
         Dense(64), BatchNormalization(), PReLU(),
     ]:
+        pass
+    for layer in [
+        
+    ]:
         nn_list.append(layer(nn_list[-1]))
     return nn_list
 
@@ -93,7 +97,7 @@ def main():
     print("start running basic neural network")
     np.random.seed(1)  # restart random number generator
     s1 = Session(parent_dir="E:/TrackMLData/")
-    n_events = 20
+    n_events = 50
     count = 0
     nn_list_basic = get_basic_nn(9)
 
@@ -103,7 +107,7 @@ def main():
         hits = join_hits_truth(hits, truth)
         fy = get_target(hits)
         # fx = get_feature(hits, 0.0, flip=False, quadratic=True)
-        for i in range(100):
+        for i in range(8):
             train_nn(nn_list_basic, get_feature(hits, theta=np.random.rand() * 2 * np.pi, flip=np.random.rand() < 0.5, quadratic=True), permute_target(fy), basic_trainable=True, epochs=5, batch_size=128, verbose=1)
             # train_nn(nn_list_basic, fx, permute_target(fy), basic_trainable=True, epochs=4, batch_size=128, verbose=1)
 
