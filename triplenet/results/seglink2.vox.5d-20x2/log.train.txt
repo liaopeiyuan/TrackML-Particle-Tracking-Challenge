@@ -1,0 +1,86 @@
+
+--- [START 2018-07-07_17-54-25] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/faster-rcnn
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/seglink2.vox.5d-20x2
+
+** dataset setting **
+
+--- [START 2018-07-07_17-59-50] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/faster-rcnn
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/seglink2.vox.5d-20x2
+
+** dataset setting **
+
+--- [START 2018-07-07_18-00-19] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/faster-rcnn
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/seglink2.vox.5d-20x2
+
+** dataset setting **
+
+--- [START 2018-07-07_18-00-47] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/faster-rcnn
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/seglink2.vox.5d-20x2
+
+** dataset setting **
+** net setting **
+	initial_checkpoint = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/seglink2.vox.5d-20x2/checkpoint/00005800_model.pth
+
+--- [START 2018-07-07_18-01-16] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/faster-rcnn
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/seglink2.vox.5d-20x2
+
+** dataset setting **
+** net setting **
+<class 'model.PairNet'>
+
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.01
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ rate    iter   epoch  num   | valid_loss               | train_loss               | batch_loss               |  time          
+-------------------------------------------------------------------------------------------------------------------------------
+
+--- [START 2018-07-07_18-01-51] ----------------------------------------------------------------
+
+	SEED         = 35202
+	PROJECT_PATH = /home/alexanderliao/data/GitHub/Kaggle-TrackML/faster-rcnn
+	out_dir      = /home/alexanderliao/data/GitHub/Kaggle-TrackML/triplenet/results/seglink2.vox.5d-20x2
+
+** dataset setting **
+** net setting **
+<class 'model.PairNet'>
+
+
+** start training here! **
+ optimizer=SGD (
+Parameter Group 0
+    dampening: 0
+    lr: 0.01
+    momentum: 0.9
+    nesterov: False
+    weight_decay: 0.0001
+)
+ momentum=0.900000
+ LR=None
+
+ rate    iter   epoch  num   | valid_loss               | train_loss               | batch_loss               |  time          
+-------------------------------------------------------------------------------------------------------------------------------
