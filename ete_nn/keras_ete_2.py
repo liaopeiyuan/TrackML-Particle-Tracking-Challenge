@@ -10,10 +10,12 @@ import os
 import keras
 from keras.layers import Input, Dense, BatchNormalization, Dropout, PReLU
 from keras.models import Model
-from keras.utils.generic_utils import  Progbar
+from keras.models import load_model
+
+from time import time
 
 from utils.session import Session
-from ete_nn.model import MLP_with_dropout
+import ete_nn.model as myModel
 
 
 def _get_quadratic_features(df):
@@ -65,33 +67,47 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
     print(f"shape of fx: {train_x.shape}")
     print(f"shape of fy: {train_y.shape}")
 
-    keras.callbacks.TensorBoard(log_dir='./Graph', histogram_freq=0,
-        write_graph=True, write_images=True)
+    tensorboard = keras.callbacks.TensorBoard(log_dir='logs/{}'.format(time()))
      
     n_targets = train_y.shape[1]
     output_layer = Dense(n_targets, activation="softmax", trainable=True)(nn_list[-1])
-    temp_model = Model(inputs=nn_list[0], outputs=output_layer)
-    temp_model.compile(optimizer="adam", loss="categorical_crossentropy")
-    temp_model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, verbose=verbose)
+    if os.listdir("ete_nn/checkpoint/") != []:
+        print("Model present, loading model")
+        temp_model = load_model("ete_nn/checkpoint/mymodel.h5")
+    else:
+        print("Model not present, creating model")
+        temp_model = Model(inputs=nn_list[0], outputs=output_layer)
+
+    adam = keras.optimizers.adam(lr=0.008)
+    temp_model.compile(optimizer=adam, loss="categorical_crossentropy")
+    history = temp_model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, verbose=verbose, callbacks=[tensorboard])
+
+    losses = history.history['loss']
+    return int(losses[len(losses)-1]), temp_model
 
 def main():
     print("start running basic neural network")
     np.random.seed(1)  # restart random number generator
     s1 = Session(parent_dir="/mydisk/TrackML-Data/tripletnet/")
-    n_events = 5000
+    n_events = 10000
     count = 0
-    nn_list_basic = MLP_with_dropout(9, 0.1)
+    nn_list_basic = myModel.MLP_with_dropout(9, 0)
 
     for hits_train, truth_train in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         count += 1
         print(f"{count}/{n_events}")
         hits_train = join_hits_truth(hits_train, truth_train)
         fy = get_target(hits_train)
-        
+
+        loss_global = 5000
         # fx = get_feature(hits, 0.0, flip=False, quadratic=True)
         for i in range(100):
-            train_nn(nn_list_basic, get_feature(hits_train, theta=np.random.rand() * 2 * np.pi, flip=np.random.rand() < 0.5, quadratic=True), permute_target(fy),
-            basic_trainable=True, epochs=20, batch_size=128, verbose=1)
+            print("Step: " + str(i))
+            loss, model = train_nn(nn_list_basic, get_feature(hits_train, theta=np.random.rand() * 2 * np.pi, flip=np.random.rand() < 0.5, quadratic=True), permute_target(fy),
+            basic_trainable=True, epochs=20, batch_size=256, verbose=1)
+            if(loss<loss_global):
+                print("Epoch result better than the best, saving model")
+                model.save("ete_nn/checkpoint/"+"mymodel.h5")
             # train_nn(nn_list_basic, fx, permute_target(fy), basic_trainable=True, epochs=4, batch_size=128, verbose=1)
 
 
