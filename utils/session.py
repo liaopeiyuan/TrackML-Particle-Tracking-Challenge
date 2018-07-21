@@ -16,7 +16,6 @@ import pandas as pd
 
 from trackml.dataset import load_event
 
-
 class Session(object):
     """
     A highly integrated framework for efficient data loading, prediction submission, etc. in TrackML Challenge
@@ -112,6 +111,18 @@ class Session(object):
         return event_names, \
             (load_event(self._parent_dir + self._train_dir + event_name, content) for event_name in event_names)
 
+    def get_test_event(self, n=3, content=(HITS, TRUTH), randomness=True):
+        n = min(n, len(self._test_event_id_list))
+        if randomness:
+            event_ids = np.random.choice(self._test_event_id_list, size=n, replace=False).tolist()
+        else:
+            event_ids, = self._test_event_id_list[:n]
+            self._test_event_id_list = self._test_event_id_list[n:] + self._test_event_id_list[:n]
+
+        event_names = [Session.get_event_name(event_id) for event_id in event_ids]
+        return event_names, \
+            (load_event(self._parent_dir + self._test_dir + event_name, content) for event_name in event_names)
+    
     def remove_test_events(self, n=10, content=(HITS, CELLS), randomness=False):
         n = min(n, len(self._test_event_id_list))
         if randomness:
@@ -144,5 +155,5 @@ class Session(object):
 
 
 if __name__ == "__main__":
-    s1 = Session(parent_dir="E:/TrackMLData/")
+    s1 = Session(parent_dir="/mydisk/TrackML-Data/tripletnet/")
     event_names, event_loaders = s1.remove_train_events(4, content=[s1.HITS, s1.TRUTH], randomness=True)
