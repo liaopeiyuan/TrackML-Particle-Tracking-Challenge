@@ -78,7 +78,7 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
         print("Model not present, creating model")
         temp_model = Model(inputs=nn_list[0], outputs=output_layer)
 
-    adam = keras.optimizers.adam(lr=0.008)
+    adam = keras.optimizers.adam(lr=0.02)
     temp_model.compile(optimizer=adam, loss="categorical_crossentropy")
     history = temp_model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, verbose=verbose, callbacks=[tensorboard])
 
