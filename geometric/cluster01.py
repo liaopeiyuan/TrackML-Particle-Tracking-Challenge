@@ -27,7 +27,7 @@ def get_quadric_features(df):
 
 def get_lr(sub_df):
     m = linear_model.LinearRegression(fit_intercept=True, normalize=False)
-    x_cols = ["z", "z2"]
+    x_cols = ["z", "z2", "sinz"]
     y_cols = ["x", "y"]
     m.fit(sub_df[x_cols], sub_df[y_cols])
     return m.score(sub_df[x_cols], sub_df[y_cols])
@@ -50,6 +50,7 @@ def get_lr_r2(sub_df, cols=("x", "y", "x2", "y2", "z2", "xy", "xz", "yz")):
     return m.score(sub_df[list(cols)], sub_df["z"])
 """
 
+
 def plot_cdf(data, bins=100):
     values, base = np.histogram(data, bins=bins)
     cumulative = np.cumsum(values) / len(data)
@@ -62,7 +63,28 @@ def plot_track_subroutine(sub_df, ax):
     return sub_df
 
 
-if __name__ == "__main__":
+def get_hits_df(hits_df, truth_df):
+    # get a perfect dataset for clustering
+    df = truth_df[["hit_id", "particle_id"]].merge(hits_df[["hit_id", "x", "y", "z"]], on="hit_id")
+    df.drop("hit_id", axis=1, inplace=True)
+    df = df.loc[df["particle_id"] != 0]
+    # remove small tracks
+    df = df.merge(pd.DataFrame(df.groupby("particle_id").size().rename("track_size")), left_on="particle_id", right_index=True)
+    df = df.loc[df["track_size"] > 3]
+    # scale coordinate values
+    # hits[["x", "y", "z"]] = scale(hits[["x", "y", "z"]])
+    df = get_quadric_features(df)
+    return df
+
+
+def run_sin_score(hits_df, n):
+    hits_df = hits_df.copy()
+    hits_df["sinz"] = np.sin(hits_df["z"] / n * np.pi)
+    r2 = hits_df.groupby("particle_id").apply(lambda x: get_lr(x))
+    return r2.sum()
+
+
+def main_1():
     print("start running clustering and regression")
     np.random.seed(1)  # restart random number generator
     s1 = Session(parent_dir="E:/TrackMLData/")
@@ -77,16 +99,12 @@ if __name__ == "__main__":
     for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         count += 1
         print(count)
-        hits = truth[["hit_id", "particle_id"]].merge(hits[["hit_id", "x", "y", "z"]], on="hit_id")
-        hits.drop("hit_id", axis=1, inplace=True)
-        hits = hits.loc[hits["particle_id"] != 0]
-        # remove small tracks
-        hits = hits.merge(pd.DataFrame(hits.groupby("particle_id").size().rename("track_size")), left_on="particle_id", right_index=True)
-        hits = hits.loc[hits["track_size"] > 3]
 
-        # scale coordinate values
-        # hits[["x", "y", "z"]] = scale(hits[["x", "y", "z"]])
-        hits = get_quadric_features(hits)
+        hits = get_hits_df(hits, truth)
+
+        # get new features for helix
+        hits["sinz"] = np.sin(hits["z"] / 1000 * np.pi)
+
         # weight = hits.groupby("particle_id").apply(lambda x: get_lr_weight(x, selected_cols))
         r2 = hits.groupby("particle_id").apply(lambda x: get_lr(x))
         print(f"proportion of perfect explanations: {(r2 > tau).sum()}/{hits.particle_id.nunique()}")
@@ -97,7 +115,7 @@ if __name__ == "__main__":
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1, projection='3d')
 
-        for p_id in np.random.choice(r2[r2 < tau].index, size=30, replace=False):
+        for p_id in np.random.choice(r2[r2 < tau].index, size=min((r2 < tau).sum(), 30), replace=False):
             plot_track_subroutine(hits.loc[hits["particle_id"] == p_id], ax)
 
         plt.show()
@@ -118,3 +136,16 @@ if __name__ == "__main__":
     # plt.hist(error_2, bins=100)
 
 
+def main_2():
+    from bayes_opt import BayesianOptimization as BO
+
+    s1 = Session(parent_dir="E:/TrackMLData/")
+    train_list = [get_hits_df(hits, truth) for hits, truth in s1.get_train_events(n=10, content=[s1.HITS, s1.TRUTH], randomness=True)[1]]
+
+
+    sin_bo_1 = BO(lambda n: sum(run_sin_score(hits_df, n) for hits_df in train_list), pbounds={"n": (0, 10000)}, verbose=1)
+    sin_bo_1.maximize(init_points=5, n_iter=25, kappa=5)
+
+
+if __name__ == "__main__":
+    main_2()
