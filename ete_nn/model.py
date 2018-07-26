@@ -66,6 +66,7 @@ def complex_cnn(input_size=9):
         Conv1D(kernel_size=(4), filters=400, strides=1, padding='same',
         activation="relu", kernel_initializer="glorot_normal"),
         Conv1D(kernel_size=(4), filters=400, strides=1, padding='same',
+	activation='relu', kernel_initializer='glorot_normal')
         BatchNormalization(),AveragePooling1D(2),
         activation="relu", kernel_initializer="glorot_normal"),
         Conv1D(kernel_size=(8), filters=300, strides=1, padding='same',
