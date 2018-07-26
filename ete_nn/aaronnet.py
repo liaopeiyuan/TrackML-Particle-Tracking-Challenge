@@ -79,7 +79,7 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
     else:
         print("Model not present, creating model")
         temp_model = Model(inputs=nn_list[0], outputs=output_layer)
-        temp_model = keras.utils.multi_gpu_model(temp_model, gpus=4)
+        temp_model = keras.utils.multi_gpu_model(temp_model, gpus=8)
 
     adam = keras.optimizers.adam(lr=0.0005)
     temp_model.compile(optimizer=adam, loss="categorical_crossentropy")
@@ -92,7 +92,7 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
 def main():
     print("start running basic neural network")
     np.random.seed(1)  # restart random number generator
-    s1 = Session(parent_dir="/rscratch/xuanyu/Kaggle-TrackML/aaronmao/")
+    s1 = Session(parent_dir="/rscratch/xuanyu/aaronmao/")
     n_events = 5000
     count = 0
     nn_list_basic = myModel.complex_cnn(9)
@@ -110,10 +110,11 @@ def main():
             loss, model = train_nn(nn_list_basic, get_feature(hits_train, theta=np.random.rand() * 2 * np.pi, flip=np.random.rand() < 0.5, quadratic=True), permute_target(fy),
             basic_trainable=True, epochs=30, batch_size=1024, verbose=1)
             if(loss<loss_global):
-                print("Epoch result better than the best, saving model")
+                print("Epoch result better than the best, saving model"
                 model.save("./checkpoint/aaronmao/"+"mymodel.h5")
             # train_nn(nn_list_basic, fx, permute_target(fy), basic_trainable=True
             # , epochs=4, batch_size=128, verbose=1)
+
 
 
 if __name__ == "__main__":

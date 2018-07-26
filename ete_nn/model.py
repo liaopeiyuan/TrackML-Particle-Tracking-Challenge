@@ -140,7 +140,7 @@ def MLP(input_size=9, rate=0.5):
         Dense(64, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
         Dense(128, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
         Dense(128, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
-        Dense(128, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+#        Dense(128, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
         Dense(128, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
         #Dropout(rate),
         Dense(256, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
@@ -155,6 +155,9 @@ def MLP(input_size=9, rate=0.5):
         Dense(1024, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
         Dense(1024, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
         Dense(1024, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+#	Dropout(rate),
+#	Dense(1500, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+#	Dense(1500, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
     ]:
       nn_list.append(layer(nn_list[-1]))
     return nn_list
