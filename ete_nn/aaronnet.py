@@ -110,7 +110,7 @@ def main():
             loss, model = train_nn(nn_list_basic, get_feature(hits_train, theta=np.random.rand() * 2 * np.pi, flip=np.random.rand() < 0.5, quadratic=True), permute_target(fy),
             basic_trainable=True, epochs=30, batch_size=1024, verbose=1)
             if(loss<loss_global):
-                print("Epoch result better than the best, saving model"
+                print("Epoch result better than the best, saving model")
                 model.save("./checkpoint/aaronmao/"+"mymodel.h5")
             # train_nn(nn_list_basic, fx, permute_target(fy), basic_trainable=True
             # , epochs=4, batch_size=128, verbose=1)
