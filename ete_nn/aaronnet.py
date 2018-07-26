@@ -92,7 +92,7 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
 def main():
     print("start running basic neural network")
     np.random.seed(1)  # restart random number generator
-    s1 = Session(parent_dir="/rscratch/xuanyu/aaronmao/")
+    s1 = Session(parent_dir="/rscratch/xuanyu/KAIL/")
     n_events = 5000
     count = 0
     nn_list_basic = myModel.complex_cnn(9)

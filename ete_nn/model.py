@@ -5,18 +5,22 @@ from keras.models import Model
 def get_basic_nn(input_size=9):
     nn_list = [Input(shape=(input_size,))]
     for layer in [
-        Dense(32), BatchNormalization(), PReLU(),
-        Dense(64), BatchNormalization(), PReLU(),
-        Dense(75), BatchNormalization(), PReLU(),
+        Dense(32), Dense(32), BatchNormalization(), PReLU(),
+        Dense(64), Dense(64), Dense(64), BatchNormalization(), PReLU(),
         Dense(100), BatchNormalization(), PReLU(),
         Dense(128), BatchNormalization(), PReLU(),
         Dense(128), BatchNormalization(), PReLU(),
-        Dense(128), BatchNormalization(), PReLU(),
-        Dense(128), BatchNormalization(), PReLU(),
-        Dense(128), BatchNormalization(), PReLU(),
-        Dense(110), BatchNormalization(), PReLU(),
-        Dense(75), BatchNormalization(), PReLU(),
-        Dense(64), BatchNormalization(), PReLU(),
+        Dense(256), Dense(256), BatchNormalization(), PReLU(),
+        Dense(512), BatchNormalization(), PReLU(),
+        Dense(1024), BatchNormalization(), PReLU(),
+        Dense(2048), BatchNormalization(), PReLU(),
+        Dense(4096), Dense(4096), BatchNormalization(), PReLU(),
+        Dense(8192), BatchNormalization(), PReLU(),
+        Dense(8192), BatchNormalization(), PReLU(),
+        Dense(16384), BatchNormalization(), PReLU(),
+        Dense(4096), Dense(4096), Dense(2048),
+        Dense(1024), Dense(512), Dense(512), Dense(256),
+        Dense(128), Dense(64), BatchNormalization(), PReLU()
     ]:
         nn_list.append(layer(nn_list[-1]))
     return nn_list
