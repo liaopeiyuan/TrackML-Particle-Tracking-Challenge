@@ -81,7 +81,7 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
         temp_model = Model(inputs=nn_list[0], outputs=output_layer)
         temp_model = keras.utils.multi_gpu_model(temp_model, gpus=4)
 
-    adam = keras.optimizers.adam(lr=0.001)
+    adam = keras.optimizers.adam(lr=0.0005)
     temp_model.compile(optimizer=adam, loss="categorical_crossentropy")
 	
 
