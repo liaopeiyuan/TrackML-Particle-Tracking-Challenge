@@ -12,7 +12,7 @@ import keras
 from keras.layers import Input, Dense, BatchNormalization, Dropout, PReLU
 from keras.models import Model
 from keras.models import load_model
-
+import tensorflow as tf
 from time import time
 
 from utils.session import Session
@@ -81,15 +81,16 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
         temp_model = Model(inputs=nn_list[0], outputs=output_layer)
 
     adam = keras.optimizers.adam(lr=0.001)
-    parallel_model = multi_gpu_model(temp_model, gpus=8)
-    parallel_model.compile(loss='categorical_crossentropy',
-                       optimizer=adam)
+    #parallel_model = multi_gpu_model(temp_model, gpus=8)
+    #parallel_model.compile(loss='categorical_crossentropy',
+    #                   optimizer=adam)
 
 	# This `fit` call will be distributed on 8 GPUs.
 	# Since the batch size is 256, each GPU will process 32 samples.
 	#parallel_model.fit(x, y, epochs=20, batch_size=256)
-    #temp_model.compile(optimizer=adam, loss="categorical_crossentropy")
-    history = parallel_model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, verbose=verbose, callbacks=[tensorboard])
+    temp_model.compile(optimizer=adam, loss="categorical_crossentropy")
+    with tf.device('/gpu:0'):
+	history = temp_model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, verbose=verbose, callbacks=[tensorboard])
 
     losses = history.history['loss']
     return int(losses[len(losses)-1]), temp_model
