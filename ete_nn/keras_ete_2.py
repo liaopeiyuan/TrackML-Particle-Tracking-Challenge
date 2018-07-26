@@ -68,7 +68,7 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
     print(f"shape of fx: {train_x.shape}")
     print(f"shape of fy: {train_y.shape}")
 
-    tensorboard = keras.callbacks.TensorBoard(log_dir='logs/')
+    tensorboard = keras.callbacks.TensorBoard(log_dir='logs/'.format(time()))
      
     n_targets = train_y.shape[1]
     output_layer = Dense(n_targets, activation="softmax", trainable=True)(nn_list[-1])
@@ -78,6 +78,7 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
     else:
         print("Model not present, creating model")
         temp_model = Model(inputs=nn_list[0], outputs=output_layer)
+        temp_model = keras.utils.multi_gpu_model(temp_model, gpus=5)
 
     adam = keras.optimizers.adam(lr=0.001)
     temp_model.compile(optimizer=adam, loss="categorical_crossentropy")
@@ -92,7 +93,7 @@ def main():
     s1 = Session(parent_dir="/mydisk/TrackML-Data/tripletnet/")
     n_events = 3000
     count = 0
-    nn_list_basic = myModel.basic_cnn(9)
+    nn_list_basic = myModel.complex_cnn(9)
 
     for hits_train, truth_train in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         count += 1
@@ -102,10 +103,10 @@ def main():
 
         loss_global = 5000
         # fx = get_feature(hits, 0.0, flip=False, quadratic=True)
-        for i in range(100):
+        for i in range(10):
             print("Step: " + str(i))
             loss, model = train_nn(nn_list_basic, get_feature(hits_train, theta=np.random.rand() * 2 * np.pi, flip=np.random.rand() < 0.5, quadratic=True), permute_target(fy),
-            basic_trainable=True, epochs=20, batch_size=64, verbose=1)
+            basic_trainable=True, epochs=20, batch_size=128, verbose=1)
             if(loss<loss_global):
                 print("Epoch result better than the best, saving model")
                 model.save("ete_nn/checkpoint/"+"mymodel.h5")
