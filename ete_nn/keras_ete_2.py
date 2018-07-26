@@ -2,6 +2,7 @@
 try to minimize the expected loss for the following:
 train_nn(nn_list_basic, get_feature(hits, theta=np.random.rand()*2*np.pi, flip=np.random.rand()<0.5), permute_target(fy), basic_trainable=True, epochs=..., batch_size=...)
 """
+from keras.utils import multi_gpu_model
 
 import numpy as np
 import pandas as pd
@@ -17,7 +18,7 @@ from time import time
 from utils.session import Session
 import ete_nn.model as myModel
 
-os.chdir("/mydisk/Programming/Git/Kaggle-TrackML/")
+os.chdir("/rscratch/xuanyu/Kaggle-TrackML/")
 
 def _get_quadratic_features(df):
     df["x2"] = df["x"] ** 2
@@ -62,26 +63,33 @@ def join_hits_truth(hits, truth):
     return hits
 
 
-def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_size=64, verbose=0):
+def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_size=4096, verbose=0):
     for layer in nn_list:
         layer.trainable = basic_trainable
-    print(f"shape of fx: {train_x.shape}")
-    print(f"shape of fy: {train_y.shape}")
+    #print(f"shape of fx: {train_x.shape}")
+    #print(f"shape of fy: {train_y.shape}")
 
     tensorboard = keras.callbacks.TensorBoard(log_dir='logs/')
      
     n_targets = train_y.shape[1]
     output_layer = Dense(n_targets, activation="softmax", trainable=True)(nn_list[-1])
-    if os.listdir("ete_nn/checkpoint/") != []:
+    if os.listdir("./checkpoint/") != []:
         print("Model present, loading model")
-        temp_model = load_model("ete_nn/checkpoint/mymodel.h5")
+        temp_model = load_model("./checkpoint/mymodel.h5")
     else:
         print("Model not present, creating model")
         temp_model = Model(inputs=nn_list[0], outputs=output_layer)
 
     adam = keras.optimizers.adam(lr=0.001)
-    temp_model.compile(optimizer=adam, loss="categorical_crossentropy")
-    history = temp_model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, verbose=verbose, callbacks=[tensorboard])
+    parallel_model = multi_gpu_model(temp_model, gpus=8)
+    parallel_model.compile(loss='categorical_crossentropy',
+                       optimizer=adam)
+
+	# This `fit` call will be distributed on 8 GPUs.
+	# Since the batch size is 256, each GPU will process 32 samples.
+	#parallel_model.fit(x, y, epochs=20, batch_size=256)
+    #temp_model.compile(optimizer=adam, loss="categorical_crossentropy")
+    history = parallel_model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, verbose=verbose, callbacks=[tensorboard])
 
     losses = history.history['loss']
     return int(losses[len(losses)-1]), temp_model
@@ -89,14 +97,14 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
 def main():
     print("start running basic neural network")
     np.random.seed(1)  # restart random number generator
-    s1 = Session(parent_dir="/mydisk/TrackML-Data/tripletnet/")
-    n_events = 3000
+    s1 = Session(parent_dir="/rscratch/xuanyu/Kaggle-TrackML/portable-dataset/")
+    n_events = 200
     count = 0
-    nn_list_basic = myModel.basic_cnn(9)
+    nn_list_basic = myModel.MLP(9)
 
     for hits_train, truth_train in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         count += 1
-        print(f"{count}/{n_events}")
+        #print(f"{count}/{n_events}")
         hits_train = join_hits_truth(hits_train, truth_train)
         fy = get_target(hits_train)
 
@@ -105,10 +113,10 @@ def main():
         for i in range(100):
             print("Step: " + str(i))
             loss, model = train_nn(nn_list_basic, get_feature(hits_train, theta=np.random.rand() * 2 * np.pi, flip=np.random.rand() < 0.5, quadratic=True), permute_target(fy),
-            basic_trainable=True, epochs=20, batch_size=64, verbose=1)
+            basic_trainable=True, epochs=20, batch_size=4096, verbose=1)
             if(loss<loss_global):
                 print("Epoch result better than the best, saving model")
-                model.save("ete_nn/checkpoint/"+"mymodel.h5")
+                model.save("./checkpoint/"+"mymodel.h5")
             # train_nn(nn_list_basic, fx, permute_target(fy), basic_trainable=True, epochs=4, batch_size=128, verbose=1)
 
 

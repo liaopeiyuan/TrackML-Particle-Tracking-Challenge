@@ -127,3 +127,31 @@ def basic_cnn(input_size=9):
     ]:
         nn_list.append(layer(nn_list[-1]))
     return nn_list
+
+
+def MLP(input_size=9, rate=0.5):
+    nn_list = [Input(shape=(input_size,))]
+    for layer in[
+        Dense(32, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        #Dropout(rate),
+        Dense(64, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        Dense(128, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        Dense(128, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        Dense(128, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        Dense(128, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        #Dropout(rate),
+        Dense(256, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        Dense(256, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        Dense(256, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        Dropout(rate),
+        Dense(512, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        Dense(512, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        Dense(512, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        Dense(512, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        Dropout(rate),
+        Dense(1024, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        Dense(1024, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+        Dense(1024, kernel_initializer='RandomUniform'), BatchNormalization(), PReLU(),
+    ]:
+      nn_list.append(layer(nn_list[-1]))
+    return nn_list
