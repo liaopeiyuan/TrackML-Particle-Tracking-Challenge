@@ -79,16 +79,9 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
     else:
         print("Model not present, creating model")
         temp_model = Model(inputs=nn_list[0], outputs=output_layer)
-	temp_model = keras.utils.multi_gpu_model(temp_model, gpus=4)
+        temp_model = keras.utils.multi_gpu_model(temp_model, gpus=4)
 
     adam = keras.optimizers.adam(lr=0.001)
-    #parallel_model = multi_gpu_model(temp_model, gpus=8)
-    #parallel_model.compile(loss='categorical_crossentropy',
-    #                   optimizer=adam)
-
-	# This `fit` call will be distributed on 8 GPUs.
-	# Since the batch size is 256, each GPU will process 32 samples.
-	#parallel_model.fit(x, y, epochs=20, batch_size=256)
     temp_model.compile(optimizer=adam, loss="categorical_crossentropy")
 	
 
@@ -100,13 +93,13 @@ def main():
     print("start running basic neural network")
     np.random.seed(1)  # restart random number generator
     s1 = Session(parent_dir="/rscratch/xuanyu/Kaggle-TrackML/aaronmao/")
-    n_events = 200
+    n_events = 5000
     count = 0
-    nn_list_basic = myModel.MLP(9)
+    nn_list_basic = myModel.complex_cnn(9)
 
     for hits_train, truth_train in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
         count += 1
-        #print(f"{count}/{n_events}")
+        print(f"{count}/{n_events}")
         hits_train = join_hits_truth(hits_train, truth_train)
         fy = get_target(hits_train)
 
@@ -115,7 +108,7 @@ def main():
         for i in range(100):
             print("Step: " + str(i))
             loss, model = train_nn(nn_list_basic, get_feature(hits_train, theta=np.random.rand() * 2 * np.pi, flip=np.random.rand() < 0.5, quadratic=True), permute_target(fy),
-            basic_trainable=True, epochs=20, batch_size=4096, verbose=1)
+            basic_trainable=True, epochs=30, batch_size=1024, verbose=1)
             if(loss<loss_global):
                 print("Epoch result better than the best, saving model")
                 model.save("./checkpoint/"+"mymodel.h5")
