@@ -73,9 +73,9 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
      
     n_targets = train_y.shape[1]
     output_layer = Dense(n_targets, activation="softmax", trainable=True)(nn_list[-1])
-    if os.listdir("./checkpoint/") != []:
+    if os.listdir("./checkpoint/aaronmao/") != []:
         print("Model present, loading model")
-        temp_model = load_model("./checkpoint/mymodel.h5")
+        temp_model = load_model("./checkpoint/aaronmao/mymodel.h5")
     else:
         print("Model not present, creating model")
         temp_model = Model(inputs=nn_list[0], outputs=output_layer)
@@ -112,7 +112,8 @@ def main():
             if(loss<loss_global):
                 print("Epoch result better than the best, saving model")
                 model.save("./checkpoint/aaronmao/"+"mymodel.h5")
-            # train_nn(nn_list_basic, fx, permute_target(fy), basic_trainable=True, epochs=4, batch_size=128, verbose=1)
+            # train_nn(nn_list_basic, fx, permute_target(fy), basic_trainable=True
+            # , epochs=4, batch_size=128, verbose=1)
 
 
 if __name__ == "__main__":
