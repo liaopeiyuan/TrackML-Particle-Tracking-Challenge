@@ -18,7 +18,7 @@ from time import time
 from utils.session import Session
 import ete_nn.model as myModel
 
-os.chdir("/rscratch/xuanyu/Kaggle-TrackML/")
+os.chdir("/rscratch/xuanyu/KAIL/Kaggle-TrackML/")
 
 def _get_quadratic_features(df):
     df["x2"] = df["x"] ** 2
@@ -76,10 +76,11 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
     if os.listdir("./checkpoint/aaronmao/") != []:
         print("Model present, loading model")
         temp_model = load_model("./checkpoint/aaronmao/mymodel.h5")
+        temp_model = keras.utils.multi_gpu_model(temp_model, gpus=6)
     else:
         print("Model not present, creating model")
         temp_model = Model(inputs=nn_list[0], outputs=output_layer)
-        temp_model = keras.utils.multi_gpu_model(temp_model, gpus=8)
+        temp_model = keras.utils.multi_gpu_model(temp_model, gpus=6)
 
     adam = keras.optimizers.adam(lr=0.001)
     temp_model.compile(optimizer=adam, loss="categorical_crossentropy")
