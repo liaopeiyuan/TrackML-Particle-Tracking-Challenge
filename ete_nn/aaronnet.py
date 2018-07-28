@@ -75,15 +75,12 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
     output_layer = Dense(n_targets, activation="softmax", trainable=True)(nn_list[-1])
     if os.listdir("./checkpoint/aaronmao/") != []:
         print("Model present, loading model")
-        json_file = open("./checkpoint/aaronmao/mymodel.json", "r")
-        loaded_model_json = json_file.read()
-        json_file.close()
-        loaded_model = model_from_json(loaded_model_json)
-        loaded_model.load_weights("modelweights.h5")
+        temp_model.load_model("./checkpoint/aaronmao/mymodel.h5")
         temp_model = keras.utils.multi_gpu_model(temp_model, gpus=8)
     else:
         print("Model not present, creating model")
         temp_model = Model(inputs=nn_list[0], outputs=output_layer)
+        temp_model.save(".checkpoint/aaronmao/mymodel.h5")
         temp_model = keras.utils.multi_gpu_model(temp_model, gpus=8)
 
     adam = keras.optimizers.adam(lr=0.001)
@@ -117,12 +114,8 @@ def main():
             basic_trainable=True, epochs=2, batch_size=2048, verbose=1)
 
             if(loss<loss_global):
-                print("Epoch result better than the best, saving model")
-                model_json = model.to_json()
-                with open("./checkpoint/aaronmao/" + "mymodel.json", "w") as json_file:
-                    json_file.write(model_json)
-                
-                model.save_weights("./checkpoint/aaronmao/"+"modelweights.h5")
+                print("Epoch result better than the best, saving model")              
+                model.save("./checkpoint/aaronmao/mymodel.h5", overwrite=True)
             # train_nn(nn_list_basic, fx, permute_target(fy), basic_trainable=True
             # , epochs=4, batch_size=128, verbose=1)
 
