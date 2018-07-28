@@ -76,11 +76,11 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
     if os.listdir("./checkpoint/aaronmao/") != []:
         print("Model present, loading model")
         temp_model = load_model("./checkpoint/aaronmao/mymodel.h5")
-        temp_model = keras.utils.multi_gpu_model(temp_model, gpus=6)
+        temp_model = keras.utils.multi_gpu_model(temp_model, gpus=7)
     else:
         print("Model not present, creating model")
         temp_model = Model(inputs=nn_list[0], outputs=output_layer)
-        temp_model = keras.utils.multi_gpu_model(temp_model, gpus=6)
+        temp_model = keras.utils.multi_gpu_model(temp_model, gpus=8)
 
     adam = keras.optimizers.adam(lr=0.0005)
     temp_model.compile(optimizer=adam, loss="categorical_crossentropy")
@@ -109,7 +109,7 @@ def main():
         for i in range(100):
             print("Step: " + str(i))
             loss, model = train_nn(nn_list_basic, get_feature(hits_train, theta=np.random.rand() * 2 * np.pi, flip=np.random.rand() < 0.5, quadratic=True), permute_target(fy),
-            basic_trainable=True, epochs=100, batch_size=1024, verbose=1)
+            basic_trainable=True, epochs=40, batch_size=2048, verbose=1)
             if(loss<loss_global):
                 print("Epoch result better than the best, saving model")
                 model.save("./checkpoint/aaronmao/"+"mymodel.h5")
