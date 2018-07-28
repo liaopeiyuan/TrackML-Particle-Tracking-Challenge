@@ -214,8 +214,8 @@ def join_hits_truth(hits, truth):
 def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_size=64, verbose=0):
     for layer in nn_list:
         layer.trainable = basic_trainable
-    print(f"shape of fx: {train_x.shape}")
-    print(f"shape of fy: {train_y.shape}")
+    #print(f"shape of fx: {train_x.shape}")
+    #print(f"shape of fy: {train_y.shape}")
 
     tensorboard = keras.callbacks.TensorBoard(log_dir='logs/')
     early_stopping = EarlyStopping(patience=50, verbose=1)
@@ -316,7 +316,7 @@ nn_list_basic = MLP(9)
 
 for hits_train, truth_train in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
     count += 1
-    print(f"{count}/{n_events}")
+    #print(f"{count}/{n_events}")
     hits_train = join_hits_truth(hits_train, truth_train)
     fy = get_target(hits_train)
 
