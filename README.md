@@ -17,4 +17,5 @@ Useful scripts for [Kaggle TrackML Particle Tracking Challenge](https://www.kagg
 Team Members (in alphabetical order):
 - Tony Chen - Stevenson School
 - Alexander Liao - Kent School
+= Jiajun Mao - Kent School
 - Tianyi Miao - Indian Springs School
