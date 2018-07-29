@@ -111,7 +111,7 @@ def main():
         for i in range(100):
             print("Step: " + str(i))
             loss, model = train_nn(nn_list_basic, get_feature(hits_train, theta=np.random.rand() * 2 * np.pi, flip=np.random.rand() < 0.5, quadratic=True), permute_target(fy),
-            basic_trainable=True, epochs=50, batch_size=2048, verbose=1)
+            basic_trainable=True, epochs=2, batch_size=2048, verbose=1)
 
             if(loss<loss_global):
                 print("Epoch result better than the best, saving model")              
