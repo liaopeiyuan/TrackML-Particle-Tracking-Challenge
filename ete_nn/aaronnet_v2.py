@@ -65,6 +65,8 @@ def join_hits_truth(hits, truth):
 
 
 def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_size=4096, verbose=0):
+    global model_loaded
+    
     for layer in nn_list:
         layer.trainable = basic_trainable
     #print(f"shape of fx: {train_x.shape}")
