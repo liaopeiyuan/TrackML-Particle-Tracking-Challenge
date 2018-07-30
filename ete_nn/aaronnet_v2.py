@@ -10,8 +10,7 @@ import os
 
 import keras
 from keras.layers import Input, Dense, BatchNormalization, Dropout, PReLU
-from keras.models import Model
-from keras.models import load_model
+from keras.models import Model, model_from_json, load_model
 import tensorflow as tf
 from time import time
 
