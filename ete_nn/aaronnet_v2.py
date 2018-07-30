@@ -73,7 +73,9 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
     n_targets = train_y.shape[1]
     output_layer = Dense(n_targets, activation="softmax", trainable=True)(nn_list[-1])
 
-    if os.listdir("./checkpoint/aaronmao/") != []:
+    model_loaded = False
+
+    if os.listdir("./checkpoint/aaronmao/") != [] and not model_loaded:
         print("Model present, loading model")
         json_file = open("./checkpoint/aaronmao/model.json", "r")
         loaded_model_json = json_file.read()
@@ -82,6 +84,8 @@ def train_nn(nn_list, train_x, train_y, basic_trainable=True, epochs=10, batch_s
 
         loaded_model.load_weights("./checkpoint/aaronmao/mymodel.h5")
         temp_model = keras.utils.multi_gpu_model(loaded_model, gpus=6)
+
+        model_loaded = True
     """
     else:
         print("Model not present, creating model")
