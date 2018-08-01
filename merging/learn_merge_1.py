@@ -5,8 +5,10 @@ try to use machine learning algorithms to learn a best way to merge clusters
 import numpy as np
 import pandas as pd
 from scipy.sparse import csc_matrix, csr_matrix
+import networkx as nx
 from itertools import combinations
 from geometric.tools import reassign_noise
+
 
 def get_flat_adjacency_vector(cluster_id):
     """
@@ -62,6 +64,8 @@ def get_pair_weight(weight):
 
 
 def vector_to_symmetric_matrix(v):
+    raise DeprecationWarning("This function 'vector_to_symmetric_matrix' is deprecated except for testing purposes, "
+                             "please refer to adjacency_pv_to_cluster_id instead.")
     n = int((v.shape[0]*2) ** 0.5) + 1  # the shape of the symmetric matrix
     # this is the inverse formula from n*(n-1)//2
     ret = np.zeros([n, n])
@@ -71,7 +75,7 @@ def vector_to_symmetric_matrix(v):
     return ret
 
 
-def prepare_bc_data(cluster_pred, particle_id=None, weight=None, binary_feature=False):
+def get_bc_data(cluster_pred, particle_id=None, weight=None, binary_feature=False):
     """
     :param cluster_pred: (n_samples, n_steps) matrix
     :param particle_id: (n_samples,)
@@ -94,17 +98,35 @@ def prepare_bc_data(cluster_pred, particle_id=None, weight=None, binary_feature=
     return ret_x, ret_y, ret_w
 
 
-def adjacency_pv_to_cluster_id(av, eps=0.5):
+def adjacency_pv_to_cluster_id(apv, eps=0.5):
     """
     :param av: predicted adjacency probability vector from binary classifier
     :param eps: threshold to consider two points adjacent
     :return:
     """
-    am = vector_to_symmetric_matrix(av > eps)  # predicted adjacency matrix
-    n = am.shape[0]  # the number of samples
-    # TODO: run DFS/BFS on am (adjacency matrix) with random initializations, essentially getting the clusters
-    # TODO: let a(i, j) denote adjacency relationship provided by a binary classifier, I cannot guarantee that "a(i, j) and a(j, k) imply a(i, k)"
-    # TODO: and that's why we need randomization: different random seeds may result in different clustering results
+    mask = apv > eps
+    n = int((apv.shape[0] * 2) ** 0.5) + 1  # the shape of the symmetric matrix
+    # this is the inverse formula from n*(n-1)//2
+
+    g1 = nx.from_edgelist(np.array(np.tril_indices(n, -1)).T[mask].tolist())
+    c_id = 1
+    ret = np.zeros(n)
+    for component in nx.connected_components(g1):
+        ret[list(component)] = c_id
+        c_id += 1
+    return ret
+
+
+def temp_main(binary_classifier, train_data, val_data, score_func):
+    for cluster_pred, particle_id, weight in train_data:  # train_data is a list of 3-tuples
+        x, y, w = get_bc_data(cluster_pred, particle_id, weight, binary_feature=False)
+        binary_classifier.fit(x, y, w)  # it's also possible to see validation score here if you use lightgbm
+    for cluster_pred, particle_id, weight in val_data:  # train_data is a list of 3-tuples
+        x, y, w = get_bc_data(cluster_pred, binary_feature=False)
+        apv = binary_classifier.predict(x)
+        final_pred = adjacency_pv_to_cluster_id(apv, eps=0.5)
+        print(score_func(final_pred, particle_id, weight))
+
 
 if __name__ == '__main__':
     mock_cluster_id = (np.random.rand(10) * 5).astype(int)
