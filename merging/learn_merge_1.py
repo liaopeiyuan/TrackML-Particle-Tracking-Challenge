@@ -4,7 +4,7 @@ try to use machine learning algorithms to learn a best way to merge clusters
 
 import numpy as np
 import pandas as pd
-from scipy.sparse import csc_matrix
+from scipy.sparse import csc_matrix, csr_matrix
 from itertools import combinations
 
 
@@ -51,12 +51,53 @@ def get_flat_adjacency_vector(cluster_id):
     return ret
 
 
-def adjacency_vector_to_adjacency_matrix(av):
-    pass
+def get_pair_weight(weight):
+    """
+    the adjacency vector/matrix considers whether two points belong to the same particle, while this function computes
+    how important that pair is by averaging the weights of the two individual points.
+    """
+    ret = weight + weight.reshape([-1, 1])
+    ret = ret[np.tril_indices_from(ret, k=-1)] / 2  # flatten into vector
+    return ret
+
+
+def vector_to_symmetric_matrix(v):
+    n = int((v.shape[0]*2) ** 0.5) + 1
+    ret = np.zeros([n, n])
+    ret[np.tril_indices(n, -1)] = v
+    ret += ret.T
+    ret += np.identity(n)
+    return ret
+
+
+def prepare_bc_data(cluster_pred, particle_id, weight, binary_feature=False):
+    """
+    :param cluster_pred: (n_samples, n_steps) matrix
+    :param particle_id: (n_samples,)
+    :param weight: (n_samples,)
+    :param binary_feature: use binary/bool as adjacency feature, rather than cluster size
+    :return:
+    prepare for binary classification
+    """
+    ret_w = get_pair_weight(weight)
+    ret_y = get_flat_adjacency_vector(particle_id).astype(bool)
+    ret_x = csc_matrix((ret_y.shape[0], cluster_pred.shape[1]), dtype=(bool if binary_feature else float))
+    for c in range(cluster_pred.shape[1]):
+        ret_x[:, c] = get_flat_adjacency_vector(cluster_pred.iloc[:, c])
+    # then, use a classifier such as logistic regression or lightgbm to fit (ret_x, ret_y, ret_w), ret_w is optional
+    # even neural networks
+    # tune hyperparameters
+    return ret_x, ret_y, ret_w
 
 
 if __name__ == '__main__':
     mock_cluster_id = (np.random.rand(10) * 5).astype(int)
-    print(mock_cluster_id)
-    ret = get_flat_adjacency_vector(mock_cluster_id)
-    print(ret)
+    # print(mock_cluster_id)
+    # ret = get_flat_adjacency_vector(mock_cluster_id)
+    # print(ret)
+    r1 = get_pair_weight(np.array([1,2,3,4,5]))
+    print(r1)
+    r2 = vector_to_symmetric_matrix(r1)
+    print(r2)
+
+    
