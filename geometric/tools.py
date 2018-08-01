@@ -15,12 +15,12 @@ def label_encode(y):
     return LabelEncoder().fit_transform(y)
 
 
-def reassign_noise(labels: np.ndarray, idx):
+def reassign_noise(labels: np.ndarray, mask):
     """
     assign noisy points (labeled with key_value such as -1 or 0) to their own clusters of size 1
     """
     ret = labels.copy()
-    ret[idx] = np.arange(np.sum(idx)) + np.max(ret) + 1
+    ret[mask] = np.arange(np.sum(mask)) + np.max(ret) + 1
     return ret
 
 

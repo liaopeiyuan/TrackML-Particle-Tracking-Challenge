@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csc_matrix, csr_matrix
 from itertools import combinations
-
+from geometric.tools import reassign_noise
 
 def get_flat_adjacency_vector(cluster_id):
     """
@@ -80,8 +80,11 @@ def prepare_bc_data(cluster_pred, particle_id=None, weight=None, binary_feature=
     :return:
     prepare for binary classification
     """
+
     ret_w = None if weight is None else get_pair_weight(weight)
-    ret_y = None if particle_id is None else get_flat_adjacency_vector(particle_id).astype(bool)
+    ret_y = None if particle_id is None else get_flat_adjacency_vector(
+        reassign_noise(particle_id, particle_id == 0)).astype(bool)
+    # notice: noisy hits (particle_id == 0) will be reassigned to facilitate track size computation
     ret_x = csc_matrix((ret_y.shape[0], cluster_pred.shape[1]), dtype=(bool if binary_feature else float))
     for c in range(cluster_pred.shape[1]):
         ret_x[:, c] = get_flat_adjacency_vector(cluster_pred.iloc[:, c])
