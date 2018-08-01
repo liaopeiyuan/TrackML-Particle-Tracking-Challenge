@@ -75,7 +75,7 @@ def vector_to_symmetric_matrix(v):
     return ret
 
 
-def prepare_bc_data(cluster_pred, particle_id=None, weight=None, binary_feature=False):
+def get_bc_data(cluster_pred, particle_id=None, weight=None, binary_feature=False):
     """
     :param cluster_pred: (n_samples, n_steps) matrix
     :param particle_id: (n_samples,)
@@ -115,6 +115,18 @@ def adjacency_pv_to_cluster_id(apv, eps=0.5):
         ret[list(component)] = c_id
         c_id += 1
     return ret
+
+
+def temp_main(binary_classifier, train_data, val_data, score_func):
+    for cluster_pred, particle_id, weight in train_data:  # train_data is a list of 3-tuples
+        x, y, w = get_bc_data(cluster_pred, particle_id, weight, binary_feature=False)
+        binary_classifier.fit(x, y, w)  # it's also possible to see validation score here if you use lightgbm
+    for cluster_pred, particle_id, weight in val_data:  # train_data is a list of 3-tuples
+        x, y, w = get_bc_data(cluster_pred, binary_feature=False)
+        apv = binary_classifier.predict(x)
+        final_pred = adjacency_pv_to_cluster_id(apv, eps=0.5)
+        print(score_func(final_pred, particle_id, weight))
+
 
 if __name__ == '__main__':
     mock_cluster_id = (np.random.rand(10) * 5).astype(int)
