@@ -62,7 +62,8 @@ def get_pair_weight(weight):
 
 
 def vector_to_symmetric_matrix(v):
-    n = int((v.shape[0]*2) ** 0.5) + 1
+    n = int((v.shape[0]*2) ** 0.5) + 1  # the shape of the symmetric matrix
+    # this is the inverse formula from n*(n-1)//2
     ret = np.zeros([n, n])
     ret[np.tril_indices(n, -1)] = v
     ret += ret.T
@@ -90,9 +91,9 @@ def prepare_bc_data(cluster_pred, particle_id=None, weight=None, binary_feature=
     return ret_x, ret_y, ret_w
 
 
-def adjacency_probability_to_cluster_id(av, eps=0.5):
+def adjacency_pv_to_cluster_id(av, eps=0.5):
     """
-    :param av: predicted adjacency vector from binary classifier
+    :param av: predicted adjacency probability vector from binary classifier
     :param eps: threshold to consider two points adjacent
     :return:
     """
