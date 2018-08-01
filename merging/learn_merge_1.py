@@ -90,6 +90,18 @@ def prepare_bc_data(cluster_pred, particle_id, weight, binary_feature=False):
     return ret_x, ret_y, ret_w
 
 
+def adjacency_probability_to_cluster_id(av, eps=0.5):
+    """
+    :param av: predicted adjacency vector from binary classifier
+    :param eps: threshold to consider two points adjacent
+    :return:
+    """
+    am = vector_to_symmetric_matrix(av > eps)  # predicted adjacency matrix
+    n = am.shape[0]  # the number of samples
+    # TODO: run DFS/BFS on am (adjacency matrix) with random initializations, essentially getting the clusters
+    # TODO: let a(i, j) denote adjacency relationship provided by a binary classifier, I cannot guarantee that "a(i, j) and a(j, k) imply a(i, k)"
+    # TODO: and that's why we need randomization: different random seeds may result in different clustering results
+
 if __name__ == '__main__':
     mock_cluster_id = (np.random.rand(10) * 5).astype(int)
     # print(mock_cluster_id)
@@ -100,4 +112,4 @@ if __name__ == '__main__':
     r2 = vector_to_symmetric_matrix(r1)
     print(r2)
 
-    
+
