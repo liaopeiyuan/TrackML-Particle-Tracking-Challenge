@@ -70,7 +70,7 @@ def vector_to_symmetric_matrix(v):
     return ret
 
 
-def prepare_bc_data(cluster_pred, particle_id, weight, binary_feature=False):
+def prepare_bc_data(cluster_pred, particle_id=None, weight=None, binary_feature=False):
     """
     :param cluster_pred: (n_samples, n_steps) matrix
     :param particle_id: (n_samples,)
@@ -79,8 +79,8 @@ def prepare_bc_data(cluster_pred, particle_id, weight, binary_feature=False):
     :return:
     prepare for binary classification
     """
-    ret_w = get_pair_weight(weight)
-    ret_y = get_flat_adjacency_vector(particle_id).astype(bool)
+    ret_w = None if weight is None else get_pair_weight(weight)
+    ret_y = None if particle_id is None else get_flat_adjacency_vector(particle_id).astype(bool)
     ret_x = csc_matrix((ret_y.shape[0], cluster_pred.shape[1]), dtype=(bool if binary_feature else float))
     for c in range(cluster_pred.shape[1]):
         ret_x[:, c] = get_flat_adjacency_vector(cluster_pred.iloc[:, c])
