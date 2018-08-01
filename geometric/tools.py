@@ -23,12 +23,10 @@ def reassign_noise(labels: np.ndarray, mask):
     ret[mask] = np.arange(np.sum(mask)) + np.max(ret) + 1
     return ret
 
-
+"""
 def merge_naive(pred_1, pred_2, cutoff=20):
-    """
-    naive cluster merging:
-    iterate over hits; if a hit belongs to a larger cluster in pred_2, it is reassigned
-    """
+    # naive cluster merging:
+    # iterate over hits; if a hit belongs to a larger cluster in pred_2, it is reassigned
     if pred_1 is None:
         return pred_2
     c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
@@ -38,6 +36,20 @@ def merge_naive(pred_1, pred_2, cutoff=20):
     idx = (n2 > n1) & (n2 < cutoff)
     pred[idx] = max(pred_1) + 1 + pred_2[idx]
     return label_encode(pred)
+"""
+
+
+def merge_naive(pred_1, pred_2, cutoff=20):
+    if pred_1 is None:
+        return pred_2
+    d = pd.DataFrame(data={'s1': pred_1, 's2': pred_2})
+    d['N1'] = d.groupby('s1')['s1'].transform('count')
+    d['N2'] = d.groupby('s2')['s2'].transform('count')
+    max_s1 = d['s1'].max() + 1
+    cond = np.where((d['N2'].values > d['N1'].values) & (d['N2'].values < cutoff))
+    s1 = d['s1'].values
+    s1[cond] = d['s2'].values[cond] + max_s1
+    return label_encode(s1)
 
 
 def merge_discreet(pred_1, pred_2, cutoff=21):
@@ -96,7 +108,7 @@ def track_completeness(df, idx):
         "particle_id", sort=True)["x"].agg("count")
     return np.mean(agg_1 == agg_2)
 
-
+"""
 def helix_error_gn(x, y, z, x0, y0, damp, iter, verbose=False):
 
     a = np.random.rand()
@@ -147,13 +159,13 @@ def helix_error_gn(x, y, z, x0, y0, damp, iter, verbose=False):
             print('a update wrt y on iter {}: {}'.format(i, a))
             print('b update wrt y on iter {}: {}'.format(i, b))
 
-        """
-        J=np.zeros((2,2))
-        J[0,0]=np.sin(b*z)
-        J[0,1]=
-        J[1,0]=
-        J[1,1]=
-        """
+        
+        # J=np.zeros((2,2))
+        # J[0,0]=np.sin(b*z)
+        # J[0,1]=
+        # J[1,0]=
+        # J[1,1]=
+        
 
     x_est = a * np.cos(b * z)+x0
     y_est = a * np.sin(b * z)+y0
@@ -162,13 +174,13 @@ def helix_error_gn(x, y, z, x0, y0, damp, iter, verbose=False):
     erry = (y.flatten() - y_est)
 
     return a, b, errx, erry
-
+"""
 
 if __name__ == "__main__":
     x = np.array([0, 0.5403, -0.4161, -0.9900, -0.6536, 0.2837, 0.9602])
     y = np.array([0, 0.8415, 0.9093, 0.1411, -0.7568, -0.9589, -0.2794])
     z = np.array([0, 1, 2, 3, 4, 5, 6])
-    [a, b, errx, erry] = helix_error_gn(x, y, z, 0, 0, 0.01, 60, verbose=False)
+    # [a, b, errx, erry] = helix_error_gn(x, y, z, 0, 0, 0.01, 60, verbose=False)
     print(a)
     print(b)
     print(np.mean(errx))

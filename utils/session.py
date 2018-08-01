@@ -16,6 +16,7 @@ import pandas as pd
 
 from trackml.dataset import load_event
 
+
 class Session(object):
     """
     A highly integrated framework for efficient data loading, prediction submission, etc. in TrackML Challenge
