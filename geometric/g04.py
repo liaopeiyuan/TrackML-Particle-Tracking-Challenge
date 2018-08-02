@@ -47,8 +47,7 @@ class HelixUnrollWithRadius(HelixUnroll):
             # use hidden transformation methods to re-weight the features. Consider nonlinear transformations later.
             dfs = self.hidden_transform(dfs)
             res = \
-            dbscan(X=dfs, eps=self.eps_func(i), min_samples=1, metric="minkowski", p=self.p, n_jobs=self.dbscan_n_jobs)[
-                1]
+            dbscan(X=dfs, eps=self.eps_func(i), min_samples=1, metric="minkowski", p=self.p, n_jobs=self.dbscan_n_jobs)[1]
             pred = self.merge_func(pred, res)
 
             if score_func is not None:

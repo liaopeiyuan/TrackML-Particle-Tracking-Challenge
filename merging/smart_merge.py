@@ -93,7 +93,7 @@ def get_bc_data(cluster_pred, particle_id=None, weight=None, binary_feature=Fals
     # notice: noisy hits (particle_id == 0) will be reassigned to facilitate track size computation
     ret_x = csc_matrix((m, len(cluster_pred)), dtype=(bool if binary_feature else float))
     for c, cluster_id in enumerate(cluster_pred):
-        ret_x[:, c] = get_flat_adjacency_vector(cluster_id)
+        ret_x[:, c] = get_flat_adjacency_vector(cluster_id).reshape([-1, 1])
     # then, use a classifier such as logistic regression or lightgbm to fit (ret_x, ret_y, ret_w), ret_w is optional
     # even neural networks
     # tune hyperparameters
