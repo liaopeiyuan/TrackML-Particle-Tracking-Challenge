@@ -49,7 +49,7 @@ def get_flat_adjacency_vector(cluster_id):
             ret[i * (i - 1) // 2 + j] = cluster_size
             # if adjacent, return positive cluster size, which provides more information than binary indicator
             # could be useful for machine learning algorithms
-    
+            
     pred.groupby("cluster_id").agg(subroutine)  # use agg instead of apply to avoid running the first group twice
     return ret
 
@@ -78,21 +78,22 @@ def vector_to_symmetric_matrix(v):
 
 def get_bc_data(cluster_pred, particle_id=None, weight=None, binary_feature=False):
     """
-    :param cluster_pred: (n_samples, n_steps) matrix
+    :param cluster_pred: list (len = n_steps) of cluster id prediction arrays (length n_samples)
     :param particle_id: (n_samples,)
     :param weight: (n_samples,)
     :param binary_feature: use binary/bool as adjacency feature, rather than cluster size
     :return:
     prepare for binary classification
     """
-    
+    n_samples = cluster_pred[0].shape[0]
+    m = n_samples * (n_samples - 1) // 2
     ret_w = None if weight is None else get_pair_weight(weight)
     ret_y = None if particle_id is None else get_flat_adjacency_vector(
         reassign_noise(particle_id, particle_id == 0)).astype(bool)
     # notice: noisy hits (particle_id == 0) will be reassigned to facilitate track size computation
-    ret_x = csc_matrix((ret_y.shape[0], cluster_pred.shape[1]), dtype=(bool if binary_feature else float))
-    for c in range(cluster_pred.shape[1]):
-        ret_x[:, c] = get_flat_adjacency_vector(cluster_pred.iloc[:, c])
+    ret_x = csc_matrix((m, len(cluster_pred)), dtype=(bool if binary_feature else float))
+    for c, cluster_id in enumerate(cluster_pred):
+        ret_x[:, c] = get_flat_adjacency_vector(cluster_id)
     # then, use a classifier such as logistic regression or lightgbm to fit (ret_x, ret_y, ret_w), ret_w is optional
     # even neural networks
     # tune hyperparameters

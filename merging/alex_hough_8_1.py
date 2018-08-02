@@ -225,7 +225,7 @@ def pred_wrapper(arg):
     return arg[1].fit_predict(arg[0])
 p1 = mp.Pool(processes=12)
 cluster_pred_0 = list(p1.map(pred_wrapper, zip(dfh_gen_1(temp_data[0][0], coef=c, n_steps=225, mm=1, stepii=4e-6), clusterer_gen_1(225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1))))
-cluster_pred_1 = list(p1.map(pred_wrapper, zip(dfh_gen_1(temp_data[1][0], coef=c, n_steps=225, mm=1, stepii=4e-6), clusterer_gen_1(225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1))))
-cluster_pred_2 = list(p1.map(pred_wrapper, zip(dfh_gen_1(temp_data[2][0], coef=c, n_steps=225, mm=1, stepii=4e-6), clusterer_gen_1(225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1))))
+cluster_pred_1 = list(p1.map(pred_wrapper, zip(dfh_gen_1(temp_data[1][0], coef=c, n_steps=225, mm=1, stepii=4e-6), clusterer_gen_1(225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1)), chunksize=15))
+cluster_pred_2 = list(p1.map(pred_wrapper, zip(dfh_gen_1(temp_data[2][0], coef=c, n_steps=225, mm=1, stepii=4e-6), clusterer_gen_1(225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1)), chunksize=15))
 # cluster_pred_1 = list(map(lambda arg: arg[1].fit_predict(arg[0]), zip(dfh_gen_1(hits, coef=c, n_steps=225, mm=1, stepii=4e-6), clusterer_gen_1(225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=-1))))
 # should give a list of cluster ids, each a n_samples length array
