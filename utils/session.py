@@ -84,7 +84,7 @@ class Session(object):
         if randomness:
             event_ids = np.random.choice(self._train_event_id_list, size=n, replace=False).tolist()
         else:
-            event_ids, = self._train_event_id_list[:n]
+            event_ids = self._train_event_id_list[:n]
             self._train_event_id_list = self._train_event_id_list[n:] + self._train_event_id_list[:n]
         
         event_names = [Session.get_event_name(event_id) for event_id in event_ids]

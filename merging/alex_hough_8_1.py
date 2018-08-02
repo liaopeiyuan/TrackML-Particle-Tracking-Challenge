@@ -107,12 +107,10 @@ def precision(truth, submission, min_hits):
 class Clusterer(object):
     def __init__(self):
         self.abc = []
-
-    def initialize(self, dfhits):
-        self.cluster = range(len(dfhits))
+        self.cluster_pred = []
 
     def Hough_clustering(self, dfh, coef, epsilon, min_samples=1, n_loop=225, verbose=True):
-        merged_cluster = self.cluster
+        # merged_cluster = self.cluster
         mm = 1
         stepii = 0.000004
         count_ii = 0
@@ -129,10 +127,10 @@ class Clusterer(object):
                 dfs = ss.fit_transform(dfh[['sina1', 'cosa1', 'zdivrt', 'zdivr', 'xdivr', 'ydivr']].values)
                 # dfs = scale_ignore_nan(dfh[['sina1','cosa1','zdivrt','zdivr','xdivr','ydivr']])
                 dfs = np.multiply(dfs, coef)
-                new_cluster = DBSCAN(eps=eps_new, min_samples=min_samples, metric='euclidean', n_jobs=4).fit(
-                    dfs).labels_
-                merged_cluster = merge(merged_cluster, new_cluster)
-        self.cluster = merged_cluster
+                new_cluster = DBSCAN(eps=eps_new, min_samples=min_samples, metric='euclidean', n_jobs=-1).fit_predict(dfs)
+                self.cluster_pred.append(new_cluster)
+                # merged_cluster = merge(merged_cluster, new_cluster)
+        # self.cluster = merged_cluster
 
 
 def create_one_event_submission(event_id, hits, labels):
@@ -159,7 +157,13 @@ def preprocess_hits(h, dz):
 # Clustering by varying
 # model = Clusterer()
 # model.initialize(hits)
+"""
 if __name__ == '__main__':
+    from utils.session import Session
+    s1 = Session()
+    temp_data = []
+    for hits, truth in s1.get_train_events(n=3, content=[s1.HITS, s1.TRUTH], randomness=False)[1]: temp_data.append([hits[["x", "y", "z"]], truth["particle_id"], truth["weight"]])
+    
     for i in tqdm(range(62, 125)):
         path_to_train = "/home/alexanderliao/data/Kaggle/competitions/trackml-particle-identification/test"
         event_prefix = "event" + str(i).zfill(9)
@@ -170,8 +174,7 @@ if __name__ == '__main__':
         model = Clusterer()
         model.initialize(hits)
         hits_with_dz = preprocess_hits(hits, 0)
-        model.Hough_clustering(hits_with_dz, coef=c, epsilon=0.0048, min_samples=min_samples_in_cluster,
-                               n_loop=300, verbose=False)
+        model.Hough_clustering(hits_with_dz, coef=c, epsilon=0.0048, min_samples=min_samples_in_cluster, n_loop=300, verbose=False)
 
         if i == 62:
             submission = create_one_event_submission(i, hits, model.cluster)
@@ -181,3 +184,48 @@ if __name__ == '__main__':
         # submission.to_csv('submission.csv')
     print('\n')
     submission.to_csv('submission.csv')
+"""
+
+
+def dfh_gen_1(df, coef, n_steps=225, mm=1, stepii=4e-6):
+    df = df.copy()
+    # df['z'] = df['z'] + dz # TODO: the r later may be different
+    df['r'] = np.sqrt(df['x'] ** 2 + df['y'] ** 2 + df['z'] ** 2)
+    df['rt'] = np.sqrt(df['x'] ** 2 + df['y'] ** 2)
+    df['a0'] = np.arctan2(df['y'], df['x'])
+    df['zdivrt'] = df['z'] / df['rt']
+    df['zdivr'] = df['z'] / df['r']
+    df['xdivr'] = df['x'] / df['r']
+    df['ydivr'] = df['y'] / df['r']
+    for ii in np.arange(0, n_steps * stepii, stepii):
+        for jj in range(2):
+            mm = mm * (-1)
+            df['a1'] = df['a0'].values - np.nan_to_num(np.arccos(mm * ii * df['rt'].values))
+            df['sina1'] = np.sin(df['a1'])
+            df['cosa1'] = np.cos(df['a1'])
+            ss = StandardScaler()
+            dfs = ss.fit_transform(df[['sina1', 'cosa1', 'zdivrt', 'zdivr', 'xdivr', 'ydivr']].values)
+            # dfs = scale_ignore_nan(dfh[['sina1','cosa1','zdivrt','zdivr','xdivr','ydivr']])
+            dfs = np.multiply(dfs, coef)
+            yield dfs
+
+    
+def clusterer_gen_1(n_steps=225, adaptive_eps_coef=1, eps=0.05, min_samples=1, metric="euclidean", p=2, n_jobs=1):
+    for ii in range(1, n_steps + 1):
+        for jj in range(2):
+            eps_new = eps + ii * adaptive_eps_coef * 1e-5
+            yield DBSCAN(eps=eps_new, min_samples=min_samples, n_jobs=n_jobs, metric=metric, metric_params=None, p=p)
+
+c = [1.6, 1.6, 0.73, 0.17, 0.027, 0.027]
+import multiprocessing as mp
+p1 = mp.Pool()
+hits = pd.DataFrame()
+temp_data = [["hits", "particle_id", "weight"], ["hits", "particle_id", "weight"], ["hits", "particle_id", "weight"]]
+def pred_wrapper(arg):
+    return arg[1].fit_predict(arg[0])
+p1 = mp.Pool(processes=12)
+cluster_pred_0 = list(p1.map(pred_wrapper, zip(dfh_gen_1(temp_data[0][0], coef=c, n_steps=225, mm=1, stepii=4e-6), clusterer_gen_1(225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1))))
+cluster_pred_1 = list(p1.map(pred_wrapper, zip(dfh_gen_1(temp_data[1][0], coef=c, n_steps=225, mm=1, stepii=4e-6), clusterer_gen_1(225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1))))
+cluster_pred_2 = list(p1.map(pred_wrapper, zip(dfh_gen_1(temp_data[2][0], coef=c, n_steps=225, mm=1, stepii=4e-6), clusterer_gen_1(225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1))))
+# cluster_pred_1 = list(map(lambda arg: arg[1].fit_predict(arg[0]), zip(dfh_gen_1(hits, coef=c, n_steps=225, mm=1, stepii=4e-6), clusterer_gen_1(225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=-1))))
+# should give a list of cluster ids, each a n_samples length array

@@ -3,8 +3,6 @@ utils.py
 
 useful tools for clustering
 """
-from collections import Counter
-
 import numpy as np
 import pandas as pd
 
@@ -181,7 +179,7 @@ if __name__ == "__main__":
     y = np.array([0, 0.8415, 0.9093, 0.1411, -0.7568, -0.9589, -0.2794])
     z = np.array([0, 1, 2, 3, 4, 5, 6])
     # [a, b, errx, erry] = helix_error_gn(x, y, z, 0, 0, 0.01, 60, verbose=False)
-    print(a)
-    print(b)
-    print(np.mean(errx))
-    print(np.mean(erry))
+    # print(a)
+    # print(b)
+    # print(np.mean(errx))
+    # print(np.mean(erry))

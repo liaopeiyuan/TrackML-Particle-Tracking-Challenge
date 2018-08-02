@@ -9,12 +9,13 @@ from sklearn.cluster import DBSCAN
 from geometric.tools import merge_naive
 from utils.session import Session
 
+import lightgbm as lgb
 
-class HelixUnroll3(object):
-    """
-    (Tianyi) this is my 3rd version of HelixUnroll, which seeks to emulate that by Alex Liao
-    """
-
+params_1 = {'objective': 'binary', 'boosting': 'gbdt', 'learning_rate': 0.05, 'num_leaves': 32,
+            'min_data_in_leaf': 30, 'min_sum_hessian_in_leaf': 40, 'bagging_fraction': 0.8, 'bagging_freq': 1,
+            'feature_fraction': 0.7, 'max_delta_step': 0.0, 'lambda_l1': 0.05, 'lambda_l2': 0.05,
+            'min_gain_to_split': 0.01, 'scale_pos_weight': 1, 'drop_rate': 0.02, 'verbose': 0,
+            'seed': 0}
 
 
 if __name__ == '__main__':

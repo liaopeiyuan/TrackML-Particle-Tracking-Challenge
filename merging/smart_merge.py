@@ -4,7 +4,7 @@ try to use machine learning algorithms to learn a best way to merge clusters
 
 import numpy as np
 import pandas as pd
-from scipy.sparse import csc_matrix, csr_matrix
+from scipy.sparse import csc_matrix
 import networkx as nx
 from itertools import combinations
 from geometric.tools import reassign_noise
@@ -37,18 +37,19 @@ def get_flat_adjacency_vector(cluster_id):
     :param cluster_id: 1d pd.Series or np.array with shape (n_samples,)
     """
     n = cluster_id.shape[0]
-    ret = np.zeros(n*(n-1)//2)  # column vector as dense array
+    ret = np.zeros(n * (n - 1) // 2)  # column vector as dense array
     pred = pd.DataFrame({"cluster_id": cluster_id})
     pred = pred.join(pred["cluster_id"].value_counts().rename("cluster_size"), on="cluster_id")  # get cluster size
     pred["sample_index"] = pred.index
     pred = pred.loc[pred["cluster_size"] > 1, :]  # eliminate singletons to save groupby time
-
+    
     def subroutine(sub_df):
         cluster_size = sub_df["cluster_size"].iloc[0]  # cluster size is the same for all points in a cluster
         for j, i in combinations(sub_df["sample_index"], r=2):  # j < i is guaranteed
-            ret[i*(i-1)//2+j] = cluster_size
+            ret[i * (i - 1) // 2 + j] = cluster_size
             # if adjacent, return positive cluster size, which provides more information than binary indicator
             # could be useful for machine learning algorithms
+    
     pred.groupby("cluster_id").agg(subroutine)  # use agg instead of apply to avoid running the first group twice
     return ret
 
@@ -66,7 +67,7 @@ def get_pair_weight(weight):
 def vector_to_symmetric_matrix(v):
     raise DeprecationWarning("This function 'vector_to_symmetric_matrix' is deprecated except for testing purposes, "
                              "please refer to adjacency_pv_to_cluster_id instead.")
-    n = int((v.shape[0]*2) ** 0.5) + 1  # the shape of the symmetric matrix
+    n = int((v.shape[0] * 2) ** 0.5) + 1  # the shape of the symmetric matrix
     # this is the inverse formula from n*(n-1)//2
     ret = np.zeros([n, n])
     ret[np.tril_indices(n, -1)] = v
@@ -84,7 +85,7 @@ def get_bc_data(cluster_pred, particle_id=None, weight=None, binary_feature=Fals
     :return:
     prepare for binary classification
     """
-
+    
     ret_w = None if weight is None else get_pair_weight(weight)
     ret_y = None if particle_id is None else get_flat_adjacency_vector(
         reassign_noise(particle_id, particle_id == 0)).astype(bool)
@@ -107,7 +108,7 @@ def adjacency_pv_to_cluster_id(apv, eps=0.5):
     mask = apv > eps
     n = int((apv.shape[0] * 2) ** 0.5) + 1  # the shape of the symmetric matrix
     # this is the inverse formula from n*(n-1)//2
-
+    
     g1 = nx.from_edgelist(np.array(np.tril_indices(n, -1)).T[mask].tolist())
     c_id = 1
     ret = np.zeros(n)
@@ -133,9 +134,7 @@ if __name__ == '__main__':
     # print(mock_cluster_id)
     # ret = get_flat_adjacency_vector(mock_cluster_id)
     # print(ret)
-    r1 = get_pair_weight(np.array([1,2,3,4,5]))
+    r1 = get_pair_weight(np.array([1, 2, 3, 4, 5]))
     print(r1)
     r2 = vector_to_symmetric_matrix(r1)
     print(r2)
-
-
