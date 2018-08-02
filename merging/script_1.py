@@ -4,14 +4,15 @@ test the clustering score from alex
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from sklearn.cluster import DBSCAN
 from geometric.tools import merge_naive
 from utils.session import Session
+from merging.helix_cluster import run_helix_cluster, clusterer_gen_1, dfh_gen_1
 
 
-
-
+"""
 from merging.smart_merge import get_bc_data
 cluster_pred_0 = pd.DataFrame({f"step_{i}": val for i, val in enumerate(cluster_pred_0)})
 cluster_pred_1 = pd.DataFrame({f"step_{i}": val for i, val in enumerate(cluster_pred_1)})
@@ -47,16 +48,29 @@ params_1 = {'objective': 'binary', 'boosting': 'gbdt', 'learning_rate': 0.05, 'n
             'metric':
             'seed': 0}
 lgb.train(params_1, d0, num_boost_round=10000, valid_sets=[d0, d1], valid_names=["d0", "d1"], )
-
-
+"""
 
 
 if __name__ == '__main__':
+    """
     np.random.seed(0)
     n_events = 20
     s1 = Session(parent_dir="E:/TrackMLData/")
     for x in s1.get_train_events(n=10, content=[s1.HITS, s1.TRUTH], randomness=True):
         print(x)
     print("bye")
-
+    """
+    
+    # TODO: if you have a pair_merge function and a list cluster_pred of cluster ids, you can just call:
+    # TODO: reduce(pair_merge, cluster_pred)
+    s1 = Session("data/")
+    c = [1.5, 1.5, 0.73, 0.17, 0.027, 0.027]
+    temp_data = [{"cluster_pred": run_helix_cluster(
+        dfh_gen_1(hits, coef=c, n_steps=225, mm=1, stepii=4e-6, z_step=0.5),
+        clusterer_gen_1(db_step=5, n_steps=225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1), parallel=True), "truth": truth}
+        for hits, truth in s1.get_train_events(n=5, content=[s1.HITS, s1.TRUTH], randomness=True)[1]]
+    
+        
+        
+        
 

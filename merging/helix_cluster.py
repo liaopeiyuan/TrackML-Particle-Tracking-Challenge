@@ -1,8 +1,16 @@
+"""
+an end-to-end encapsulation of helix rotation and clustering.
+Use generator semantics, convenient for parallel computation
+
+"""
+
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
+from functools import reduce
+from tqdm import tqdm
 
 
 def dfh_gen_1(df, coef, n_steps=225, mm=1, stepii=4e-6, z_step=0.5):
@@ -42,13 +50,21 @@ def clusterer_gen_1(db_step=5, n_steps=225, adaptive_eps_coef=1, eps=0.05, min_s
                 yield DBSCAN(eps=eps_new, min_samples=db, n_jobs=n_jobs, metric=metric, metric_params=None, p=p)
 
 
+def pred_wrapper(arg):
+    return arg[1].fit_predict(arg[0])
+
+
 def run_helix_cluster(dfh_gen, clusterer_gen, parallel=False):
-    def pred_wrapper(arg):
-        return arg[1].fit_predict(arg[0])
-        
     if parallel:
         pool_1 = mp.Pool()
-        return list(pool_1.map(pred_wrapper, zip(dfh_gen, clusterer_gen)))
+        return list(pool_1.map(pred_wrapper, tqdm(zip(dfh_gen, clusterer_gen))))
     else:
-        return list(map(pred_wrapper, zip(dfh_gen, clusterer_gen)))
+        return list(map(pred_wrapper, tqdm(zip(dfh_gen, clusterer_gen))))
 
+
+if __name__ == '__main__':
+    hits = pd.DataFrame()
+    c = [1.5, 1.5, 0.73, 0.17, 0.027, 0.027]
+    dfh_gen_1(hits, coef=c, n_steps=225, mm=1, stepii=4e-6, z_step=0.5)
+    clusterer_gen_1(db_step=5, n_steps=225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1)
+    
