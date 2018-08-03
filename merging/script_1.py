@@ -67,7 +67,8 @@ if __name__ == '__main__':
     c = [1.5, 1.5, 0.73, 0.17, 0.027, 0.027]
     temp_data = [{"cluster_pred": run_helix_cluster(
         dfh_gen_1(hits, coef=c, n_steps=225, mm=1, stepii=4e-6, z_step=0.5),
-        clusterer_gen_1(db_step=5, n_steps=225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1), parallel=True), "truth": truth}
+        clusterer_gen_1(db_step=5, n_steps=225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1), parallel=True),
+        "truth": truth}
         for hits, truth in s1.get_train_events(n=5, content=[s1.HITS, s1.TRUTH], randomness=True)[1]]
     
         
