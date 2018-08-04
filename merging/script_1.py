@@ -94,12 +94,25 @@ temp_data = temp_data[:3]
 idx0, x0, y0, w0 = get_bc_data(temp_data[0]["cluster_pred"], temp_data[0]["truth"]["particle_id"], temp_data[0]["truth"]["weight"], binary_feature=False, parallel=True)
 idx1, x1, y1, w1 = get_bc_data(temp_data[1]["cluster_pred"], temp_data[1]["truth"]["particle_id"], temp_data[1]["truth"]["weight"], binary_feature=False, parallel=True)
 
+# try logistic regression
+from keras.models import Sequential
+from keras.layers import Dense, Activation
+from merging.nn_tools import f1_metric
+
+lr_1 = Sequential([
+    Dense(1, input_shape=(900,)),
+    Activation('sigmoid'),
+])
+lr_1.compile(optimizer='adam', loss='binary_crossentropy')
+lr_1.fit(x0, y0, sample_weight=w0, batch_size=256, epochs=5, validation_data=(x1, y1, w1), shuffle=True, callbacks=[f1_metric])
+
+
 
 from sklearn.linear_model import SGDClassifier
 sgdc1 = SGDClassifier(loss="hinge", penalty="l2", alpha=0.0001, l1_ratio=0.15, fit_intercept=True, max_iter=500, tol=1e-3, shuffle=True, verbose=1, epsilon=0.1, n_jobs=-1, random_state=None, learning_rate="optimal", eta0=0.0, power_t=0.5, class_weight=None, warm_start=False, average=False, n_iter=None)
-sgdc1.fit(x0.astype(bool), y0)
+sgdc1.fit(x0.astype(bool), y0, sample_weight=w0)
 sgdc2 = SGDClassifier(loss="hinge", penalty="l2", alpha=0.0001, l1_ratio=0.15, fit_intercept=True, max_iter=500, tol=1e-3, shuffle=True, verbose=1, epsilon=0.1, n_jobs=-1, random_state=None, learning_rate="optimal", eta0=0.0, power_t=0.5, class_weight=None, warm_start=False, average=False, n_iter=None)
-sgdc2.fit(x0, y0)
+sgdc2.fit(x0, y0, sample_weight=w0)
 
 # x1, y1, w1 = get_bc_data(temp_data[1]["cluster_pred"], temp_data[1]["truth"]["particle_id"], temp_data[1]["truth"]["weight"], binary_feature=False)
 from sklearn import metrics

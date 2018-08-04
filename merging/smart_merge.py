@@ -125,6 +125,7 @@ def get_bc_data(cluster_pred, particle_id=None, weight=None, binary_feature=Fals
     ),
         format="csr", dtype=(bool if binary_feature else np.uint8))
     print("Preparing mask")
+    # if True in mask, the two points are assigned to the same cluster in at least one step
     mask = ret_x.indptr[1:] != ret_x.indptr[:-1]  # if True in mask, will be kept in memory
     ret_x = ret_x[mask, :]
     print("Preparing idx")
