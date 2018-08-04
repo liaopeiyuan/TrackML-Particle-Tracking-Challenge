@@ -191,43 +191,6 @@ def merge_naive(pred_1, pred_2, cutoff=20):
 
 
 # ======================================================================================================================
-def dfh_gen_1(df, coef, n_steps=225, mm=1, stepii=4e-6, z_step=0.5):
-    """
-    default code provided by Alex on Slack, August 2nd
-    """
-    for z0 in np.arange(-5.5, 5.5, z_step):
-        df['z'] = df['z'] + z0  # TODO: the r later may be different
-        df['r'] = np.sqrt(df['x'] ** 2 + df['y'] ** 2 + df['z'] ** 2)
-        df['rt'] = np.sqrt(df['x'] ** 2 + df['y'] ** 2)
-        df['a0'] = np.arctan2(df['y'], df['x'])
-        df['zdivrt'] = df['z'] / df['rt']
-        df['zdivr'] = df['z'] / df['r']
-        df['xdivr'] = df['x'] / df['r']
-        df['ydivr'] = df['y'] / df['r']
-        for ii in np.arange(0, n_steps * stepii, stepii):
-            for jj in range(2):
-                mm = mm * (-1)
-                df['a1'] = df['a0'].values - np.nan_to_num(np.arccos(mm * ii * df['rt'].values))
-                df['sina1'] = np.sin(df['a1'])
-                df['cosa1'] = np.cos(df['a1'])
-                ss = StandardScaler()
-                dfs = ss.fit_transform(df[['sina1', 'cosa1', 'zdivrt', 'zdivr', 'xdivr', 'ydivr']].values)
-                # dfs = scale_ignore_nan(dfh[['sina1','cosa1','zdivrt','zdivr','xdivr','ydivr']])
-                dfs = np.multiply(dfs, coef)
-                yield dfs
-
-
-def clusterer_gen_1(db_step=5, n_steps=225, adaptive_eps_coef=1, eps=0.05, min_samples=1, metric="euclidean", p=2, n_jobs=1):
-    """
-    default code provided by Alex on Slack, August 2nd
-    """
-    for db in np.arange(min_samples, 10, db_step):
-        for ii in range(1, n_steps + 1):
-            for jj in range(2):
-                eps_new = eps + ii * adaptive_eps_coef * 1e-5
-                yield DBSCAN(eps=eps_new, min_samples=db, n_jobs=n_jobs, metric=metric, metric_params=None, p=p)
-
-
 def pred_wrapper(arg):
     return arg[1].fit_predict(arg[0])
 
@@ -327,6 +290,7 @@ def predict_bc(cluster_pred, predict_func, eps=0.5, binary_feature=False, parall
 
 
 # ======================================================================================================================
+'''
 import keras
 from sklearn.metrics import precision_recall_fscore_support
 
@@ -454,33 +418,95 @@ def get_nn_model(input_shape):
         nn_list.append(layer(nn_list[-1]))
     return nn_list
     
-    
-import lightgbm as lgb
+'''
+# import lightgbm as lgb
+# from timeit import timeit
+# temp_mask = np.random.rand(49995000) > 0.9
+# num = 10
+# timeit("np.array(np.tril_indices(10000, -1)).T[temp_mask]", number=num, globals=globals()) / num
+# timeit("(lambda x: np.array([x[0][temp_mask], x[1][temp_mask]]).T)(np.tril_indices(10000, -1))", number=num, globals=globals()) / num
 
-
-from timeit import timeit
-temp_mask = np.random.rand(49995000) > 0.9
-num = 10
-timeit("np.array(np.tril_indices(10000, -1)).T[temp_mask]", number=num, globals=globals()) / num
-timeit("(lambda x: np.array([x[0][temp_mask], x[1][temp_mask]]).T)(np.tril_indices(10000, -1))", number=num, globals=globals()) / num
 
 def score_upper_bound(dfh_gen, cluster_gen, truth, parallel=True):
+    # upper bound is monotonic with: from all true pairs, how many true pairs can be clustered in at least one step?
+    # however, a pathological solution: group everything into the same cluster -> highest upper bound
     print("Preparing cluster_pred")
     cluster_pred = run_helix_cluster(dfh_gen, cluster_gen, parallel=parallel)
     n = len(cluster_pred[0])
-    print("Preparing ret_x")
-    ret_x = sparse_hstack(blocks=(
-        mp.Pool().map(get_flat_adjacency_vector, cluster_pred) if parallel else
-        map(get_flat_adjacency_vector, cluster_pred)
-    ),
-        format="csr", dtype=bool)
-    del cluster_pred
-    print("Preparing mask")
-    mask = ret_x.indptr[1:] != ret_x.indptr[:-1]
-    del ret_x
-    print("Preparing idx")
-    ret_idx = np.array(np.tril_indices(n, -1)).T[mask]
-    print("Preparing ret_y")
+    print("Preparing connectivity graph g1")
+    g1 = nx.Graph()
+    def subroutine(sub_df):
+        g1.add_edges_from(combinations(sub_df["sample_index"], r=2))
+    for cluster_id in tqdm(cluster_pred):
+        pred = pd.DataFrame({"cluster_id": cluster_id})
+        pred["sample_index"] = pred.index
+        pred.groupby("cluster_id").agg(subroutine)
+    print("preparing connectivity graph g2")
     particle_id = truth["particle_id"].values
-    ret_y = get_flat_adjacency_vector(reassign_noise(particle_id, particle_id == 0)).astype(bool)[mask].toarray().ravel()
+    particle_id = reassign_noise(particle_id, particle_id == 0)
+    edges_arr = np.array(g1.edges)
+    mask = particle_id[edges_arr[:, 0]] == particle_id[edges_arr[:, 1]]  # if True, the edge is true in particle track
+    g2 = nx.from_edgelist(edges_arr[mask].tolist())
     
+    print("calculating score upper bound")
+    c_id = 1
+    ub_pred = np.zeros(n)
+    for component in nx.connected_components(g2):
+        ub_pred[list(component)] = c_id
+        c_id += 1
+    ub_score = easy_score(truth, ub_pred)
+    print(f"score upper bound: {ub_score}")
+    
+    print("calculating benchmark score")
+    bm_pred = reduce(merge_naive, cluster_pred)
+    bm_score = easy_score(truth, bm_pred)
+    print(f"benchmark score: {bm_score} (if this is significantly lower, the clustering algorithm is giving too many false positives)")
+    return ub_score, bm_score
+
+
+def dfh_gen_1(df, coef, n_steps=225, mm=1, stepii=4e-6, z_step=0.5):
+    for z0 in np.arange(-5.5, 5.5, z_step):
+        df['z'] = df['z'] + z0  # TODO: the r later may be different
+        df['r'] = np.sqrt(df['x'] ** 2 + df['y'] ** 2 + df['z'] ** 2)
+        df['rt'] = np.sqrt(df['x'] ** 2 + df['y'] ** 2)
+        df['a0'] = np.arctan2(df['y'], df['x'])
+        df['zdivrt'] = df['z'] / df['rt']
+        df['zdivr'] = df['z'] / df['r']
+        df['xdivr'] = df['x'] / df['r']
+        df['ydivr'] = df['y'] / df['r']
+        for ii in np.arange(0, n_steps * stepii, stepii):
+            for jj in range(2):
+                mm = mm * (-1)
+                df['a1'] = df['a0'].values - np.nan_to_num(np.arccos(mm * ii * df['rt'].values))
+                df['sina1'] = np.sin(df['a1'])
+                df['cosa1'] = np.cos(df['a1'])
+                ss = StandardScaler()
+                dfs = ss.fit_transform(df[['sina1', 'cosa1', 'zdivrt', 'zdivr', 'xdivr', 'ydivr']].values)
+                # dfs = scale_ignore_nan(dfh[['sina1','cosa1','zdivrt','zdivr','xdivr','ydivr']])
+                dfs = np.multiply(dfs, coef)
+                yield dfs
+
+
+def cluster_gen_1(db_step=5, n_steps=225, adaptive_eps_coef=1, eps=0.05, min_samples=1, metric="euclidean", p=2, n_jobs=1):
+    """
+    default code provided by Alex on Slack, August 2nd
+    """
+    for db in np.arange(min_samples, 10, db_step):
+        for ii in range(1, n_steps + 1):
+            for jj in range(2):
+                eps_new = eps + ii * adaptive_eps_coef * 1e-5
+                yield DBSCAN(eps=eps_new, min_samples=db, n_jobs=n_jobs, metric=metric, metric_params=None, p=p)
+
+
+# exploring possible features
+s1 = Session("data/")
+np.random.seed(679433641)
+for hits, truth in s1.get_train_events(n=1, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
+    score_upper_bound(
+        dfh_gen_1(hits, coef=[1.5, 1.5, 0.73, 0.17, 0.027, 0.027], n_steps=225, mm=1, stepii=4e-6, z_step=0.5),
+        cluster_gen_1(db_step=5, n_steps=225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1),
+        truth,
+        parallel=True
+    )
+    
+
