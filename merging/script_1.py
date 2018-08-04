@@ -106,6 +106,16 @@ lr_1 = Sequential([
 lr_1.compile(optimizer='adam', loss='binary_crossentropy')
 lr_1.fit(x0, y0, sample_weight=w0, batch_size=256, epochs=5, validation_data=(x1, y1, w1), shuffle=True, callbacks=[f1_metric])
 
+from merging.smart_merge import adjacency_pv_to_cluster_id
+
+import timeit
+timeit.timeit("lr_1.predict(x1, batch_size=512)", number=3, globals=globals())
+pred_1 = lr_1.predict(x1, batch_size=2048)
+
+from trackml.score import score_event
+
+cluster_1 = adjacency_pv_to_cluster_id(temp_data[1]["truth"].shape[0], idx1, pred_1, 0.5)
+
 
 
 from sklearn.linear_model import SGDClassifier

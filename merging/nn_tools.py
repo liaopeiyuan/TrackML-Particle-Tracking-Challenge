@@ -14,7 +14,7 @@ class F1Callback(keras.callbacks.Callback):
         self.val_recalls = []
         self.val_precisions = []
     def on_epoch_end(self, epoch, logs={}):
-        val_predict = (np.asarray(self.model.predict(self.validation_data[0]))).round()
+        val_predict = (np.asarray(self.model.predict(self.validation_data[0], batch_size=2048))).round()
         val_target = self.validation_data[1]
         val_weight = self.validation_data[2]  # notice: the validation data is weighted
         _val_precision, _val_recall, _val_fscore, _val_support = precision_recall_fscore_support(y_true=val_target, y_pred=val_predict, sample_weight=val_weight, average="binary")
