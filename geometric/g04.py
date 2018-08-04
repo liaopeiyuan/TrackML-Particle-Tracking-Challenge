@@ -59,7 +59,7 @@ class HelixUnrollWithRadius(HelixUnroll):
         return pred, np.array(score_list)
 
 
-def fast_score(df, pred):
+def easy_score(df, pred):
     return score_event(
         truth=df,
         submission=pd.DataFrame({"hit_id": df.hit_id, "track_id": pred})

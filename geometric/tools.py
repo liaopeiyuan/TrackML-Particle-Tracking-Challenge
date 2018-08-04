@@ -7,6 +7,18 @@ import numpy as np
 import pandas as pd
 
 from sklearn.preprocessing import LabelEncoder
+from trackml.score import score_event
+
+
+def easy_score(truth, pred):
+    return score_event(
+        truth=truth,
+        submission=pd.DataFrame({"hit_id": truth.hit_id, "track_id": pred})
+    )
+
+
+def easy_sub(truth, pred):
+    return pd.DataFrame({"hit_id": truth.hit_id, "track_id": pred})
 
 
 def label_encode(y):

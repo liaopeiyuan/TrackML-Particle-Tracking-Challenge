@@ -66,6 +66,20 @@ for event_data in temp_data:
         event_data["cluster_pred"][i] = reassign_noise(cluster_id, cluster_id == -1)
 
 
+def get_nn_data(n_events=5):
+    ret = []
+    count = 0
+    for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
+        count += 1
+        print(f"get_nn_data progress: {count}/{n_events}")
+        cluster_pred = run_helix_cluster(
+            dfh_gen_1(hits, coef=c, n_steps=225, mm=1, stepii=4e-6, z_step=0.5),
+            clusterer_gen_1(db_step=5, n_steps=225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean",
+                            p=2, n_jobs=1), parallel=True)
+        idx, x, y, w = get_bc_data(cluster_pred, truth["particle_id"], truth["weight"], binary_feature=False, parallel=True)
+        ret.append({"idx": idx, "x": x, "y": y, "w": w, "truth": truth})
+    return ret
+
 
 temp_data[0]["cluster_pred"]
 mask = temp_data[0]["truth"]["weight"] > 0
@@ -96,33 +110,68 @@ idx1, x1, y1, w1 = get_bc_data(temp_data[1]["cluster_pred"], temp_data[1]["truth
 
 # try logistic regression
 from keras.models import Sequential
-from keras.layers import Dense, Activation
+from keras.layers import Dense, Activation, BatchNormalization, PReLU, Dropout
 from merging.nn_tools import f1_metric
 
-lr_1 = Sequential([
-    Dense(1, input_shape=(900,)),
+nn_1 = Sequential([
+    Dense(512, input_shape=(900,)),
+    PReLU(), Dropout(0.5), BatchNormalization(),
+    
+    Dense(256),
+    PReLU(), Dropout(0.5), BatchNormalization(),
+    
+    Dense(256),
+    PReLU(), Dropout(0.5), BatchNormalization(),
+    
+    Dense(128),
+    PReLU(), Dropout(0.5), BatchNormalization(),
+    
+    Dense(1),
     Activation('sigmoid'),
 ])
-lr_1.compile(optimizer='adam', loss='binary_crossentropy')
-lr_1.fit(x0, y0, sample_weight=w0, batch_size=256, epochs=5, validation_data=(x1, y1, w1), shuffle=True, callbacks=[f1_metric])
+nn_1.compile(optimizer='adam', loss='binary_crossentropy')
+nn_1.fit(x0, y0, sample_weight=w0, batch_size=2048, epochs=5, validation_data=(x1, y1, w1), shuffle=True, callbacks=[f1_metric])
+
+
+nn_1.fit(x0, y0, sample_weight=np.ones(x0.shape[0]), batch_size=2048, epochs=5, validation_data=(x1, y1, w1), shuffle=True, callbacks=[f1_metric])
+
 
 from merging.smart_merge import adjacency_pv_to_cluster_id
 
 import timeit
 timeit.timeit("lr_1.predict(x1, batch_size=512)", number=3, globals=globals())
-pred_1 = lr_1.predict(x1, batch_size=2048)
-
-from trackml.score import score_event
-
-cluster_1 = adjacency_pv_to_cluster_id(temp_data[1]["truth"].shape[0], idx1, pred_1, 0.5)
+pred_0 = nn_1.predict(x0, batch_size=2048)
+pred_1 = nn_1.predict(x1, batch_size=2048)
 
 
+from geometric.tools import easy_score, easy_sub
 
-from sklearn.linear_model import SGDClassifier
-sgdc1 = SGDClassifier(loss="hinge", penalty="l2", alpha=0.0001, l1_ratio=0.15, fit_intercept=True, max_iter=500, tol=1e-3, shuffle=True, verbose=1, epsilon=0.1, n_jobs=-1, random_state=None, learning_rate="optimal", eta0=0.0, power_t=0.5, class_weight=None, warm_start=False, average=False, n_iter=None)
-sgdc1.fit(x0.astype(bool), y0, sample_weight=w0)
-sgdc2 = SGDClassifier(loss="hinge", penalty="l2", alpha=0.0001, l1_ratio=0.15, fit_intercept=True, max_iter=500, tol=1e-3, shuffle=True, verbose=1, epsilon=0.1, n_jobs=-1, random_state=None, learning_rate="optimal", eta0=0.0, power_t=0.5, class_weight=None, warm_start=False, average=False, n_iter=None)
-sgdc2.fit(x0, y0, sample_weight=w0)
+for eps in np.arange(0.1, 1.0, 0.1):
+    print(eps, easy_score(temp_data[0]["truth"], adjacency_pv_to_cluster_id(temp_data[0]["truth"].shape[0], idx0, pred_0, eps)))
+    print(eps, easy_score(temp_data[1]["truth"], adjacency_pv_to_cluster_id(temp_data[1]["truth"].shape[0], idx1, pred_1, eps)))
+    
+easy_score(temp_data[0]["truth"], adjacency_pv_to_cluster_id(temp_data[0]["truth"].shape[0], idx0, pred_0, 0.25))
+easy_score(temp_data[1]["truth"], adjacency_pv_to_cluster_id(temp_data[1]["truth"].shape[0], idx1, pred_1, 0.25))
+
+cluster_0 = adjacency_pv_to_cluster_id(temp_data[0]["truth"].shape[0], idx0, pred_0, 0.25)
+easy_score(temp_data[0]["truth"], cluster_0)
+easy_score(temp_data[0]["truth"], reassign_noise(cluster_0, cluster_0 == 0))
+from merging.alex_hough_8_1 import analyze_truth_perspective
+analyze_truth_perspective(temp_data[0]["truth"], easy_sub(temp_data[0]["truth"], cluster_0))
+
+
+
+from functools import reduce
+
+pred_0_b = reduce(merge_naive, temp_data[0]["cluster_pred"])
+easy_score(temp_data[0]["truth"], pred_0_b)
+
+# from sklearn.linear_model import SGDClassifier
+# sgdc1 = SGDClassifier(loss="hinge", penalty="l2", alpha=0.0001, l1_ratio=0.15, fit_intercept=True, max_iter=500, tol=1e-3, shuffle=True, verbose=1, epsilon=0.1, n_jobs=-1, random_state=None, learning_rate="optimal", eta0=0.0, power_t=0.5, class_weight=None, warm_start=False, average=False, n_iter=None)
+# sgdc1.fit(x0.astype(bool), y0, sample_weight=w0)
+# sgdc2 = SGDClassifier(loss="hinge", penalty="l2", alpha=0.0001, l1_ratio=0.15, fit_intercept=True, max_iter=500, tol=1e-3, shuffle=True, verbose=1, epsilon=0.1, n_jobs=-1, random_state=None, learning_rate="optimal", eta0=0.0, power_t=0.5, class_weight=None, warm_start=False, average=False, n_iter=None)
+# sgdc2.fit(x0, y0, sample_weight=w0)
+
 
 # x1, y1, w1 = get_bc_data(temp_data[1]["cluster_pred"], temp_data[1]["truth"]["particle_id"], temp_data[1]["truth"]["weight"], binary_feature=False)
 from sklearn import metrics
@@ -146,3 +195,5 @@ params_1 = {'objective': 'binary', 'boosting': 'gbdt', 'learning_rate': 0.05, 'n
             'seed': 0}
 record_dict_1 = {}
 m1 = lgb.train(params_1, d0, num_boost_round=50000, valid_sets=[d0, d1], valid_names=["d0", "d1"], early_stopping_rounds=500, evals_result=record_dict_1, verbose_eval=10)
+
+

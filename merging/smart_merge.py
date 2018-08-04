@@ -89,7 +89,7 @@ def get_pair_weight(idx, weight):
     # idx is a 2d array: n_samples * 2
     weight = np.array(weight)
     ret_w = weight[idx[:, 0]] + weight[idx[:, 1]]
-    ret_w = ret_w / np.sum(ret_w)
+    ret_w = ret_w * (len(ret_w) / np.sum(ret_w))
     return ret_w
 
 
@@ -149,7 +149,7 @@ def adjacency_pv_to_cluster_id(n, idx, apv, eps=0.5):
     """
     # n = int((apv.shape[0] * 2) ** 0.5) + 1  # the shape of the symmetric matrix
     # this is the inverse formula from n*(n-1)//2
-    
+    apv = np.array(apv).ravel()
     g1 = nx.from_edgelist(idx[apv > eps].tolist())
     c_id = 1
     ret = np.zeros(n)
