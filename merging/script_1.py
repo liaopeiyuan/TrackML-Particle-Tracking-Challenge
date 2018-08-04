@@ -66,26 +66,8 @@ for event_data in temp_data:
         event_data["cluster_pred"][i] = reassign_noise(cluster_id, cluster_id == -1)
 
 
-def get_nn_data(n_events=5):
-    ret = []
-    count = 0
-    for hits, truth in s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
-        count += 1
-        print(f"get_nn_data progress: {count}/{n_events}")
-        cluster_pred = run_helix_cluster(
-            dfh_gen_1(hits, coef=c, n_steps=225, mm=1, stepii=4e-6, z_step=0.5),
-            clusterer_gen_1(db_step=5, n_steps=225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean",
-                            p=2, n_jobs=1), parallel=True)
-        idx, x, y, w = get_bc_data(cluster_pred, truth["particle_id"], truth["weight"], binary_feature=False, parallel=True)
-        ret.append({"idx": idx, "x": x, "y": y, "w": w, "truth": truth})
-    return ret
-
-
-temp_data[0]["cluster_pred"]
-mask = temp_data[0]["truth"]["weight"] > 0
-raw_weight = temp_data[0]["truth"].loc[mask, "weight"]
-raw_particle_id = temp_data[0]["truth"].loc[mask, "particle_id"]
-
+  
+    
 from geometric.tools import reassign_noise
 
 
@@ -131,9 +113,7 @@ nn_1 = Sequential([
 ])
 nn_1.compile(optimizer='adam', loss='binary_crossentropy')
 nn_1.fit(x0, y0, sample_weight=w0, batch_size=2048, epochs=5, validation_data=(x1, y1, w1), shuffle=True, callbacks=[f1_metric])
-
-
-nn_1.fit(x0, y0, sample_weight=np.ones(x0.shape[0]), batch_size=2048, epochs=5, validation_data=(x1, y1, w1), shuffle=True, callbacks=[f1_metric])
+# nn_1.fit(x0, y0, sample_weight=np.ones(x0.shape[0]), batch_size=2048, epochs=5, validation_data=(x1, y1, w1), shuffle=True, callbacks=[f1_metric])
 
 
 from merging.smart_merge import adjacency_pv_to_cluster_id
@@ -158,6 +138,8 @@ easy_score(temp_data[0]["truth"], cluster_0)
 easy_score(temp_data[0]["truth"], reassign_noise(cluster_0, cluster_0 == 0))
 from merging.alex_hough_8_1 import analyze_truth_perspective
 analyze_truth_perspective(temp_data[0]["truth"], easy_sub(temp_data[0]["truth"], cluster_0))
+
+
 
 
 

@@ -4,7 +4,7 @@ try to use machine learning algorithms to learn a best way to merge clusters
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
-from scipy.sparse import csc_matrix, dok_matrix, hstack as sparse_hstack, csr_matrix
+from scipy.sparse import csc_matrix, dok_matrix, lil_matrix, hstack as sparse_hstack, csr_matrix
 import networkx as nx
 from itertools import combinations
 from geometric.tools import reassign_noise
@@ -54,6 +54,7 @@ def get_flat_adjacency_vector(cluster_id):
     pred.groupby("cluster_id").agg(subroutine)  # use agg instead of apply to avoid running the first group twice
     return ret
 '''
+
 
 def get_flat_adjacency_vector(cluster_id):
     n = cluster_id.shape[0]
@@ -119,7 +120,7 @@ def get_bc_data(cluster_pred, particle_id=None, weight=None, binary_feature=Fals
     """
     n = len(cluster_pred[0])
     print("Preparing ret_x")
-    ret_x = sparse_hstack(blocks=list(
+    ret_x = sparse_hstack(blocks=(
         mp.Pool().map(get_flat_adjacency_vector, cluster_pred) if parallel else
         map(get_flat_adjacency_vector, cluster_pred)
     ),
