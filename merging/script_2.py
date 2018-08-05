@@ -197,10 +197,12 @@ def pred_wrapper(arg):
 
 def run_helix_cluster(dfh_gen, clusterer_gen, parallel=True):
     if parallel:
-        with mp.Pool() as pool_1:
-            return list(pool_1.map(pred_wrapper, zip(dfh_gen, clusterer_gen)))
+        with mp.Pool(24) as pool_1:
+            ret = list(pool_1.map(pred_wrapper, zip(dfh_gen, clusterer_gen)))
+            pool_1.close()
+            return ret
     else:
-        return list(map(pred_wrapper, zip(dfh_gen, clusterer_gen)))
+        return map(pred_wrapper, zip(dfh_gen, clusterer_gen))
 
 
 # ======================================================================================================================
@@ -498,8 +500,10 @@ def cluster_gen_1(db_step=5, n_steps=225, adaptive_eps_coef=1, eps=0.05, min_sam
 
 
 # new generation
-def dfh_gen_2(df, coef, n_step, size_step=4e-6):
+def dfh_gen_2(df, w_xy_cluster, w_xy_r, n_step, size_step=4e-6):
     # total steps: n_astep * 2
+    # w_xy_cluster: weight on x/y during clustering, 0 to 1.5
+    # w_xy_cluster: weight on x/y during radius->angle rotation, 0 to 1.5
     for jj in range(1):
         # df = df[['x', 'y', 'z']].copy()
         # df['z'] = df['z']  # TODO: the r later may be different
@@ -507,7 +511,7 @@ def dfh_gen_2(df, coef, n_step, size_step=4e-6):
         # df['r'] = np.sqrt(df['x'] ** 2 + df['y'] ** 2 + df['z'] ** 2)
         df['rt'] = np.sqrt(df['x'] ** 2 + df['y'] ** 2)
         df['zdivrt'] = df['z'] / df['rt']
-        df['a_delta'] = df['rt'] * size_step
+        df['a_delta'] = np.sqrt(df['x']**2*w_xy_r + df['y']**2*w_xy_r + df['z']**2*(3-w_xy_r*2)) * size_step
         for ii in range(n_step):
             for mm in [1, -1]:
                 df['a1'] = df['a0'] + df['a_delta'] * mm * ii
@@ -515,7 +519,7 @@ def dfh_gen_2(df, coef, n_step, size_step=4e-6):
                 df['cosa1'] = np.cos(df['a1'])
                 ss = StandardScaler()
                 dfs = ss.fit_transform(df[['sina1', 'cosa1', 'zdivrt']].values)
-                dfs = np.multiply(dfs, coef)
+                dfs = np.multiply(dfs, [w_xy_cluster, w_xy_cluster, 3-w_xy_cluster*2])
                 yield dfs
 
                 
@@ -533,9 +537,6 @@ def cluster_gen_2(n_step=225, adaptive_eps_coef=1, eps_0=0.05, min_samples=1, me
 s1 = Session("data/")
 np.random.seed(679433641)
 for hits, truth in s1.get_train_events(n=1, content=[s1.HITS, s1.TRUTH], randomness=True)[1]:
-    score_upper_bound(
-        dfh_gen_1(hits, coef=[1.5, 1.5, 0.73, 0.17, 0.027, 0.027], n_steps=225, mm=1, stepii=4e-6, z_step=0.5),
-        cluster_gen_1(db_step=5, n_steps=225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1),
     break
 
 '''
@@ -555,27 +556,36 @@ easy_score(truth, reduce(merge_naive, cluster_pred))
 from bayes_opt import BayesianOptimization
 
 
-def calc_helix_score(n_step, w0, w1, size_step, eps_0, adaptive_eps_coef):
-    coef = np.diff([0] + sorted([w0, w1]) + [1])
-    adaptive_eps_coef = int(adaptive_eps_coef)
+def calc_helix_score(n_step, w_xy_cluster, w_xy_r, size_step, log2_eps, log2_adaptive_eps_coef):
+    adaptive_eps_coef = 2 ** log2_adaptive_eps_coef
     n_step = int(n_step)
+    size_step = float(size_step)
+    eps_0 = 2 ** log2_eps
     cluster_pred = run_helix_cluster(
-        dfh_gen_2(hits, coef=coef, n_step=n_step, size_step=size_step),
+        dfh_gen_2(hits, w_xy_cluster=w_xy_cluster, w_xy_r=w_xy_r, n_step=n_step, size_step=size_step),
         cluster_gen_2(n_step=n_step, adaptive_eps_coef=adaptive_eps_coef, eps_0=eps_0),
         parallel=True)
     return easy_score(truth, reduce(merge_naive, cluster_pred))
 
+'''
+cluster_pred = run_helix_cluster(
+        dfh_gen_2(hits, coef=[1, 1, 1], n_step=200, size_step=4e-6),
+        cluster_gen_2(n_step=225, adaptive_eps_coef=1, eps_0=0.03),
+        parallel=True)
+'''
 
 helix_bo = BayesianOptimization(f=calc_helix_score, pbounds={
     "n_step": (10, 1000),
-    "w0": (0, 1),
-    "w1": (0, 1),
+    "w_xy_cluster": (0.0, 1.5),
+    "w_xy_r": (0.0, 1.5),
     "size_step": (0, 0.1),
-    "eps_0": (0, 1.0),
-    "adaptive_eps_coef": (0, 1000),
-})
+    "log2_eps": (-10, -3),
+    "log2_adaptive_eps_coef": (-5, 5),
+}, random_state=None, verbose=1)
 
-helix_bo.maximize(init_points=5, n_iter=25)
+helix_bo.explore({"n_step": [100, 200], "w_xy_cluster": [1.5], "w_xy_r": [1.5], "size_step": [1e-5], })
+
+helix_bo.maximize(init_points=10, n_iter=25)
 
 '''
 d1 = list(cluster_gen_1(db_step=5, n_steps=225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1))
