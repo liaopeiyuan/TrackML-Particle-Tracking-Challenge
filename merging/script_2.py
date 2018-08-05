@@ -555,7 +555,7 @@ easy_score(truth, reduce(merge_naive, cluster_pred))
 
 from bayes_opt import BayesianOptimization
 
-
+'''
 def calc_helix_score(n_step, w_xy_cluster, w_xy_r, size_step, log2_eps, log2_adaptive_eps_coef):
     adaptive_eps_coef = 2 ** log2_adaptive_eps_coef
     n_step = int(n_step)
@@ -567,12 +567,11 @@ def calc_helix_score(n_step, w_xy_cluster, w_xy_r, size_step, log2_eps, log2_ada
         parallel=True)
     return easy_score(truth, reduce(merge_naive, cluster_pred))
 
-'''
 cluster_pred = run_helix_cluster(
         dfh_gen_2(hits, coef=[1, 1, 1], n_step=200, size_step=4e-6),
         cluster_gen_2(n_step=225, adaptive_eps_coef=1, eps_0=0.03),
         parallel=True)
-'''
+
 
 helix_bo = BayesianOptimization(f=calc_helix_score, pbounds={
     "n_step": (10, 1000),
@@ -587,7 +586,7 @@ helix_bo.explore({"n_step": [100, 200], "w_xy_cluster": [1.5], "w_xy_r": [1.5], 
 
 helix_bo.maximize(init_points=10, n_iter=25)
 
-'''
+
 d1 = list(cluster_gen_1(db_step=5, n_steps=225, adaptive_eps_coef=1, eps=0.0048, min_samples=1, metric="euclidean", p=2, n_jobs=1))
 d2 = list(cluster_gen_2(n_step=225, adaptive_eps_coef=1, eps_0=0.0048))
 
@@ -597,3 +596,102 @@ cluster_pred = run_helix_cluster(
     True
 )
 '''
+
+
+# debugging generator function:
+d1 = (lambda x, y, z: np.sqrt(x**2 + y**2 + z**2))(hits.x, hits.y, hits.z)
+d2 = (lambda df, w_xy_ra: np.dot(df[["x", "y", "z"]] ** 2, [w_xy_ra, w_xy_ra, 3 - w_xy_ra * 2]))(hits, 1)
+
+
+def dfh_gen_3(df, step_init=0, n_step=100, w_xy_ra=1.0, w_xy_rz=1.0, w_xy_c=1.0, a_step=1e-5, z_step=0.0, log=None):
+    if log is None or not log:
+        log = {"a_delta": [], "z_delta": []}
+    # will yield n_step * 2 steps
+    df = df[["x", "y", "z"]].copy()
+    df["z0"] = df["z"]  # TODO: z-shifting
+    df["a0"] = np.arctan2(df["y"], df["x"])  # default angle
+    df["ra"] = np.sqrt(np.dot(df[["x", "y", "z"]] ** 2, [w_xy_ra, w_xy_ra, 3 - w_xy_ra * 2]))  # weighted radius for angle
+    df["rz"] = np.sqrt(np.dot(df[["x", "y", "z"]] ** 2, [w_xy_rz, w_xy_rz, 3 - w_xy_rz * 2]))  # weighted radius for z
+    df["rt"] = np.sqrt(df["x"] ** 2 + df["y"] ** 2)
+    for ii in range(step_init, step_init + n_step):  # step index
+        for mm in (-1, 1):  # direction multiplier
+            if ii == 0 and mm == 1:
+                break
+            a_delta = mm * ii * a_step
+            z_delta = mm * ii * z_step
+            log["a_delta"].append(a_delta)
+            log["z_delta"].append(z_delta)
+            df["a_delta"] = a_delta * df["ra"]
+            df["z_delta"] = z_delta * df["rz"]
+            df["a1"] = df["a0"] + df["a_delta"]
+            df["z1"] = df["z0"] + np.sign(df["z0"]) * df["z_delta"]  # z coordinates are symmetric by the xy-plane
+            # perparing features for clustering
+            df["sin_a1"] = np.sin(df["a1"])
+            df["cos_a1"] = np.cos(df["a1"])
+            df["z1_div_rt"] = df["z1"] / df["rt"]
+            dfs = StandardScaler().fit_transform(df[["sin_a1", "cos_a1", "z1_div_rt"]])
+            dfs = np.multiply(dfs, [w_xy_c, w_xy_c, 3 - w_xy_c * 2])
+            yield dfs
+
+
+def cluster_gen_3(step_init=0, n_step=225, eps_init=0.05, eps_step=1e-5, min_samples=1, metric="euclidean", p=2,
+                  n_jobs=1, log=None):
+    if log is None or not log:
+        log = {"eps": []}
+    for ii in range(step_init, step_init + n_step):
+        eps = eps_init + ii * eps_step
+        for mm in (-1, 1):
+            if ii == 0 and mm == 1:
+                break
+            log["eps"].append(eps)
+            yield DBSCAN(eps=eps, min_samples=min_samples, n_jobs=n_jobs, metric=metric, metric_params=None, p=p)
+
+
+# a larger step index (ii) indicates further deviation from the original coordinates
+log1, log2 = {}, {}
+cluster_pred = run_helix_cluster(
+    dfh_gen_3(hits, step_init=-50, n_step=120, w_xy_ra=1, w_xy_rz=0.7, w_xy_c=0.9, a_step=1e-5, z_step=1e-5, log=log1),
+    cluster_gen_3(step_init=-50, n_step=120, eps_init=4e-3, eps_step=-5e-6, log=log2), parallel=True)
+easy_score(truth, reduce(merge_naive, cluster_pred))
+easy_score(truth, reduce(merge_naive, cluster_pred[::-1]))
+
+log1_list, log2_list = [{}], [{}]
+
+
+def calc_helix_score(step_init, n_step, w_xy_ra, w_xy_c, eps_init_e3, eps_step_e6, eps_step_sign):
+    step_init = int(step_init)
+    n_step = int(n_step)
+    eps_init = eps_init_e3 * 1e-3
+    eps_step = eps_step_e6 * 1e-6 * np.sign(eps_step_sign)
+    try:
+        cluster_pred = run_helix_cluster(
+            dfh_gen_3(hits, step_init=step_init, n_step=n_step, w_xy_ra=w_xy_ra, w_xy_rz=0, w_xy_c=w_xy_c, a_step=1e-5, z_step=0.0, log=log1_list[-1]),
+            cluster_gen_3(step_init=step_init, n_step=n_step, eps_init=eps_init, eps_step=eps_step, log=log2_list[-1]),
+            parallel=True)
+    except ValueError:
+        return -1.0
+    log1_list.append({})
+    log2_list.append({})
+    return easy_score(truth, reduce(merge_naive, cluster_pred))
+
+helix_bo = BayesianOptimization(f=calc_helix_score, pbounds={
+    "step_init": (-100, 50),
+    "n_step": (120, 500),
+    "w_xy_ra": (0.0, 1.5),
+    "w_xy_c": (0.0, 1.5),
+    "eps_init_e3": (1, 10),
+    "eps_step_e6": (1, 10),
+    "eps_step_sign": (-1, 1),
+}, random_state=None, verbose=1)
+
+helix_bo.maximize(init_points=2000, n_iter=1000, kappa=5)
+
+
+helix_bo.maximize(init_points=100, n_iter=3000, kappa=15)
+
+easy_score(truth, reduce(merge_naive, cluster_pred[::2]))
+easy_score(truth, reduce(merge_naive, cluster_pred[::-2]))
+easy_score(truth, reduce(merge_naive, cluster_pred[::3]))
+easy_score(truth, reduce(merge_naive, cluster_pred[::-3]))
+easy_score(truth, reduce(merge_naive, (cluster_pred[j] for j in np.hstack(np.array([0,3]) + 4 * i for i in range(60))[:-1])))
+
