@@ -650,6 +650,7 @@ class Clusterer(object):
             cond=np.where(np.isfinite(dfh['a1'].values))
             dfh['sina1'] = np.zeros(len(dfh))
             dfh['cosa1'] = np.zeros(len(dfh))
+
             dfh['sina1'].values[cond] = np.sin(dfh['a1'].values[cond])
             dfh['cosa1'].values[cond] = np.cos(dfh['a1'].values[cond])
             dfh['x1'] = dfh['a1'].values/dfh['z1'].values
