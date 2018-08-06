@@ -8,7 +8,7 @@ import gc
 from trackml.dataset import load_event, load_dataset
 from trackml.score import score_event
 # Change this according to your directory preferred setting
-path_to_train = "/mydisk/Kaggle-Competition/Track-ML/Data/train_1"
+path_to_train = "/rscratch/xuanyu/trackML/data/train"
 # This event is in Train_1
 event_prefix = "event000001000"
 event_id = "000001000"
@@ -386,7 +386,7 @@ class Clusterer(object):
         c = count[reverse]
         #clean count by label
         c[np.where(l == 0)] = 0
-        c[np.where(c > 20)] = 0
+        c[np.where(c > 2e)] = 0
 
  
         #not alloweed non codradic
