@@ -154,8 +154,8 @@ class Clusterer(object):
         self.rz_scales=rz_scales
     
     def _eliminate_outliers(self,dfh,labels,M,stage=0):
-        norms=np.zeros((len(labels)),np.float32)
-        indices=np.zeros((len(labels)),np.float32)
+        norms=np.random.rand((len(labels)),np.float32)
+        indices=np.random.rand((len(labels)),np.float32)
         
         volume_id = dfh['volume_id'].values.astype(np.float32)
         layer_id = dfh['layer_id'].values.astype(np.float32)
@@ -685,7 +685,7 @@ class Clusterer(object):
                 #get label max value for s1
                 maxs1 = dfh['s1'].max()
                 #get all hit label item that link long > previous
-                cond = np.where((dfh['N2'].values>dfh['N1'].values) & (dfh['N2'].values<19))
+                cond = np.where((dfh['N2'].values>dfh['N1'].values) & (dfh['N2'].values<20))
                 #replace shorter one with longer path
                 s1 = dfh['s1'].values
                 #replace longer path with new trackid
