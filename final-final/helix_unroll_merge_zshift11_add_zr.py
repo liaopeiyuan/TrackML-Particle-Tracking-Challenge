@@ -386,7 +386,7 @@ class Clusterer(object):
         c = count[reverse]
         #clean count by label
         c[np.where(l == 0)] = 0
-        c[np.where(c > 2e)] = 0
+        c[np.where(c > 2)] = 0
 
  
         #not alloweed non codradic
