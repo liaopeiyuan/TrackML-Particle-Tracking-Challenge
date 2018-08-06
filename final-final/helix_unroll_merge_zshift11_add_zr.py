@@ -648,8 +648,9 @@ class Clusterer(object):
             #dfh['sina1'] = np.sin(dfh['a1'].values)
             #dfh['cosa1'] = np.cos(dfh['a1'].values)
             cond=np.where(np.isfinite(dfh['a1'].values))
-            dfh['sina1'] = np.random.rand(len(dfh))
-            dfh['cosa1'] = np.random.rand(len(dfh))
+            dfh['sina1'] = np.zeros(len(dfh))
+            dfh['cosa1'] = np.zeros(len(dfh))
+
             dfh['sina1'].values[cond] = np.sin(dfh['a1'].values[cond])
             dfh['cosa1'].values[cond] = np.cos(dfh['a1'].values[cond])
             dfh['x1'] = dfh['a1'].values/dfh['z1'].values
@@ -684,7 +685,7 @@ class Clusterer(object):
                 #get label max value for s1
                 maxs1 = dfh['s1'].max()
                 #get all hit label item that link long > previous
-                cond = np.where((dfh['N2'].values>dfh['N1'].values) & (dfh['N2'].values<20))
+                cond = np.where((dfh['N2'].values>dfh['N1'].values) & (dfh['N2'].values<19))
                 #replace shorter one with longer path
                 s1 = dfh['s1'].values
                 #replace longer path with new trackid
