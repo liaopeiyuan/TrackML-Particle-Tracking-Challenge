@@ -1201,7 +1201,7 @@ if __name__ == "__main__":
     del labels
     gc.collect()
 
-    path_to_test = "input/test"
+    path_to_test = "/rscratch/xuanyu/trackML/data/"
     test_dataset_submissions = []
 
     create_submission = True # True for submission 
