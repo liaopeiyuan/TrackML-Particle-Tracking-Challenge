@@ -1,18 +1,15 @@
 # Importing necessary python native package
+import gc
+import os
+
 import numpy as np
 import pandas as pd
-import os
-import gc
-
 from trackml.dataset import load_event, load_dataset
 from trackml.score import score_event
 
-from multiprocessing import Pool
-
 # Import self defined packages
-from finalAtom.utils.fast_score import cpmp_fast_score
-from finalAtom.utils.create_submission import create_one_event_submission
 from finalAtom.utils.clusterer import Clusterer
+from finalAtom.utils.create_submission import create_one_event_submission
 
 path_to_train = "/mydisk/Kaggle-Competition/Track-ML/Data/train_1/"
 path_to_test = "/mydisk/Kaggle-Competition/Track-ML/Data/test/"
@@ -20,11 +17,11 @@ event_prefix = "event000001000"
 event_id = "000001000"
 
 
-def cossimilar(X,Y):
-    lx = np.sqrt(np.inner(X,X))
-    ly = np.sqrt(np.inner(Y,Y))
+def cossimilar(X, Y):
+    lx = np.sqrt(np.inner(X, X))
+    ly = np.sqrt(np.inner(Y, Y))
     np.inner(X, Y)
-    cossimilar = np.inner(X, Y) / (lx*ly)
+    cossimilar = np.inner(X, Y) / (lx * ly)
     return cossimilar
 
 
@@ -33,11 +30,11 @@ if __name__ == "__main__":
     dataset_submissions = []
     dataset_scores = []
 
-    #for event_id, hits, cells, particles, truth in load_dataset(path_to_train, skip=0, nevents=5):
+    # for event_id, hits, cells, particles, truth in load_dataset(path_to_train, skip=0, nevents=5):
     hits, cells, particles, truth = load_event(os.path.join(path_to_train, event_prefix))
 
     # Track pattern recognition
-    model = Clusterer()
+    model = Clusterer(event_id, event_prefix, path_to_train)
     print("after cluster")
     labels = model.predict(hits)
     print("after predict")
@@ -49,7 +46,7 @@ if __name__ == "__main__":
     score = score_event(truth, one_submission)
     dataset_scores.append(score)
     # Print out the score for eval
-    print("Score for predict event : %.8f" % ( score))
+    print("Score for predict event : %.8f" % (score))
 
     # Track extension
     for i in range(8):
@@ -58,7 +55,7 @@ if __name__ == "__main__":
         # Score for the event
         score = score_event(truth, one_submission)
         dataset_scores.append(score)
-        print("Score for final extended event :%d %.8f" % ( i,score))
+        print("Score for final extended event :%d %.8f" % (i, score))
 
     # Delete model/labels and call for garbage collect
     del model
@@ -73,15 +70,15 @@ if __name__ == "__main__":
         for event_id, hits, cells in load_dataset(path_to_test, parts=['hits', 'cells']):
 
             # Track pattern recognition 
-            model = Clusterer()
+            model = Clusterer(event_id, event_prefix, path_to_train)
             labels = model.predict(hits)
 
             # Prepare submission for an event
             one_submission = create_one_event_submission(event_id, hits, labels)
 
-            for i in range(4): one_submission =  model._extend(one_submission, hits)
+            for i in range(4): one_submission = model._extend(one_submission, hits)
             test_dataset_submissions.append(one_submission)
-            
+
             print('Event ID: ', event_id)
             del model
             del labels
