@@ -11,7 +11,7 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from trackml.score import score_event
 from trackml.dataset import load_event
 from functools import reduce
-from tqdm import tqdm
+from tqdm import tqdm, trange
 from itertools import product
 
 
@@ -809,14 +809,20 @@ def temp_wrapper_3(idx):
 
 record_2_idx = []
 record_2_score = []
-for i in range(200):
-    with mp.Pool() as p1:
-        idx_list = [np.random.permutation(range(len(cluster_pred))) for j in range(20)]
-        score_list = list(p1.map(temp_wrapper_3, idx_list))
-        record_2_idx.extend(idx_list)
-        record_2_score.extend(score_list)
-    print(f"current max score: {max(record_2_score)}")
 
+with trange(1000) as t:
+    for i in t:
+        t.set_postfix(max_score=f"{max(record_2_score):.5}")
+        with mp.Pool() as p1:
+            idx_list = [np.random.permutation(range(len(cluster_pred))) for j in range(20)]
+            score_list = list(p1.map(temp_wrapper_3, idx_list))
+            record_2_idx.extend(idx_list)
+            record_2_score.extend(score_list)
+    
+
+cond = np.where(np.array(record_2_score) > np.quantile(record_2_score, 0.9))[0].tolist()
+record_2_score = [record_2_score[i] for i in cond]
+record_2_idx = [record_2_idx[i] for i in cond]
 
 easy_score(truth, im.merge_naive(cluster_pred))
 # im1 = IterativeMerger()
