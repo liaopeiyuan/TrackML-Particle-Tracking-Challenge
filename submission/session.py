@@ -710,7 +710,7 @@ class Session(object):
         T = T[smallest_index,:]        
         norm = np.linalg.norm(np.dot(Z,T), ord=2)**2
         return norm
-        
+
     def predict(self, hits):    
         dataset_submissions=[]
 
@@ -750,10 +750,10 @@ class Session(object):
         labels = np.unique(self.clusters)
         self._eliminate_outliers(hits,labels,X,stage=1)
         
-        one_submission = create_one_event_submission(event_id, hits, self.clusters)
-        dataset_submissions.append(one_submission)
-        score = score_event(truth, one_submission)
-        print("Score after eliminate stage 1 event : %.8f" % ( score))  
+        #one_submission = create_one_event_submission(event_id, hits, self.clusters)
+        #dataset_submissions.append(one_submission)
+        #score = score_event(truth, one_submission)
+        #print("Score after eliminate stage 1 event : %.8f" % ( score))  
 
         max_len = np.max(self.clusters)
         mask = self.clusters == 0 
@@ -761,10 +761,10 @@ class Session(object):
         print(len(mask))         
         self.clusters[mask] = self._init(hits[mask],stage=3)+max_len 
 
-        one_submission = create_one_event_submission(event_id, hits, self.clusters)
-        dataset_submissions.append(one_submission)
-        score = score_event(truth, one_submission)
-        print("Score after stage 1-2 event : %.8f" % ( score))
+        #one_submission = create_one_event_submission(event_id, hits, self.clusters)
+        #dataset_submissions.append(one_submission)
+        #score = score_event(truth, one_submission)
+        #print("Score after stage 1-2 event : %.8f" % ( score))
 
         return self.clusters   
 
