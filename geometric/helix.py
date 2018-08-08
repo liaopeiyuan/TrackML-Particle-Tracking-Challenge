@@ -34,26 +34,20 @@ class HelixUnroll(object):
         self.dz_func = dz_func
         self.n_steps = n_steps
         self.hidden_transform = hidden_transform  # transform the hidden space after scaling, before dbscan
-
         self.merge_func = merge_func
-
         self.eps_func = eps_func
         self.p = p
         self.dbscan_n_jobs = dbscan_n_jobs
-
     def fit_predict(self, df, score_func=None, verbose=False):
         df = df.copy()
         df.loc[:, "r3"] = self.r3_func(df.x, df.y, df.z)
-
         # df.loc[:, "rs"] = np.sqrt(df.x ** 2 + df.y ** 2 + df.z ** 2)  # radius in spherical coordinate system
         df.loc[:, "rc"] = np.sqrt(df.x ** 2 + df.y ** 2)  # radius in cylindrical coordinate system
         df.loc[:, "a0"] = np.arctan2(df.y, df.x)  # angle in cylindrical coordinate system
         df.loc[:, "z1"] = df.z / df.rc  # monotonic with cot(psi)
         # df.loc[:, "z2"] = df.z / df.rs TODO: 4 feature maybe? [1, 1, 0.4, 0.4]
-
         pred = None
         score_list = []
-
         for i in range(self.n_steps):
             dz = self.dz_func(i)
             df.loc[:, "a1"] = df.a0 + dz * df.r3  # rotation, points with higher r3 are rotated to a larger degree
@@ -67,7 +61,6 @@ class HelixUnroll(object):
             dfs = self.hidden_transform(dfs)
             res = dbscan(X=dfs, eps=self.eps_func(i), min_samples=1, metric="minkowski", p=self.p, n_jobs=self.dbscan_n_jobs)[1]
             pred = self.merge_func(pred, res)
-
             if score_func is not None:
                 # use a callback to customize scoring
                 step_score = score_func(pred)

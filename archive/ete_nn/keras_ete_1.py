@@ -1,3 +1,4 @@
+"""
 mize the expected loss for the following:
 train_nn(nn_list_basic, get_feature(hits, theta=np.random.rand()*2*np.pi, flip=np.random.rand()<0.5), permute_target(fy), basic_trainable=True, epochs=..., batch_size=...)
 """

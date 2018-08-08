@@ -42,16 +42,16 @@ def analyze_truth_perspective(truth, submission):
     tru['count_track'] = tru.groupby(['track_id']).hit_id.transform('count')
     good_hits = tru[(tru.count_both > 0.5 * tru.count_particle) & (tru.count_both > 0.5 * tru.count_track)]
     score = good_hits.weight.sum()
-
     anatru = tru.particle_id.value_counts().value_counts().sort_index().to_frame().rename(
         {'particle_id': 'true_particle_counts'}, axis=1)
     # anatru['true_particle_ratio'] = anatru['true_particle_counts'].values*100/np.sum(anatru['true_particle_counts'])
-
     anatru['good_tracks_counts'] = np.zeros(len(anatru)).astype(int)
     anatru['good_tracks_intersect_nhits_avg'] = np.zeros(len(anatru))
     anatru['best_detect_intersect_nhits_avg'] = np.zeros(len(anatru))
     for nhit in tqdm(range(4, 20)):
         particle_list = tru[(tru.count_particle == nhit)].particle_id.unique()
+        if len(particle_list) == 0:
+            continue
         intersect_count = 0
         good_tracks_count = 0
         good_tracks_intersect = 0
@@ -60,7 +60,6 @@ def analyze_truth_perspective(truth, submission):
             intersect_count += nhit_intersect
             corresponding_track = tru.loc[tru[tru.particle_id == p].count_both.idxmax()].track_id
             leng_corresponding_track = len(tru[tru.track_id == corresponding_track])
-
             if (nhit_intersect >= nhit / 2) and (nhit_intersect >= leng_corresponding_track / 2):
                 good_tracks_count += 1
                 good_tracks_intersect += nhit_intersect
@@ -69,7 +68,6 @@ def analyze_truth_perspective(truth, submission):
         anatru.at[nhit, 'good_tracks_counts'] = good_tracks_count
         if good_tracks_count > 0:
             anatru.at[nhit, 'good_tracks_intersect_nhits_avg'] = good_tracks_intersect / good_tracks_count
-
     return score, anatru, good_hits
 
 

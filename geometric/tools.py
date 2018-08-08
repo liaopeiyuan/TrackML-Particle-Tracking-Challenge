@@ -7,6 +7,18 @@ import numpy as np
 import pandas as pd
 
 from sklearn.preprocessing import LabelEncoder
+from trackml.score import score_event
+
+
+def easy_score(truth, pred):
+    return score_event(
+        truth=truth,
+        submission=pd.DataFrame({"hit_id": truth.hit_id, "track_id": pred})
+    )
+
+
+def easy_sub(truth, pred):
+    return pd.DataFrame({"hit_id": truth.hit_id, "track_id": pred})
 
 
 def label_encode(y):
@@ -20,6 +32,19 @@ def reassign_noise(labels: np.ndarray, mask):
     ret = labels.copy()
     ret[mask] = np.arange(np.sum(mask)) + np.max(ret) + 1
     return ret
+
+
+def merge_naive(pred_1, pred_2, cutoff=20):
+    if pred_1 is None:
+        return pred_2
+    d = pd.DataFrame(data={'s1': pred_1, 's2': pred_2})
+    d['N1'] = d.groupby('s1')['s1'].transform('count')
+    d['N2'] = d.groupby('s2')['s2'].transform('count')
+    max_s1 = d['s1'].max() + 1
+    cond = np.where((d['N2'].values > d['N1'].values) & (d['N2'].values < cutoff))
+    s1 = d['s1'].values
+    s1[cond] = d['s2'].values[cond] + max_s1
+    return label_encode(s1)
 
 """
 def merge_naive(pred_1, pred_2, cutoff=20):
@@ -36,26 +61,13 @@ def merge_naive(pred_1, pred_2, cutoff=20):
     return label_encode(pred)
 """
 
-
-def merge_naive(pred_1, pred_2, cutoff=20):
-    if pred_1 is None:
-        return pred_2
-    d = pd.DataFrame(data={'s1': pred_1, 's2': pred_2})
-    d['N1'] = d.groupby('s1')['s1'].transform('count')
-    d['N2'] = d.groupby('s2')['s2'].transform('count')
-    max_s1 = d['s1'].max() + 1
-    cond = np.where((d['N2'].values > d['N1'].values) & (d['N2'].values < cutoff))
-    s1 = d['s1'].values
-    s1[cond] = d['s2'].values[cond] + max_s1
-    return label_encode(s1)
-
-
+"""
 def merge_discreet(pred_1, pred_2, cutoff=21):
-    """
-    discreet cluster merging (less likely to reassign points)
-    iterate over clusters in pred_2; np.sum(n1[idx]) < c2[track]**2 -> pred[idx] = d + track
-    this is self-documenting
-    """
+    
+    # discreet cluster merging (less likely to reassign points)
+    # iterate over clusters in pred_2; np.sum(n1[idx]) < c2[track]**2 -> pred[idx] = d + track
+    # this is self-documenting
+    
     if pred_1 is None:
         return pred_2
     c1, c2 = Counter(pred_1), Counter(pred_2)  # track id -> track size
@@ -73,6 +85,7 @@ def merge_discreet(pred_1, pred_2, cutoff=21):
         if np.sum(n1[idx]) < c2[track]**2:
             pred[idx] = d + track
     return label_encode(pred)
+"""
 
 
 def hit_completeness(df, idx, track_size=None):

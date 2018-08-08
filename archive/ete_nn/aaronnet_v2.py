@@ -2,20 +2,17 @@
 try to minimize the expected loss for the following:
 train_nn(nn_list_basic, get_feature(hits, theta=np.random.rand()*2*np.pi, flip=np.random.rand()<0.5), permute_target(fy), basic_trainable=True, epochs=..., batch_size=...)
 """
-from keras.utils import multi_gpu_model
 
 import numpy as np
 import pandas as pd
 import os
 
 import keras
-from keras.layers import Input, Dense, BatchNormalization, Dropout, PReLU
-from keras.models import Model, model_from_json, load_model
-import tensorflow as tf
-from time import time
+from keras.layers import Dense
+from keras.models import Model, model_from_json
 
 from utils.session import Session
-import ete_nn.model as myModel
+import archive.ete_nn.model as myModel
 
 os.chdir("/rscratch/xuanyu/KAIL/Kaggle-TrackML/")
 

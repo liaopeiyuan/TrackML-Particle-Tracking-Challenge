@@ -54,10 +54,9 @@ def pred_wrapper(arg):
     return arg[1].fit_predict(arg[0])
 
 
-def run_helix_cluster(dfh_gen, clusterer_gen, parallel=False):
+def run_helix_cluster(dfh_gen, clusterer_gen, parallel=True):
     if parallel:
-        pool_1 = mp.Pool()
-        return list(pool_1.map(pred_wrapper, zip(dfh_gen, clusterer_gen)))
+        return list(mp.Pool().map(pred_wrapper, zip(dfh_gen, clusterer_gen)))
     else:
         return list(map(pred_wrapper, zip(dfh_gen, clusterer_gen)))
 
