@@ -23,8 +23,6 @@ event_prefix = "event000001000"
 event_id = "000001000"
 
 
-
-
 def cossimilar(X, Y):
     lx = np.sqrt(np.inner(X, X))
     ly = np.sqrt(np.inner(Y, Y))
@@ -71,7 +69,7 @@ if __name__ == "__main__":
     del labels
     gc.collect()
     '''
-    
+
     # Preparing the test for submission
     test_dataset_submissions = []
 
