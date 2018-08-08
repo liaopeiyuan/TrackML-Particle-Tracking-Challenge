@@ -24,10 +24,8 @@ class Clusterer(object):
         self.event_prefix = event_prefix
         self.path_to_train = path_to_train
         self.rz_scales = rz_scales
-
     
     def _init_merge(self, dfhin, stage=0, newstart=1):
-
         start_time = timeit.default_timer()
         print(type(dfhin))
         print(dfhin)
@@ -408,7 +406,6 @@ class Clusterer(object):
         labels = np.unique(l2)
 
         indices = np.zeros((len(labels)), np.float32)
-        # M = self.X
 
         for i, cluster in tqdm(enumerate(labels), total=len(labels), disable=True):
             if cluster == 0:
@@ -790,14 +787,5 @@ class Clusterer(object):
         return self.clusters
 
     def predict_merge(self, hits):
-
-        dataset_submissions = []
-
-        hits, cells, particles, truth = load_event(os.path.join(self.path_to_train, self.event_prefix))
-
         hits = hits.assign(rrr=np.sqrt(hits.x ** 2 + hits.y ** 2))
-        X = self._preprocess(hits)
-        self.X = X
-        self.clusters = self._init_merge(hits, stage=0)  # 90
-
-        return self.clusters
+        return self._init_merge(hits, stage=0)  # 90
