@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
             for i in range(4): 
                 one_submission = model._extend(one_submission, hits)
-                test_dataset_submissions.append(one_submission)
+            test_dataset_submissions.append(one_submission)
 
             print('Event ID: ', event_id)
             del model
