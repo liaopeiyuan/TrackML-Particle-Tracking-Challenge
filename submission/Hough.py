@@ -25,7 +25,7 @@ s1 = Session(parent_dir="/rscratch/xuanyu/KAIL/test_trackml/")
 n_events = 125
 test_dataset_submissions=[]
 
-list_of_test_events = s1.get_test_event(n=n_events, content=[s1.HITS], randomness=True)[1]
+names, list_of_test_events = s1.get_test_event(n=n_events, content=[s1.HITS], randomness=True)[1]
 for hits in tqdm(list_of_test_events):
 # Track pattern recognition
 
