@@ -530,6 +530,166 @@ class Session(object):
                #if(indices[i] !=1): # I guess its noise
                 self.clusters[self.clusters==cluster]=0 
 
+    def _add_count(self,l,dfh,stage):
+
+        if(stage==0):
+            mergelen_threshold = 12
+            sensor_diff_threshold = 0
+            lowlen_threshold = 12
+        elif(stage==1):
+            mergelen_threshold = 9
+            sensor_diff_threshold = 1
+            lowlen_threshold = 12   
+        elif(stage==2):
+            mergelen_threshold = 9
+            sensor_diff_threshold = 5
+            lowlen_threshold = 6                     
+        elif(stage==3):
+            mergelen_threshold = 6
+            sensor_diff_threshold = 3
+            lowlen_threshold = 6
+        elif(stage==4): # free run
+            mergelen_threshold = 9
+            sensor_diff_threshold = 2
+            lowlen_threshold = 4
+        elif(stage==5): # free run
+            mergelen_threshold = 9
+            sensor_diff_threshold = 2
+            lowlen_threshold = 4
+        else:            
+            unique, reverse, count = np.unique(l, return_counts=True, return_inverse=True)
+            c = count[reverse]
+            #clean count by label
+            c[np.where(l == 0)] = 0
+            c[np.where(c > 20)] = 0
+            return (l, c)  
+
+        #labels = np.unique(l)
+        unique, reverse, count = np.unique(l, return_counts=True, return_inverse=True)
+        c = count[reverse]
+        #clean count by label
+        c[np.where(l == 0)] = 0
+        c[np.where(c > 20)] = 0
+
+ 
+        #not alloweed non codradic
+        # l2_norm = l[np.where(c >= 6)]
+        # labels_old = np.unique(l2_norm)
+        # norms=np.zeros((len(labels_old)),np.float32)
+        # indices=np.zeros((len(labels_old)),np.float32)
+        # print("x:M")
+        # M = self.X
+        # for i, cluster in tqdm(enumerate(labels_old),total=len(labels_old)):
+        #     if cluster == 0:
+        #         continue
+        #     index = np.argwhere(l==cluster)
+        #     index = np.reshape(index,(index.shape[0]))    
+        #     x = M[index]
+        #     norms[i] = self._test_quadric(x)
+
+        #     print(norms[i])
+        #     if np.log10(norms[i]) >0:
+        #         print("kill norm !!!!")
+        #         l[l==cluster]=0 
+        #         continue  
+
+
+
+        l2 = l[np.where(c >= mergelen_threshold)]
+        labels = np.unique(l2)
+        #print(len(labels))
+        #print(labels)
+        #print(l2)
+      
+        indices=np.zeros((len(labels)),np.float32)
+        #M = self.X
+   
+        for i, cluster in tqdm(enumerate(labels),total=len(labels),disable=True):
+            if cluster == 0:
+                continue
+            #for all pair , count there norm    
+            index = np.argwhere(l==cluster)
+            index = np.reshape(index,(index.shape[0]))
+            #print(type(index))
+            indices[i] = len(index)
+                 
+
+            # check if follow helix line
+
+            #if(len(index)>=mergelen_threshold):
+            if(len(index)>=mergelen_threshold):
+
+
+                #print(x)
+                #print(type(index))
+                #print(index)
+                #truthdf = truth.iloc[index]
+                currentdf = dfh.iloc[index]
+                #print(truthdf)
+                #print(currentdf)
+                #print(norms[i])
+
+                volume_id = dfh['volume_id'].values.astype(np.float32)
+                layer_id = dfh['layer_id'].values.astype(np.float32)
+                module_id = dfh['module_id'].values.astype(np.float32)
+                current_module =module_id[index] 
+                current_layer =layer_id[index] 
+                module_id0 = current_module[:-1]
+                module_id1 = current_module[1: ]
+                ld = module_id1-module_id0
+                #the same module id is not allowed
+                #print(ld)
+                layer_id0 = current_layer[:-1]
+                layer_id1 = current_layer[1: ]
+                ld2 = layer_id1-layer_id0
+                #print(ld2)
+                #ld = np.where(ld==0 and ld2==0)
+                #print(ld)
+                checkindex = np.where(ld==0)
+                checkindex2 = np.where(ld2==0)
+                checkindex =np.intersect1d(checkindex ,checkindex2)#
+
+                #print(checkindex)
+                #print(len(checkindex))
+
+                if(len(checkindex)>sensor_diff_threshold):
+                    #print("kill!!!!")
+                    #print(truthdf)
+                    l[l==cluster]=0 
+                    continue
+                #if(len(checkindex)>sensor_diff_threshold):
+                #    self.clusters[self.clusters==cluster]=0 
+                #    continue
+
+
+ 
+        #test
+        #threshold1 = np.percentile(norms,90)*5  # +-10%   *5
+        #threshold2 = 25 #length >25
+        #threshold3 = 6  #length <6  as i know the min length is 4
+        # print(norms)
+        # threshold1 = np.percentile(norms,90)*5  # +-10%   *5
+        # #threshold1 = 1
+        # print(threshold1)
+        # threshold2 = 25 #length >25
+        # threshold3 = lowlen_threshold
+        # #threshold3 = 4  #length <6  as i know the min length is 4        
+        # for i, cluster in enumerate(labels):
+        #     if norms[i] > threshold1 or indices[i] > threshold2 or indices[i] < threshold3:
+        #     #if norms[i] > threshold1 :
+        #        #if(indices[i] !=1): # I guess its noise
+        #         self.clusters[self.clusters==cluster]=0
+
+
+
+
+        unique, reverse, count = np.unique(l, return_counts=True, return_inverse=True)
+        c = count[reverse]
+        #clean count by label
+        c[np.where(l == 0)] = 0
+        c[np.where(c > 20)] = 0
+        return (l, c)
+        
     def predict(self, hits):    
         dataset_submissions=[]
 
