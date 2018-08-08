@@ -26,6 +26,7 @@ n_events = 125
 test_dataset_submissions=[]
 
 #list_of_test_events = s1.get_test_event(n=n_events, content=[s1.HITS], randomness=True)[1]
+i=0
 for event_id, hits, cells in tqdm(load_dataset("/rscratch/xuanyu/KAIL/test_trackml/test", parts=['hits', 'cells'])):
 # Track pattern recognition
     #print(hits)
@@ -39,6 +40,9 @@ for event_id, hits, cells in tqdm(load_dataset("/rscratch/xuanyu/KAIL/test_track
         one_submission = model._extend(one_submission, hits)
     test_dataset_submissions.append(one_submission)
 
+    if(i==3 or i%20==0):
+        submission = pd.concat(test_dataset_submissions, axis=0)
+        submission.to_csv('submission_600_temp.csv', index=False)
     print('Event ID: ', event_id)
     del model
     del labels
