@@ -1,4 +1,4 @@
-from session import *
+import Session
 
 import gc
 import numpy as np
