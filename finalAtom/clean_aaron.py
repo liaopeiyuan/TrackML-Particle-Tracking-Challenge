@@ -6,10 +6,11 @@ import numpy as np
 import pandas as pd
 from trackml.dataset import load_event, load_dataset
 from trackml.score import score_event
-
+from tqdm import tqdm
 # Import self defined packages
 from finalAtom.utils.clusterer import Clusterer
 from finalAtom.utils.create_submission import create_one_event_submission
+
 
 #TODO change the submissoincsv save path [include / at the end]
 csv_save_path = "/rscratch/xuanyu/aaronmao/"
@@ -21,8 +22,6 @@ path_to_test = base_path+"test/"
 
 event_prefix = "event000001000"
 event_id = "000001000"
-
-
 
 
 def cossimilar(X, Y):
@@ -37,7 +36,7 @@ if __name__ == "__main__":
 
     dataset_submissions = []
     dataset_scores = []
-
+    """
     # for event_id, hits, cells, particles, truth in load_dataset(path_to_train, skip=0, nevents=5):
     hits, cells, particles, truth = load_event(os.path.join(path_to_train, event_prefix))
 
@@ -70,14 +69,18 @@ if __name__ == "__main__":
     del model
     del labels
     gc.collect()
+<<<<<<< HEAD
     '''
     
+=======
+    """
+>>>>>>> 994bb3bd5728969af3d457602f518445c151d4ea
     # Preparing the test for submission
     test_dataset_submissions = []
 
     create_submission = True
     if create_submission:
-        for event_id, hits, cells in load_dataset(path_to_test, parts=['hits', 'cells']):
+        for event_id, hits, cells in tqdm(load_dataset(path_to_test, parts=['hits', 'cells'])):
 
             # Track pattern recognition 
             model = Clusterer(event_id, event_prefix, path_to_train)
