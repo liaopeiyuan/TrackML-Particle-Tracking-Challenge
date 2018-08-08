@@ -179,20 +179,15 @@ class Clusterer(object):
 
             else:
                 dfh['s2'] = clusters
-                # get link long for each item
                 dfh['N2'] = dfh.groupby('s2')['s2'].transform('count')
-                # get label max value for s1
+                dfh['stemp'] = dfh['s1']
                 maxs1 = dfh['s1'].max()
-                # get all hit label item that link long > previous
-                cond = np.where((dfh['N2'].values > dfh['N1'].values) & (dfh['N2'].values < 19))
-                # replace shorter one with longer path
-                s1 = dfh['s1'].values
-                # replace longer path with new trackid
-                s1[cond] = dfh['s2'].values[cond] + maxs1
-                # update final path
-                dfh['s1'] = s1
-                dfh['s1'] = dfh['s1'].astype('int64')
-                # update link long
+                maxs2 = dfh['s2'].max()
+                dfh.loc[(dfh['N2'] > dfh['N1']) & (dfh['N2'] < 20), 's1'] = dfh['s2'] + maxs1
+                dfh.loc[(dfh['N2'] < dfh['N1']) & (dfh['N1'] < 16) & (dfh['N1'] > 11) & (dfh['N2'] < 9), 's1'] = dfh['stemp'] + maxs1
+                dfh.loc[(dfh['N2'] > dfh['N1']) & (dfh['N1'] < 16) & (dfh['N1'] > 11) & (dfh['N2'] > 30), 's1'] = dfh['stemp'] + maxs1
+                dfh.loc[(dfh['N2'] > dfh['N1']) & (dfh['N2'] < 16) & (dfh['N2'] > 11) & (dfh['N1'] < 9), 's1'] = dfh['s2'] + maxs1
+                dfh.loc[(dfh['N2'] < dfh['N1']) & (dfh['N2'] < 16) & (dfh['N2'] > 11) & (dfh['N1'] > 30), 's1'] = dfh['s2'] + maxs1
                 dfh['N1'] = dfh.groupby('s1')['s1'].transform('count')
         # heng'code
 

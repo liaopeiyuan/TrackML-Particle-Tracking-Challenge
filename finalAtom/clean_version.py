@@ -76,8 +76,9 @@ if __name__ == "__main__":
             # Prepare submission for an event
             one_submission = create_one_event_submission(event_id, hits, labels)
 
-            for i in range(4): one_submission = model._extend(one_submission, hits)
-            test_dataset_submissions.append(one_submission)
+            for i in range(4): 
+                one_submission = model._extend(one_submission, hits)
+                test_dataset_submissions.append(one_submission)
 
             print('Event ID: ', event_id)
             del model

@@ -11,7 +11,8 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from trackml.score import score_event
 from trackml.dataset import load_event
 from functools import reduce
-from tqdm import tqdm
+from tqdm import tqdm, trange
+from itertools import product
 
 
 class Session(object):
@@ -21,12 +22,10 @@ class Session(object):
 
     Precondition: the parent directory must be organized as follows:
     - train (directory)
-        - event000001000-cells.csv
-        ...
-    - test (directory)
-        - event000000001-cells.csv
-        ...
-    - detectors.csv
+         event000001000-cells.csv
+             - test (directory)
+         event000000001-cells.csv
+             - detectors.csv
     - sample_submission.csv
     """
     # important constants to avoid spelling errors
@@ -599,10 +598,6 @@ cluster_pred = run_helix_cluster(
 
 
 # debugging generator function:
-d1 = (lambda x, y, z: np.sqrt(x**2 + y**2 + z**2))(hits.x, hits.y, hits.z)
-d2 = (lambda df, w_xy_ra: np.dot(df[["x", "y", "z"]] ** 2, [w_xy_ra, w_xy_ra, 3 - w_xy_ra * 2]))(hits, 1)
-
-
 def dfh_gen_3(df, step_init=0, n_step=100, w_xy_ra=1.0, w_xy_rz=1.0, w_xy_c=1.0, a_step=1e-5, z_step=0.0, log=None):
     if log is None or not log:
         log = {"a_delta": [], "z_delta": []}
@@ -654,6 +649,7 @@ cluster_pred = run_helix_cluster(
     cluster_gen_3(step_init=-50, n_step=120, eps_init=4e-3, eps_step=-5e-6, log=log2), parallel=True)
 easy_score(truth, reduce(merge_naive, cluster_pred))
 easy_score(truth, reduce(merge_naive, cluster_pred[::-1]))
+'''
 
 log1_list, log2_list = [{}], [{}]
 
@@ -674,6 +670,8 @@ def calc_helix_score(step_init, n_step, w_xy_ra, w_xy_c, eps_init_e3, eps_step_e
     log2_list.append({})
     return easy_score(truth, reduce(merge_naive, cluster_pred))
 
+
+
 helix_bo = BayesianOptimization(f=calc_helix_score, pbounds={
     "step_init": (-100, 50),
     "n_step": (120, 500),
@@ -685,6 +683,7 @@ helix_bo = BayesianOptimization(f=calc_helix_score, pbounds={
 }, random_state=None, verbose=1)
 
 helix_bo.maximize(init_points=2000, n_iter=1000, kappa=5)
+helix_bo.maximize(init_points=1, n_iter=100)
 
 
 helix_bo.maximize(init_points=100, n_iter=3000, kappa=15)
@@ -694,4 +693,141 @@ easy_score(truth, reduce(merge_naive, cluster_pred[::-2]))
 easy_score(truth, reduce(merge_naive, cluster_pred[::3]))
 easy_score(truth, reduce(merge_naive, cluster_pred[::-3]))
 easy_score(truth, reduce(merge_naive, (cluster_pred[j] for j in np.hstack(np.array([0,3]) + 4 * i for i in range(60))[:-1])))
+'''
 
+from timeit import timeit
+
+
+class IterativeMerger(object):
+    def __init__(self, n2_hi=20, ns_lo=1, ns_hi=100):
+        # [0, n2_hi)
+        # [ns_lo, ns_hi)
+        self.n2_hi = n2_hi
+        self.ns_lo = ns_lo
+        self.ns_hi = ns_hi
+        
+    def _pair_merge_naive(self, pred_1, pred_2):
+        if pred_1 is None:
+            return pred_2
+        d = pd.DataFrame(data={'s1': pred_1, 's2': pred_2})
+        d['n1'] = d.groupby('s1')['s1'].transform('count')
+        d['n2'] = d.groupby('s2')['s2'].transform('count')
+        max_s1 = d['s1'].max() + 1
+        cond = np.where((d['n2'].values > d['n1'].values) & (d['n2'].values < self.n2_hi))
+        s1 = d['s1'].values
+        s1[cond] = d['s2'].values[cond] + max_s1
+        return s1
+    
+    def merge_naive(self, pred_list):
+        s = reduce(self._pair_merge_naive, pred_list)
+        return LabelEncoder().fit_transform(s)
+    
+    def _pair_merge_shared(self, pred_1, pred_2):
+        # consider the number of shared hits as well
+        if pred_1 is None:
+            return pred_2
+        d = pd.DataFrame(data={'s1': pred_1, 's2': pred_2})
+        d['n1'] = d.groupby('s1')['s1'].transform('count')
+        d['n2'] = d.groupby('s2')['s2'].transform('count')
+        d['ns'] = d.groupby(['s1', 's2'])['s1'].transform('count')  # size of shared clusters
+        max_s1 = d['s1'].max() + 1
+        cond = np.where(
+            (d['n2'].values > d['n1'].values) & (d['n2'].values < self.n2_hi) &
+            (d['ns'].values >= self.ns_lo) & (d['ns'].values < self.ns_hi))
+        s1 = d['s1'].values
+        s1[cond] = d['s2'].values[cond] + max_s1
+        return s1
+    
+    def merge_shared(self, pred_list):
+        s = reduce(self._pair_merge_shared, pred_list)
+        return LabelEncoder().fit_transform(s)
+    
+
+def temp_wrapper_1(im: IterativeMerger):
+    return im.ns_lo, easy_score(truth, im.merge_shared(cluster_pred))
+
+
+cluster_pred = run_helix_cluster(
+    dfh_gen_3(hits, step_init=-50, n_step=130, w_xy_ra=1, w_xy_rz=0.7, w_xy_c=0.9, a_step=1e-5, z_step=1e-5, log=log1),
+    cluster_gen_3(step_init=-50, n_step=130, eps_init=4e-3, eps_step=-5e-6, log=log2), parallel=True)
+with mp.Pool() as p1:
+    a1 = list(p1.map(temp_wrapper_1, [IterativeMerger(ns_hi=i) for i in range(1, 40)]))
+
+for x in a1:
+    print(f"{x[0]}".rjust(2), f"{x[1]:.7}")
+
+im = IterativeMerger(n2_hi=20)
+easy_score(truth, im.merge_naive(cluster_pred))
+from scipy import stats
+
+
+cluster_gini = list(map(lambda x: 1 - (pd.value_counts(x, sort=False, normalize=True)**2).sum(), cluster_pred))
+cluster_entropy = list(map(lambda x: stats.entropy(pd.value_counts(x, sort=False, normalize=True).values), cluster_pred))
+easy_score(truth, im.merge_naive([cluster_pred[i] for i in np.argsort(cluster_gini)][::-1]))
+easy_score(truth, im.merge_naive([cluster_pred[i] for i in np.argsort(cluster_entropy)][::-1]))
+
+
+def distribution_summary(cluster_id, k, le=True, average_cluster=True):
+    """
+    calculate a summary statistic for the value counts of a cluster_id
+    :param k: a threshold value
+    :param le: if True, return the average for the tracks with size less than or equal to k;
+        otherwise, return the average for the tracks with size greater than or equal to k
+    :param average_cluster: if True, average the counts weighted by the number of clusters (equivalent to count);
+        otherwise, average the counts weighted by the number of hits
+    """
+    vc = pd.value_counts(cluster_id, sort=False, normalize=False)
+    return np.average(((vc <= k) if le else (vc >= k)), weights=(None if average_cluster else vc.index))
+
+    
+def temp_wrapper_2(args):
+    k, le, average_cluster = args[:3]
+    cluster_lek_mean = list(map(lambda x: distribution_summary(x, k=k, le=le, average_cluster=average_cluster), cluster_pred))
+    idx = np.argsort(cluster_lek_mean).tolist()
+    return easy_score(truth, im.merge_naive([cluster_pred[i] for i in idx])),\
+           easy_score(truth, im.merge_naive([cluster_pred[i] for i in idx[::-1]]))
+
+
+params = list(product(range(1, 100), [False, True], [False, True]))
+with mp.Pool() as p1:
+    record_1 = list(p1.map(temp_wrapper_2, params))
+
+
+
+
+params = pd.DataFrame(params)
+params.columns = ["k", "le", "average_cluster"]
+record_1 = pd.DataFrame(record_1)
+record_1.columns = ["ascending_score", "descending_score"]
+record_1 = pd.concat([params, record_1], axis=1)
+record_1.sort_values("ascending_score", ascending=False).head(10)
+record_1.sort_values("descending_score", ascending=False).head(10)
+
+
+def temp_wrapper_3(idx):
+    return easy_score(truth, im.merge_naive([cluster_pred[i] for i in idx]))
+
+record_2_idx = []
+record_2_score = []
+
+with trange(1000) as t:
+    for i in t:
+        t.set_postfix(max_score=f"{max(record_2_score):.5}")
+        with mp.Pool() as p1:
+            idx_list = [np.random.permutation(range(len(cluster_pred))) for j in range(20)]
+            score_list = list(p1.map(temp_wrapper_3, idx_list))
+            record_2_idx.extend(idx_list)
+            record_2_score.extend(score_list)
+    
+
+cond = np.where(np.array(record_2_score) > np.quantile(record_2_score, 0.9))[0].tolist()
+record_2_score = [record_2_score[i] for i in cond]
+record_2_idx = [record_2_idx[i] for i in cond]
+
+easy_score(truth, im.merge_naive(cluster_pred))
+# im1 = IterativeMerger()
+# easy_score(truth, im1.merge_naive(cluster_pred))
+
+
+# easy_score(truth, reduce(merge_length_naive, cluster_pred))
+# timeit("easy_score(truth, reduce(merge_length_naive, cluster_pred))", globals=globals(), number=3)
