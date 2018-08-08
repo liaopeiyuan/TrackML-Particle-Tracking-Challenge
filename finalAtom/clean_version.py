@@ -16,8 +16,8 @@ csv_save_path = ""
 
 #TODO change the base path to your sets and train [include / at the end]
 base_path = "/mydisk/Kaggle-Competition/Track-ML/Data/"
-path_to_train = base_path+"train/"
-path_to_test = base_path+"test/"
+path_to_train = base_path+"train_test/"
+path_to_test = base_path+"test_test/"
 
 event_prefix = "event000001000"
 event_id = "000001000"
