@@ -11,8 +11,9 @@ from trackml.score import score_event
 from finalAtom.utils.clusterer import Clusterer
 from finalAtom.utils.create_submission import create_one_event_submission
 
-path_to_train = "/mydisk/Kaggle-Competition/Track-ML/Data/train_1/"
-path_to_test = "/mydisk/Kaggle-Competition/Track-ML/Data/test/"
+base_path = "/mydisk/Kaggle-Competition/Track-ML/Data/"
+path_to_train = base_path+"train_test/"
+path_to_test = base_path+"test_test/"
 event_prefix = "event000001000"
 event_id = "000001000"
 
@@ -78,7 +79,7 @@ if __name__ == "__main__":
 
             for i in range(4): 
                 one_submission = model._extend(one_submission, hits)
-                test_dataset_submissions.append(one_submission)
+            test_dataset_submissions.append(one_submission)
 
             print('Event ID: ', event_id)
             del model
