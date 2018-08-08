@@ -339,7 +339,7 @@ class Session(object):
         dz0=0
         mm = 1
         init=0
-        print("Init")
+        print("Initialization:")
 
         if(stage==0):
             scanuplim = 360
@@ -690,6 +690,27 @@ class Session(object):
         c[np.where(c > 20)] = 0
         return (l, c)
 
+    def _test_quadric(self,x):
+        if x.size == 0 or len(x.shape)<2:
+            return 0
+        Z = np.zeros((x.shape[0],10), np.float32)
+        Z[:,0] = x[:,0]**2
+        Z[:,1] = 2*x[:,0]*x[:,1]
+        Z[:,2] = 2*x[:,0]*x[:,2]
+        Z[:,3] = 2*x[:,0]
+        Z[:,4] = x[:,1]**2
+        Z[:,5] = 2*x[:,1]*x[:,2]
+        Z[:,6] = 2*x[:,1]
+        Z[:,7] = x[:,2]**2
+        Z[:,8] = 2*x[:,2]
+        Z[:,9] = 1
+        v, s, t = np.linalg.svd(Z,full_matrices=False)        
+        smallest_index = np.argmin(np.array(s))
+        T = np.array(t)
+        T = T[smallest_index,:]        
+        norm = np.linalg.norm(np.dot(Z,T), ord=2)**2
+        return norm
+        
     def predict(self, hits):    
         dataset_submissions=[]
 
