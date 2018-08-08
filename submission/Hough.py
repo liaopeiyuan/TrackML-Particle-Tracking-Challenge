@@ -21,11 +21,11 @@ from trackml.score import score_event
 
 
 np.random.seed()  # restart random number generator
-s1 = Session(parent_dir="/rscratch/xuanyu/KAIL/test_trackml/test/")
+s1 = Session(parent_dir="/rscratch/xuanyu/KAIL/test_trackml/")
 n_events = 125
 test_dataset_submissions=[]
 
-list_of_train_events = s1.get_train_events(n=n_events, content=[s1.HITS, s1.TRUTH], randomness=True)[1]
+list_of_train_events = s1.get_test_events(n=n_events, content=[s1.HITS], randomness=True)[1]
 for hits in tqdm(list_of_train_events):
 # Track pattern recognition
     model = Clusterer(event_id, event_prefix, path_to_train)
