@@ -90,7 +90,7 @@ class Clusterer(object):
                     # for jj in np.arange(-7.501,7.5,3):
                     print("jj")
                     print(jj)
-                    for ii in tqdm(np.arange(scanlowlim, scanuplim), disable=True):
+                    for ii in tqdm(np.arange(scanlowlim, scanuplim), disable=False):
                         mm = mm * (-1)
                         dz = mm * (dz0 + ii * stepdz)
                         # dz = dz0+ii*stepdz
@@ -176,7 +176,7 @@ class Clusterer(object):
                     # for jj in np.arange(-7.501,7.5,3):
                     print("jj")
                     print(jj)
-                    for ii in tqdm(np.arange(scanlowlim, scanuplim), disable=True):
+                    for ii in tqdm(np.arange(scanlowlim, scanuplim), disable=False):
                         mm = mm * (-1)
                         dz = mm * (dz0 + ii * stepdz)
                         # dz = dz0+ii*stepdz
@@ -239,7 +239,7 @@ class Clusterer(object):
         # stepeps = 0.000001
         mm = 1
         print("gogola2")
-        for ii in tqdm(range(100), disable=True):
+        for ii in tqdm(range(100), disable=False):
             mm = mm * (-1)
             dz = mm * (dz0 + ii * stepdz)
             dfh['a1'] = dfh['a0'].values + dz * dfh['z'].values * np.sign(dfh['z'].values)
@@ -407,7 +407,7 @@ class Clusterer(object):
 
         indices = np.zeros((len(labels)), np.float32)
 
-        for i, cluster in tqdm(enumerate(labels), total=len(labels), disable=True):
+        for i, cluster in tqdm(enumerate(labels), total=len(labels), disable=False):
             if cluster == 0:
                 continue
             # for all pair , count there norm
@@ -575,7 +575,7 @@ class Clusterer(object):
             sensor_diff_threshold = 5
             lowlen_threshold = 4
 
-        for i, cluster in tqdm(enumerate(labels), total=len(labels), disable=True):
+        for i, cluster in tqdm(enumerate(labels), total=len(labels), disable=False):
             if cluster == 0:
                 continue
             # for all pair , count there norm
