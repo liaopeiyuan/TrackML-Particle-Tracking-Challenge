@@ -24,10 +24,8 @@ class Clusterer(object):
         self.event_prefix = event_prefix
         self.path_to_train = path_to_train
         self.rz_scales = rz_scales
-
     
     def _init_merge(self, dfhin, stage=0, newstart=1):
-
         start_time = timeit.default_timer()
         print(type(dfhin))
         print(dfhin)
@@ -92,7 +90,7 @@ class Clusterer(object):
                     # for jj in np.arange(-7.501,7.5,3):
                     print("jj")
                     print(jj)
-                    for ii in tqdm(np.arange(scanlowlim, scanuplim)):
+                    for ii in tqdm(np.arange(scanlowlim, scanuplim), disable=True):
                         mm = mm * (-1)
                         dz = mm * (dz0 + ii * stepdz)
                         # dz = dz0+ii*stepdz
@@ -178,7 +176,7 @@ class Clusterer(object):
                     # for jj in np.arange(-7.501,7.5,3):
                     print("jj")
                     print(jj)
-                    for ii in tqdm(np.arange(scanlowlim, scanuplim)):
+                    for ii in tqdm(np.arange(scanlowlim, scanuplim), disable=True):
                         mm = mm * (-1)
                         dz = mm * (dz0 + ii * stepdz)
                         # dz = dz0+ii*stepdz
@@ -241,7 +239,7 @@ class Clusterer(object):
         # stepeps = 0.000001
         mm = 1
         print("gogola2")
-        for ii in tqdm(range(100)):
+        for ii in tqdm(range(100), disable=True):
             mm = mm * (-1)
             dz = mm * (dz0 + ii * stepdz)
             dfh['a1'] = dfh['a0'].values + dz * dfh['z'].values * np.sign(dfh['z'].values)
@@ -408,9 +406,8 @@ class Clusterer(object):
         labels = np.unique(l2)
 
         indices = np.zeros((len(labels)), np.float32)
-        # M = self.X
 
-        for i, cluster in tqdm(enumerate(labels), total=len(labels)):
+        for i, cluster in tqdm(enumerate(labels), total=len(labels), disable=True):
             if cluster == 0:
                 continue
             # for all pair , count there norm
@@ -469,7 +466,7 @@ class Clusterer(object):
         # ytt
         for angle in np.arange(-90, 90, 0.5):
 
-            print('\r %f' % angle, end='', flush=True)
+            #print('\r %f' % angle, end='', flush=True)
             # df1 = df.loc[(df.arctan2>(angle-0.5)/180*np.pi) & (df.arctan2<(angle+0.5)/180*np.pi)] #bad
             df1 = df.loc[(df.arctan2 > (angle - 1.5) / 180 * np.pi) & (df.arctan2 < (angle + 1.5) / 180 * np.pi)]
 
@@ -578,7 +575,7 @@ class Clusterer(object):
             sensor_diff_threshold = 5
             lowlen_threshold = 4
 
-        for i, cluster in tqdm(enumerate(labels), total=len(labels)):
+        for i, cluster in tqdm(enumerate(labels), total=len(labels), disable=True):
             if cluster == 0:
                 continue
             # for all pair , count there norm
@@ -790,14 +787,5 @@ class Clusterer(object):
         return self.clusters
 
     def predict_merge(self, hits):
-
-        dataset_submissions = []
-
-        hits, cells, particles, truth = load_event(os.path.join(self.path_to_train, self.event_prefix))
-
         hits = hits.assign(rrr=np.sqrt(hits.x ** 2 + hits.y ** 2))
-        X = self._preprocess(hits)
-        self.X = X
-        self.clusters = self._init_merge(hits, stage=0)  # 90
-
-        return self.clusters
+        return self._init_merge(hits, stage=0)  # 90

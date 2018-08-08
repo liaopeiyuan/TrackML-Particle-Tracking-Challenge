@@ -24,45 +24,50 @@ from sklearn.cluster import DBSCAN
 
 from sklearn.neighbors import KDTree
 import timeit
-import multiprocessing
-from multiprocessing import Pool
+import multiprocessing as mp
 
 
-# https://www.kaggle.com/cpmpml/a-faster-python-scoring-function
-def cpmp_fast_score(truth, submission):
-    truth = truth[['hit_id', 'particle_id', 'weight']].merge(submission, how='left', on='hit_id')
-    df = truth.groupby(['track_id', 'particle_id']).hit_id.count().to_frame('count_both').reset_index()
-    truth = truth.merge(df, how='left', on=['track_id', 'particle_id'])
+def extend_track(cluster_id, hits, n_iter, limit=0.04, num_neighbours=18):
+    """
+    :param cluster_id: a 1d numpy array storing the predicted cluster id for hits
+    :param hits: pandas DataFrame, must have columns x, y, z, hit_id
+    :param n_iter: number of iterations
+    :param limit:
+    :param num_neighbours:
+    :return:
+    """
+    df = hits.copy()
+    df["cluster_id"] = cluster_id
     
-    df1 = df.groupby(['particle_id']).count_both.sum().to_frame('count_particle').reset_index()
-    truth = truth.merge(df1, how='left', on='particle_id')
-    df1 = df.groupby(['track_id']).count_both.sum().to_frame('count_track').reset_index()
-    truth = truth.merge(df1, how='left', on='track_id')
-    truth.count_both *= 2
+    df["d"] = np.sqrt(df["x"]**2 + df["y"]**2 + df["z"] ** 2)
+    df["r"] = np.sqrt(df["x"]**2 + df["y"]**2)
+    df["phi"] = np.arctan2(df.z, df.r)
     
-    score = truth[(truth.count_both > truth.count_particle) & (truth.count_both > truth.count_track)].weight.sum()
-    results = truth
+    phi_margin = 1.5
+    for phi_center in np.arange(-90, 90, 0.5):
+        print(f"angle={phi_center}")
+        df1 = df.loc[(df["phi"] > np.deg2rad(phi_center - phi_margin)) & (df["phi"] < np.deg2rad(phi_center + phi_margin))]
+        min_num_neighbours = df1.shape[0]
+        if min_num_neighbours < 3:
+            continue
+        hit_ids = df1.hit_id.values
+        r = np.sqrt(df1["x"]**2 + df["y"]**2) / 1000
+        a = np.arctan2(y, x)
+        c, s = np.cos(a), np.sin(a)
+        
     
-    return score, results
-
-
 class Clusterer(object):
     def _extend(self, submission, hits, limit=0.04, num_neighbours=18):
         df = submission.merge(hits, on=['hit_id'], how='left')
         df = df.assign(d=np.sqrt(df.x ** 2 + df.y ** 2 + df.z ** 2))
         df = df.assign(r=np.sqrt(df.x ** 2 + df.y ** 2))
         df = df.assign(arctan2=np.arctan2(df.z, df.r))
-        
-        # for angle in range( -90,90,1):
-        # ytt
         for angle in np.arange(-90, 90, 0.5):
-            
             print('\r %f' % angle, end='', flush=True)
-            # df1 = df.loc[(df.arctan2>(angle-0.5)/180*np.pi) & (df.arctan2<(angle+0.5)/180*np.pi)] #bad
             df1 = df.loc[(df.arctan2 > (angle - 1.5) / 180 * np.pi) & (df.arctan2 < (angle + 1.5) / 180 * np.pi)]
-            
             min_num_neighbours = len(df1)
-            if min_num_neighbours < 3: continue
+            if min_num_neighbours < 3:
+                continue
             
             hit_ids = df1.hit_id.values
             x, y, z = df1[['x', 'y', 'z']].values.T
@@ -82,7 +87,8 @@ class Clusterer(object):
             
             for i in range(num_track_ids):
                 p = track_ids[i]
-                if p == 0: continue
+                if p == 0:
+                    continue
                 
                 idx = np.where(df1.track_id == p)[0]
                 if len(idx) < min_length: continue
@@ -127,16 +133,15 @@ class Clusterer(object):
                 direction = np.arctan2(r[ns] - r1, a[ns] - a1)
                 diff = 1 - np.cos(direction - direction1)
                 ns = ns[(r[ns] - r1 > 0.01) & (diff < (1 - np.cos(limit)))]
-                for n in ns:  df.loc[df.hit_id == hit_ids[n], 'track_id'] = p
-        # ytt try
-        self.clusters = df["track_id"].copy()
+                for n in ns:
+                    df.loc[df.hit_id == hit_ids[n], 'track_id'] = p
         
         # print ('\r')
         df = df[['event_id', 'hit_id', 'track_id']]
         return df
     
-    def __init__(self, rz_scales=[0.65, 0.965, 1.528]):
-        self.rz_scales = rz_scales
+    def __init__(self, rz_scales=(0.65, 0.965, 1.528)):
+        self.rz_scales = list(rz_scales)
     
     def _eliminate_outliers(self, dfh, labels, M, stage=0):
         norms = np.zeros((len(labels)), np.float32)
@@ -437,19 +442,7 @@ class Clusterer(object):
             indices[i] = len(index)
             
             # check if follow helix line
-            
-            # if(len(index)>=mergelen_threshold):
-            if (len(index) >= mergelen_threshold):
-                
-                # print(x)
-                # print(type(index))
-                # print(index)
-                # truthdf = truth.iloc[index]
-                currentdf = dfh.iloc[index]
-                # print(truthdf)
-                # print(currentdf)
-                # print(norms[i])
-                
+            if len(index) >= mergelen_threshold:
                 volume_id = dfh['volume_id'].values.astype(np.float32)
                 layer_id = dfh['layer_id'].values.astype(np.float32)
                 module_id = dfh['module_id'].values.astype(np.float32)
@@ -459,65 +452,30 @@ class Clusterer(object):
                 module_id1 = current_module[1:]
                 ld = module_id1 - module_id0
                 # the same module id is not allowed
-                # print(ld)
                 layer_id0 = current_layer[:-1]
                 layer_id1 = current_layer[1:]
                 ld2 = layer_id1 - layer_id0
-                # print(ld2)
-                # ld = np.where(ld==0 and ld2==0)
-                # print(ld)
                 checkindex = np.where(ld == 0)
                 checkindex2 = np.where(ld2 == 0)
                 checkindex = np.intersect1d(checkindex, checkindex2)  #
-                
-                # print(checkindex)
-                # print(len(checkindex))
-                
-                if (len(checkindex) > sensor_diff_threshold):
-                    # print("kill!!!!")
-                    # print(truthdf)
+
+                if len(checkindex) > sensor_diff_threshold:
                     l[l == cluster] = 0
                     continue
-                    # if(len(checkindex)>sensor_diff_threshold):
-                    #    self.clusters[self.clusters==cluster]=0
-                    #    continue
-        
-        # test
-        # threshold1 = np.percentile(norms,90)*5  # +-10%   *5
-        # threshold2 = 25 #length >25
-        # threshold3 = 6  #length <6  as i know the min length is 4
-        # print(norms)
-        # threshold1 = np.percentile(norms,90)*5  # +-10%   *5
-        # #threshold1 = 1
-        # print(threshold1)
-        # threshold2 = 25 #length >25
-        # threshold3 = lowlen_threshold
-        # #threshold3 = 4  #length <6  as i know the min length is 4
-        # for i, cluster in enumerate(labels):
-        #     if norms[i] > threshold1 or indices[i] > threshold2 or indices[i] < threshold3:
-        #     #if norms[i] > threshold1 :
-        #        #if(indices[i] !=1): # I guess its noise
-        #         self.clusters[self.clusters==cluster]=0
-        
-        
-        
-        
+
         unique, reverse, count = np.unique(l, return_counts=True, return_inverse=True)
         c = count[reverse]
         # clean count by label
         c[np.where(l == 0)] = 0
         c[np.where(c > 20)] = 0
-        return (l, c)
+        return l, c
     
     def _init(self, dfhin, stage=0, newstart=1):
-        
         start_time = timeit.default_timer()
         print(type(dfhin))
         print(dfhin)
         dfh = dfhin.copy()
         # ytt z xhift
-        
-        
         
         volume_id = dfh['volume_id'].values.astype(np.float32)
         layer_id = dfh['layer_id'].values.astype(np.float32)
@@ -526,87 +484,31 @@ class Clusterer(object):
         # dz0 = -0.00070
         # hough
         dz0 = 0
-        # stepdz = 0.00001
-        # stepeps = 0.000005
-        # 0.00001*100 = 0.001
-        # a1 = a0+dz*z*sin(z)
         mm = 1
         init = 0
         print("gogola")
         
-        if (stage == 0):
-            # scanuplim = 80
-            # scanlowlim = 40
-            # stepeps = 0.000005
-            scanuplim = 360
-            scanlowlim = 0
-            stepeps = 0.0000005
-            stepdz = 0.000005
-        elif (stage == 1):
-            scanuplim = 360
-            scanlowlim = 0
-            stepeps = 0.0000005
-            stepdz = 0.000005
-        elif (stage == 2):
-            scanuplim = 360
-            scanlowlim = 0
-            stepeps = 0.0000005
-            stepdz = 0.000005
-        elif (stage == 3):
-            scanuplim = 360
-            scanlowlim = 0
-            stepeps = 0.0000005
-            stepdz = 0.000005
-        elif (stage == 4):
-            scanuplim = 360
-            scanlowlim = 0
-            stepeps = 0.0000005
-            stepdz = 0.00001
-        elif (stage == 5):
-            scanuplim = 300
-            scanlowlim = 0
-            stepeps = 0.0000005
-            stepdz = 0.00001
+        if stage == 0:
+            scanuplim, scanlowlim, stepeps, stepdz = 360, 0, 5e-7, 5e-6
+        elif stage == 1:
+            scanuplim, scanlowlim, stepeps, stepdz = 360, 0, 5e-7, 5e-6
+        elif stage == 2:
+            scanuplim, scanlowlim, stepeps, stepdz = 360, 0, 5e-7, 5e-6
+        elif stage == 3:
+            scanuplim, scanlowlim, stepeps, stepdz = 360, 0, 5e-7, 5e-6
+        elif stage == 4:
+            scanuplim, scanlowlim, stepeps, stepdz = 360, 0, 5e-7, 1e-5
+        elif stage == 5:
+            scanuplim, scanlowlim, stepeps, stepdz = 300, 0, 5e-7, 1e-5
         else:
-            scanuplim = 300
-            scanlowlim = 0
-            stepeps = 0.0000005
-            stepdz = 0.00001
+            scanuplim, scanlowlim, stepeps, stepdz = 300, 0, 5e-7, 1e-5
             
-            # dfh['z'] = dfh['z']+ stage *2 - 4.01  #  (+-5)
-        # dfh['r'] = np.sqrt(dfh['x'].values**2+dfh['y'].values**2+dfh['z'].values**2)
-        # dfh['rt'] = np.sqrt(dfh['x'].values**2+dfh['y'].values**2)
-        # dfh['a0'] = np.arctan2(dfh['y'].values,dfh['x'].values)
-        # dfh['z1'] = dfh['z'].values/dfh['rt'].values
-        # dfh['z2'] = dfh['z'].values/dfh['r'].values
-        # dfh['x2'] = 1/dfh['z1'].values
-        
-        # dfh['xy'] = dfh['x'].values/dfh['y'].values
-        # dfh['xr'] = dfh['x'].values/dfh['r'].values
-        # dfh['yr'] = dfh['y'].values/dfh['r'].values
-        # dfh['rtr'] = dfh['rt'].values / dfh['r'].values
-        
-        
-        
         params = []
-        EPS = 1e-12
-        # for ii in tqdm(range(50,80)):
-        # zzz =  dfh['z'].copy()
-        # zshift_range = [0,-2,2,-4,4,-6,6]
         zshift_range = [11, -11, 7, -7, 4, -4, 0]  # good #627
-        # zshift_range = [8,-8,4,-4,0]
-        # zshift_range = [15,-15,10,-10,5,-5,0] #good two
-        # zshift_range = [0]
-        # zshift_range =[12,-12,10,-10,8,-8,6,-6,4,-4,2,-2,0] #615
-        # zshift_range =[15,-15,14,-14,13,-13,12,-12,11,-11,10,-10,9,-9,8,-8,7,-7,6,-6,5,-5,4,-4,3,-3,2,-2,1,-1,0]
-        # zshift_range =[16,-16,14,-14,12,-12,10,-10,8,-8,6,-6,4,-4,2,-2,0]
         rtzip = [2, 1]  # good
-        # rtzip = [1] #good
-        # zzzip = [2,1]
         zzzip = [1]
         
         for rtzi in rtzip:
-            # for ti in temp:
             for zzi in zzzip:
                 for jj in zshift_range:
                     # for jj in np.arange(-7.501,7.5,3):
@@ -615,19 +517,9 @@ class Clusterer(object):
                     for ii in tqdm(np.arange(scanlowlim, scanuplim)):
                         mm = mm * (-1)
                         dz = mm * (dz0 + ii * stepdz)
-                        # dz = dz0+ii*stepdz
                         params.append((dfh, dz, ii, stepeps, jj, rtzi, zzi, stage))
-                        # params.append((dfh,-dz,ii,stepeps,jj))
-                        
-                        # ======================================
         # new test
-        pool = Pool(processes=8)
-        # labels_for_all_steps = pool.map(self._find_labels, params)
-        # print("labels_for_all_steps")
-        # print(len(labels_for_all_steps))
-        # count all
-        # print(len(dfh))
-        # results = [self._add_count(l,dfh,stage) for l in labels_for_all_steps]
+        pool = mp.Pool(processes=8)
         results = pool.map(self._find_labels, params)
         pool.close()
         
@@ -648,10 +540,6 @@ class Clusterer(object):
             dfh['s1'] = labels
             counts = dfh.groupby('s1')['s1'].transform('count')
             dfh['N1'] = counts
-            # print(len(labels))
-            # print(len(dfh['s1']))
-            # print(len(counts))
-            # print(len(dfh['N1']))
         print("count size")
         print(len(counts))
         for i in range(0, len(results)):
@@ -665,52 +553,6 @@ class Clusterer(object):
             s1 = dfh['s1'].values
             s1[cond] = dfh['s2'].values[cond] + maxs1  #
             
-            
-            
-            
-            # idx = np.where((c - counts > 0))[0]
-            # print(type(l))
-            # print(type(c))
-            # print(type(labels))
-            # print(type(counts))
-            # print(len(labels))
-            # print(len(counts))
-            # print(len(l))
-            # print(len(c))
-            # #counts[idx] = c[idx]
-            # labels[idx] = l[idx] + labels.max()
-            # #dfh['s2'] = l
-            # #counts =dfh.groupby('s1')['s1'].transform('count')
-            # print(len(labels))
-            # print (labels[1320:1330])
-            # print (c[1320:1330])
-            # print(c[1324])
-            # print (l[1320:1330])
-            # print(l[1324])
-            # print("count here")
-            # print(counts[1320:1330])
-            # print(counts[1324])
-            # #
-            # #counts[idx] = c[idx]
-            # print(len(counts))
-            # dfh['s1'] = labels
-            # print(labels[1324])
-            # print(l[1324])
-            # dss = dfh['s1'].iloc[650:690]
-            # print("dss")
-            # print(dss)
-            
-            # print(len(dfh['s1']))
-            # #YTT update count
-            # counts =dfh.groupby('s1')['s1'].transform('count')
-            # #print((counts.head(1500)))
-            # dff = counts.iloc[650:690]
-            # print(dff)
-            # print(len(counts))
-            # print("lala")
-            # print(counts[1324])
-            # dfh['N1'] = counts
-        # =============================
         print('time spent:', timeit.default_timer() - start_time)
         return dfh['s1'].values
     
@@ -756,10 +598,6 @@ class Clusterer(object):
                 # get link long from each item
                 dfh['N1'] = dfh.groupby('s1')['s1'].transform('count')
                 print(dfh['N1'].head())
-                # ytt
-                # cond_empty = np.where((dfh['N1'].values>20))
-                # s1 = dfh['s1'].values
-                # s1[cond_empty] = 0
             else:
                 dfh['s2'] = clusters
                 # get link long for each item
@@ -786,8 +624,6 @@ class Clusterer(object):
         hits = hits.assign(rrr=np.sqrt(hits.x ** 2 + hits.y ** 2))
         X = self._preprocess(hits)
         self.X = X
-        # self.clusters = hits.z.copy()
-        # self.clusters =0
         self.clusters = self._init(hits, stage=0)  # 90
         one_submission = create_one_event_submission(event_id, hits, self.clusters)
         dataset_submissions.append(one_submission)
@@ -828,11 +664,7 @@ class Clusterer(object):
             print(len(labels))
         
         one_submission = create_one_event_submission(event_id, hits, self.clusters)
-        # one_submission= self._extend(one_submission,hits)
         dataset_submissions.append(one_submission)
-        # score = score_event(truth, one_submission)
-        # print("Score after stage1 event : %.8f" % ( score))
-        
         
         # stage 1-2
         labels = np.unique(self.clusters)
@@ -850,7 +682,6 @@ class Clusterer(object):
         self.clusters[mask] = self._init(hits[mask], stage=3) + max_len
         
         one_submission = create_one_event_submission(event_id, hits, self.clusters)
-        # one_submission= self._extend(one_submission,hits)
         dataset_submissions.append(one_submission)
         score = score_event(truth, one_submission)
         print("Score after stage 1-2 event : %.8f" % (score))
@@ -871,16 +702,13 @@ class Clusterer(object):
         print("outlier ")
         print(len(mask))
         self.clusters[mask] = self._init(hits[mask], stage=4) + max_len
-        # one_submission= self._extend(one_submission,hits)
         
         one_submission = create_one_event_submission(event_id, hits, self.clusters)
-        # one_submission= self._extend(one_submission,hits)
         dataset_submissions.append(one_submission)
         score = score_event(truth, one_submission)
         print("Score after stage 2-1 event : %.8f" % (score))
         
         # 0-3
-        
         
         # stage 2-2
         labels = np.unique(self.clusters)
@@ -916,29 +744,20 @@ class Clusterer(object):
         print("outlier ")
         print(len(mask))
         self.clusters[mask] = self._init(hits[mask], stage=3) + max_len
-        # self.clusters[mask] = self._init2(hits[mask])+max_len
         
         
         return self.clusters
 
 
-# model = Clusterer()
-# labels = model.predict(hits)
-
-
 def create_one_event_submission(event_id, hits, labels):
     sub_data = np.column_stack(([event_id] * len(hits), hits.hit_id.values, labels))
-    # submission = pd.DataFrame(data=sub_data, columns=["event_id", "hit_id", "track_id"]).astype(int)
     submission = pd.DataFrame(data=sub_data, columns=["event_id", "hit_id", "track_id"]).astype(np.int64)
     return submission
 
 
-
 if __name__ == "__main__":
-    
     dataset_submissions = []
     dataset_scores = []
-    # for event_id, hits, cells, particles, truth in load_dataset(path_to_train, skip=0, nevents=5):
     # ytt test
     hits, cells, particles, truth = load_event(os.path.join(path_to_train, event_prefix))
     # Track pattern recognition
@@ -979,6 +798,10 @@ if __name__ == "__main__":
     if create_submission:
         for event_id, hits, cells in load_dataset(path_to_test, parts=['hits', 'cells']):
             
+            """
+            Tianyi: so this is the entire process of using a model (Clusterer) and extending the tracks
+            
+            """
             # Track pattern recognition
             model = Clusterer()
             labels = model.predict(hits)
@@ -986,7 +809,8 @@ if __name__ == "__main__":
             # Prepare submission for an event
             one_submission = create_one_event_submission(event_id, hits, labels)
             
-            for i in range(4): one_submission = model._extend(one_submission, hits)
+            for i in range(4):
+                one_submission = model._extend(one_submission, hits)
             test_dataset_submissions.append(one_submission)
             
             print('Event ID: ', event_id)

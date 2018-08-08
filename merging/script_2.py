@@ -810,19 +810,41 @@ def temp_wrapper_3(idx):
 record_2_idx = []
 record_2_score = []
 
-with trange(1000) as t:
+with trange(3000) as t:
     for i in t:
         t.set_postfix(max_score=f"{max(record_2_score):.5}")
         with mp.Pool() as p1:
-            idx_list = [np.random.permutation(range(len(cluster_pred))) for j in range(20)]
+            idx_list = [np.random.permutation(range(len(cluster_pred))) for j in range(25)]
             score_list = list(p1.map(temp_wrapper_3, idx_list))
             record_2_idx.extend(idx_list)
             record_2_score.extend(score_list)
-    
+            if i % 100 == 0:
+                cond = np.where(np.array(record_2_score) > np.quantile(record_2_score, 0.9))[0].tolist()
+                record_2_score = [record_2_score[i] for i in cond]
+                record_2_idx = [record_2_idx[i] for i in cond]
 
-cond = np.where(np.array(record_2_score) > np.quantile(record_2_score, 0.9))[0].tolist()
+cond = np.argsort(record_2_score)[-100:][::-1]  # sort in descending scores
 record_2_score = [record_2_score[i] for i in cond]
 record_2_idx = [record_2_idx[i] for i in cond]
+
+d = 50
+for idx in record_2_idx.copy():
+    with trange(100) as t:
+        for i in t:  # iterate over current best permutations
+            t.set_postfix(max_score=f"{max(record_2_score):.5}")
+            perm_mask = np.random.choice(range(len(idx)), size=len(idx)//d, replace=False)
+            idx_list = []
+            for j in range(25):  # permutations of current mask
+                new_idx = idx.copy()
+                new_idx[perm_mask] = new_idx[perm_mask][np.random.permutation(range(len(idx)//d))]
+                idx_list.append(new_idx)
+            with mp.Pool() as p1:
+                score_list = list(p1.map(temp_wrapper_3, idx_list))
+                record_2_idx.extend(idx_list)
+                record_2_score.extend(score_list)
+            cond = np.argsort(record_2_score)[-200:][::-1]  # sort in descending scores
+            record_2_score = [record_2_score[i] for i in cond]
+            record_2_idx = [record_2_idx[i] for i in cond]
 
 easy_score(truth, im.merge_naive(cluster_pred))
 # im1 = IterativeMerger()
