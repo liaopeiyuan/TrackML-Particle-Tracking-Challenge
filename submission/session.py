@@ -328,8 +328,8 @@ class Session(object):
     def _init(self,dfhin,stage=0,newstart=1):
 
         start_time = timeit.default_timer()
-        print(type(dfhin))
-        print(dfhin)
+        print("Type of dfhin : {}".format(type(dfhin)))
+        #print(dfhin)
         dfh = dfhin.copy() 
         volume_id = dfh['volume_id'].values.astype(np.float32)
         layer_id = dfh['layer_id'].values.astype(np.float32)
