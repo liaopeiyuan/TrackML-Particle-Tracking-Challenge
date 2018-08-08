@@ -26,7 +26,7 @@ n_events = 125
 test_dataset_submissions=[]
 
 #list_of_test_events = s1.get_test_event(n=n_events, content=[s1.HITS], randomness=True)[1]
-for event_id, hits, cells in tqdm(load_dataset("/rscratch/xuanyu/KAIL/test_trackml/test", parts=['event_id', 'hits', 'cells'])):
+for event_id, hits, cells in tqdm(load_dataset("/rscratch/xuanyu/KAIL/test_trackml/test", parts=['hits', 'cells'])):
 # Track pattern recognition
     print(hits)
     labels = s1.predict(hits)
