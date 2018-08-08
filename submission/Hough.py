@@ -25,11 +25,11 @@ s1 = Session(parent_dir="/rscratch/xuanyu/KAIL/test_trackml/")
 n_events = 125
 test_dataset_submissions=[]
 
-list_of_train_events = s1.get_test_events(n=n_events, content=[s1.HITS], randomness=True)[1]
-for hits in tqdm(list_of_train_events):
+list_of_test_events = s1.get_test_event(n=n_events, content=[s1.HITS], randomness=True)[1]
+for hits in tqdm(list_of_test_events):
 # Track pattern recognition
-    model = Clusterer(event_id, event_prefix, path_to_train)
-    labels = model.predict(hits)
+
+    labels = s1.predict(hits)
 
     # Prepare submission for an event
     one_submission = create_one_event_submission(event_id, hits, labels)
