@@ -21,7 +21,7 @@ from trackml.score import score_event
 
 
 np.random.seed()  # restart random number generator
-s1 = Session(parent_dir="/Users/alexanderliao/Documents/GitHub/Kaggle-TrackML/portable-dataset/")
+s1 = Session(parent_dir="/rscratch/xuanyu/KAIL/test_trackml/test/")
 n_events = 125
 test_dataset_submissions=[]
 
