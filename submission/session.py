@@ -390,8 +390,8 @@ class Session(object):
         for rtzi in rtzip:
           for zzi in zzzip:
             for jj in zshift_range: 
-              print("jj")
-              print(jj)
+              #print("jj")
+              #print(jj)
               for ii in np.arange(scanlowlim,scanuplim):    
                 mm = mm*(-1)
                 dz = mm*(dz0+ii*stepdz)
@@ -689,7 +689,7 @@ class Session(object):
         c[np.where(l == 0)] = 0
         c[np.where(c > 20)] = 0
         return (l, c)
-        
+
     def predict(self, hits):    
         dataset_submissions=[]
 
