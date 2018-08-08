@@ -533,7 +533,7 @@ class Session(object):
     def predict(self, hits):    
         dataset_submissions=[]
 
-        hits['rrr'] =  np.sqrt( hits.x.values**2 + hits.y.values**2))
+        hits['rrr'] =  np.sqrt( hits.x.values**2 + hits.y.values**2)
 
         print("Preprocessing.....") 
         X = self._preprocess(hits)
