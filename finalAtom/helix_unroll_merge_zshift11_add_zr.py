@@ -569,7 +569,7 @@ class Clusterer(object):
         indices=np.zeros((len(labels)),np.float32)
         #M = self.X
    
-        for i, cluster in tqdm(enumerate(labels),total=len(labels)):
+        for i, cluster in tqdm(enumerate(labels),total=len(labels),disable=True):
             if cluster == 0:
                 continue
             #for all pair , count there norm    
@@ -1167,6 +1167,8 @@ if __name__ == "__main__":
     dataset_scores = []
     #for event_id, hits, cells, particles, truth in load_dataset(path_to_train, skip=0, nevents=5):
     #ytt test
+
+    """
     hits, cells, particles, truth = load_event(os.path.join(path_to_train, event_prefix))
         # Track pattern recognition
     model = Clusterer()
@@ -1200,6 +1202,7 @@ if __name__ == "__main__":
     del model
     del labels
     gc.collect()
+    """
 
     path_to_test = "/rscratch/xuanyu/trackML/data/"
     test_dataset_submissions = []
@@ -1215,7 +1218,8 @@ if __name__ == "__main__":
             # Prepare submission for an event
             one_submission = create_one_event_submission(event_id, hits, labels)
 
-            for i in range(4): one_submission =  model._extend(one_submission, hits)
+            for i in range(4): 
+                one_submission =  model._extend(one_submission, hits)
             test_dataset_submissions.append(one_submission)
             
             print('Event ID: ', event_id)

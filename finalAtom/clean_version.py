@@ -12,12 +12,12 @@ from finalAtom.utils.clusterer import Clusterer
 from finalAtom.utils.create_submission import create_one_event_submission
 
 #TODO change the submissoincsv save path [include / at the end]
-csv_save_path = "/rscratch/xuanyu/"
+csv_save_path = "/rscratch/xuanyu/aaronmao/"
 
 #TODO change the base path to your sets and train [include / at the end]
 base_path = "/rscratch/xuanyu/aaronmao/"
-path_to_train = base_path+"train_test/"
-path_to_test = base_path+"test_test/"
+path_to_train = base_path+"train/"
+path_to_test = base_path+"test/"
 
 event_prefix = "event000001000"
 event_id = "000001000"
