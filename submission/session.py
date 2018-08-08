@@ -397,7 +397,7 @@ class Session(object):
                 dz = mm*(dz0+ii*stepdz)
                 params.append((dfh, dz,ii,stepeps,jj,rtzi,zzi,stage ))
 
-        print("Done....")
+        print("Done!")
         #new test
         n=8
         print("Initializing parallel pool: {} processes".format(n))
