@@ -11,10 +11,18 @@ from trackml.score import score_event
 from finalAtom.utils.clusterer import Clusterer
 from finalAtom.utils.create_submission import create_one_event_submission
 
-path_to_train = "/mydisk/Kaggle-Competition/Track-ML/Data/train_1/"
-path_to_test = "/mydisk/Kaggle-Competition/Track-ML/Data/test/"
+#TODO change the submissoincsv save path [include / at the end]
+csv_save_path = ""
+
+#TODO change the base path to your sets and train [include / at the end]
+base_path = "/mydisk/Kaggle-Competition/Track-ML/Data/"
+path_to_train = base_path+"train/"
+path_to_test = base_path+"test/"
+
 event_prefix = "event000001000"
 event_id = "000001000"
+
+
 
 
 def cossimilar(X, Y):
@@ -78,7 +86,7 @@ if __name__ == "__main__":
 
             for i in range(4): 
                 one_submission = model._extend(one_submission, hits)
-                test_dataset_submissions.append(one_submission)
+            test_dataset_submissions.append(one_submission)
 
             print('Event ID: ', event_id)
             del model
@@ -87,4 +95,4 @@ if __name__ == "__main__":
 
         # Create submission file
         submission = pd.concat(test_dataset_submissions, axis=0)
-        submission.to_csv('submission_600.csv', index=False)
+        submission.to_csv(csv_save_path+'submission_600.csv', index=False)

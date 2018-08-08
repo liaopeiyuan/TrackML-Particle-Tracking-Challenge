@@ -25,6 +25,93 @@ class Clusterer(object):
         self.path_to_train = path_to_train
         self.rz_scales = rz_scales
 
+    
+    def _init_merge(self, dfhin, stage=0, newstart=1):
+
+        start_time = timeit.default_timer()
+        print(type(dfhin))
+        print(dfhin)
+        dfh = dfhin.copy()
+        # ytt z xhift
+
+        volume_id = dfh['volume_id'].values.astype(np.float32)
+        layer_id = dfh['layer_id'].values.astype(np.float32)
+        module_id = dfh['module_id'].values.astype(np.float32)
+
+        dz0 = 0
+        mm = 1
+        init = 0
+        print("gogola")
+
+        if stage == 0:
+            scanuplim = 360
+            scanlowlim = 0
+            stepeps = 0.0000005
+            stepdz = 0.000005
+        elif stage == 1:
+            scanuplim = 360
+            scanlowlim = 0
+            stepeps = 0.0000005
+            stepdz = 0.000005
+        elif stage == 2:
+            scanuplim = 360
+            scanlowlim = 0
+            stepeps = 0.0000005
+            stepdz = 0.000005
+        elif stage == 3:
+            scanuplim = 360
+            scanlowlim = 0
+            stepeps = 0.0000005
+            stepdz = 0.000005
+        elif stage == 4:
+            scanuplim = 360
+            scanlowlim = 0
+            stepeps = 0.0000005
+            stepdz = 0.00001
+        elif stage == 5:
+            scanuplim = 300
+            scanlowlim = 0
+            stepeps = 0.0000005
+            stepdz = 0.00001
+        else:
+            scanuplim = 300
+            scanlowlim = 0
+            stepeps = 0.0000005
+            stepdz = 0.00001
+
+        params = []
+        EPS = 1e-12
+        zshift_range = [11, -11, 7, -7, 4, -4, 0]  # good #627
+        rtzip = [2, 1]  # good
+        zzzip = [1]
+
+        for rtzi in rtzip:
+            # for ti in temp:
+            for zzi in zzzip:
+                for jj in zshift_range:
+                    # for jj in np.arange(-7.501,7.5,3):
+                    print("jj")
+                    print(jj)
+                    for ii in tqdm(np.arange(scanlowlim, scanuplim)):
+                        mm = mm * (-1)
+                        dz = mm * (dz0 + ii * stepdz)
+                        # dz = dz0+ii*stepdz
+                        params.append((dfh, dz, ii, stepeps, jj, rtzi, zzi, stage))
+                        # params.append((dfh,-dz,ii,stepeps,jj))
+
+        pool = Pool(processes=8)
+        results = pool.map(self._find_labels, params)
+        pool.close()
+
+        labels, counts = results[0]
+        print("all result")
+        print(len(labels))
+        print(len(results))
+        print(len(counts))
+
+        print('time spent:', timeit.default_timer() - start_time)
+        return results
+
     def _init(self, dfhin, stage=0, newstart=1):
 
         start_time = timeit.default_timer()
@@ -699,5 +786,18 @@ class Clusterer(object):
         print(len(mask))
         self.clusters[mask] = self._init(hits[mask], stage=3) + max_len
         # self.clusters[mask] = self._init2(hits[mask])+max_len
+
+        return self.clusters
+
+    def predict_merge(self, hits):
+
+        dataset_submissions = []
+
+        hits, cells, particles, truth = load_event(os.path.join(self.path_to_train, self.event_prefix))
+
+        hits = hits.assign(rrr=np.sqrt(hits.x ** 2 + hits.y ** 2))
+        X = self._preprocess(hits)
+        self.X = X
+        self.clusters = self._init_merge(hits, stage=0)  # 90
 
         return self.clusters
