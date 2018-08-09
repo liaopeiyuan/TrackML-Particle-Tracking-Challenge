@@ -12,12 +12,12 @@ from finalAtom.utils.clusterer import Clusterer
 from finalAtom.utils.create_submission import create_one_event_submission
 
 #TODO change the submissoincsv save path [include / at the end]
-csv_save_path = ""
+csv_save_path = "/mydisk/"
 
 #TODO change the base path to your sets and train [include / at the end]
 base_path = "/mydisk/Kaggle-Competition/Track-ML/Data/"
-path_to_train = base_path+"train_test/"
-path_to_test = base_path+"test_test/"
+path_to_train = base_path+"train_1/"
+path_to_test = base_path+"test/"
 
 event_prefix = "event000001000"
 event_id = "000001000"
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     dataset_scores = []
 
     # for event_id, hits, cells, particles, truth in load_dataset(path_to_train, skip=0, nevents=5):
-    hits, cells, particles, truth = load_event(os.path.join(path_to_train, event_prefix))
+    #hits, cells, particles, truth = load_event(os.path.join(path_to_train, event_prefix))
 
     '''
     # Track pattern recognition
