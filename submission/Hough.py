@@ -37,7 +37,7 @@ for event_id, hits, cells in tqdm(load_dataset("/rscratch/xuanyu/KAIL/test_track
     one_submission = create_one_event_submission(event_id, hits, labels)
 
     for i in range(4): 
-        one_submission = model._extend(one_submission, hits)
+        one_submission = s1._extend(one_submission, hits)
     test_dataset_submissions.append(one_submission)
 
     if i==3 or i%20==0:
