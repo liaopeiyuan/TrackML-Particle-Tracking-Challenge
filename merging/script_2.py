@@ -186,7 +186,7 @@ def merge_naive(pred_1, pred_2, cutoff=20):
     cond = np.where((d['N2'].values > d['N1'].values) & (d['N2'].values < cutoff))
     s1 = d['s1'].values
     s1[cond] = d['s2'].values[cond] + max_s1
-    return label_encode(s1)
+    return s1
 
 
 # ======================================================================================================================
@@ -827,7 +827,7 @@ cond = np.argsort(record_2_score)[-100:][::-1]  # sort in descending scores
 record_2_score = [record_2_score[i] for i in cond]
 record_2_idx = [record_2_idx[i] for i in cond]
 
-d = 50
+d = 20
 for idx in record_2_idx.copy():
     with trange(100) as t:
         for i in t:  # iterate over current best permutations
