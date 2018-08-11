@@ -44,7 +44,7 @@ for event_id, hits, cells in tqdm(load_dataset("/rscratch/xuanyu/KAIL/test_track
         submission = pd.concat(test_dataset_submissions, axis=0)
         submission.to_csv('submission_600_temp.csv', index=False)
     print('Event ID: ', event_id)
-    del model
+    #del model
     del labels
     gc.collect()
 

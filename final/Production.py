@@ -23,7 +23,7 @@
 
 import multiprocessing as mp
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
@@ -33,7 +33,7 @@ from scipy import stats
 from tqdm import tqdm
 from sklearn.cluster import DBSCAN
 
-from IPython.display import clear_output
+#from IPython.display import clear_output
 
 from trackml_helper import *
 from analysis import *
@@ -255,25 +255,25 @@ if False:
 # In[8]:
 
 
-pr = precision(truth,submission,min_hits=10)
+#pr = precision(truth,submission,min_hits=10)
 
 
 # In[9]:
 
 
-pr = precision(truth,submission,min_hits=7)
+#pr = precision(truth,submission,min_hits=7)
 
 
 # In[10]:
 
 
-pr = precision(truth,submission,min_hits=4)
+#pr = precision(truth,submission,min_hits=4)
 
 
 # In[11]:
 
 
-pr = precision(truth,submission,min_hits=1)
+#pr = precision(truth,submission,min_hits=1)
 
 
 # In[12]:
@@ -302,7 +302,7 @@ if False: #benchmark
 # Preparing Submission
 if True:
     for i in tqdm(range(125)):
-        path_to_train = "/home/alexanderliao/data/Kaggle/competitions/trackml-particle-identification/test"
+        path_to_train = "/rscratch/xuanyu/KAIL/test_trackml/test"
         event_prefix = "event"+str(i).zfill(9)
         hits = load_event_hits(os.path.join(path_to_train, event_prefix))
         c=[1.5,1.5,0.73,0.17,0.027,0.027] #[phi_coef,phi_coef,zdivrt_coef,zdivr_coef,xdivr_coef,ydivr_coef]
