@@ -28,7 +28,7 @@ def prepare_df(hits_df, truth_df):
 
 def get_basic_nn(input_size=9):
     nn_list = [Input(shape=(input_size,))]
-    for layer in sum(([Dense(128), PReLU(), BatchNormalization()] for i in range(15)), []) + [Dense(64), PReLU()]:
+    for layer in sum(([Dense(80), PReLU(), BatchNormalization()] for i in range(50)), []) + [Dense(64), PReLU()]:
         nn_list.append(layer(nn_list[-1]))
     return nn_list
 
