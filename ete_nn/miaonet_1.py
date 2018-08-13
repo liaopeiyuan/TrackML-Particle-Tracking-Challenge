@@ -61,6 +61,20 @@ def permute_target(target):
     return target[:, np.random.permutation(range(target.shape[1]))]
 
     
+def augment_1(df, theta):
+    df = df[["x", "y", "z"]].copy()
+    r = np.sqrt(df["x"] ** 2 + df["y"] ** 2)
+    a = np.arctan2(df["y"], df["x"]) + theta
+    df.loc[:, "x"] = np.cos(a) * r
+    df.loc[:, "y"] = np.sin(a) * r
+    return df
+
+
+def get_feature(df):
+    return df
+
+
+
 """
 s1 = Session("../portable-dataset/")
 volume_set = set()
@@ -86,7 +100,3 @@ for hits, in s1.get_test_event(n=10000, content=[s1.HITS])[1]:
 # print(hits.columns.tolist())
 # print(truth.columns.tolist())
 
-len(set(range(1, 3193)).difference(module_set))
-
-min(module_set)
-max(module_set)
