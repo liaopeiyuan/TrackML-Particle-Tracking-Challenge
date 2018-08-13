@@ -29,15 +29,11 @@ def get_basic_nn(input_size=9):
     for layer in [
         Dense(32), BatchNormalization(), PReLU(),
         Dense(64), BatchNormalization(), PReLU(),
-        Dense(75), BatchNormalization(), PReLU(),
-        Dense(100), BatchNormalization(), PReLU(),
         Dense(128), BatchNormalization(), PReLU(),
         Dense(128), BatchNormalization(), PReLU(),
         Dense(128), BatchNormalization(), PReLU(),
         Dense(128), BatchNormalization(), PReLU(),
         Dense(128), BatchNormalization(), PReLU(),
-        Dense(110), BatchNormalization(), PReLU(),
-        Dense(75), BatchNormalization(), PReLU(),
         Dense(64), BatchNormalization(), PReLU(),
     ]:
         nn_list.append(layer(nn_list[-1]))
@@ -49,7 +45,7 @@ def train_nn(nn_list, fx, fy, basic_trainable=True, epochs=10, batch_size=64, lo
         layer.trainable = basic_trainable
     print(f"shape of fx: {fx.shape}")
     print(f"shape of fy: {fy.shape}")
-    output_layer = Dense(1, activation="softmax", trainable=True)(nn_list[-1])
+    output_layer = Dense(np.max(fy) + 1, activation="softmax", trainable=True)(nn_list[-1])
     temp_model = Model(inputs=nn_list[0], outputs=output_layer)
     temp_model.compile(optimizer="adam", loss=loss)
     temp_model.fit(fx, fy, epochs=epochs, batch_size=batch_size, verbose=verbose)
@@ -74,20 +70,9 @@ def augment_1(df, theta):
 
 def get_feature(df):
     return df
-
-
-def main():
-    np.random.seed(1)  # restart random number generator
-    s1 = Session("../data/")
-    nn_list_basic = get_basic_nn(3)
-    for hits, truth in s1.get_train_events(n=10, content=[s1.HITS, s1.TRUTH], randomness=True)[1]: break
-    df = prepare_df(hits, truth)
-    fy = get_target(df)
-    train_nn(nn_list_basic, get_feature(augment_1(df, np.random.rand()*2*np.pi)), fy, basic_trainable=False, epochs=5, batch_size=1024, loss="sparse_categorical_crossentropy", verbose=1)
-        
-        
+    
 if __name__ == '__main__':
-    main()
+    pass
     
 
 """
