@@ -33,13 +33,11 @@ def get_basic_nn(input_size=9):
     return nn_list
 
 
-def train_nn(nn_list, fx, fy, fw, basic_trainable=True, epochs=10, batch_size=64, loss="categorical_crossentropy", metrics=None, verbose=1):
-    for layer in nn_list:
-        layer.trainable = basic_trainable
+def train_nn(input_layer, output_layer, fx, fy, fw, epochs=10, batch_size=64, loss="categorical_crossentropy", metrics=None, verbose=1):
     print(f"shape of fx: {fx.shape}")
     print(f"shape of fy: {fy.shape}")
-    output_layer = Dense(np.max(fy) + 1, activation="softmax", trainable=True)(nn_list[-1])
-    temp_model = Model(inputs=nn_list[0], outputs=output_layer)
+    final_output_layer = Dense(np.max(fy) + 1, activation="softmax", trainable=True)(output_layer)
+    temp_model = Model(inputs=input_layer, outputs=final_output_layer)
     temp_model.compile(optimizer="adam", loss=loss, metrics=metrics)
     temp_model.fit(fx, fy, sample_weight=fw, epochs=epochs, batch_size=batch_size, verbose=verbose)
     
