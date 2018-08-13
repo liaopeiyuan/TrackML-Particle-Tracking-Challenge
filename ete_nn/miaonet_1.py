@@ -11,6 +11,8 @@ from keras.layers import Input, Embedding, Dense, PReLU, BatchNormalization
 
 def prepare_df(hits_df, truth_df):
     df = truth_df[["hit_id", "particle_id", "weight"]].merge(hits_df[["hit_id", "x", "y", "z", "volume_id", "layer_id", "module_id"]], on="hit_id")
+    # drop weight = 0 rows
+    df = df.loc[df["weight"] > 0, :]
     # drop useless rows
     df["track_size"] = df.groupby("particle_id")["particle_id"].transform("count")
     # df = df.merge(pd.DataFrame(hits_df.groupby("particle_id").size().rename("track_size")), left_on="particle_id", right_index=True)
@@ -26,29 +28,20 @@ def prepare_df(hits_df, truth_df):
 
 def get_basic_nn(input_size=9):
     nn_list = [Input(shape=(input_size,))]
-    for layer in [
-        Dense(32), BatchNormalization(), PReLU(),
-        Dense(64), BatchNormalization(), PReLU(),
-        Dense(128), BatchNormalization(), PReLU(),
-        Dense(128), BatchNormalization(), PReLU(),
-        Dense(128), BatchNormalization(), PReLU(),
-        Dense(128), BatchNormalization(), PReLU(),
-        Dense(128), BatchNormalization(), PReLU(),
-        Dense(64), BatchNormalization(), PReLU(),
-    ]:
+    for layer in sum(([Dense(128), PReLU(), BatchNormalization()] for i in range(15)), []) + [Dense(64), PReLU()]:
         nn_list.append(layer(nn_list[-1]))
     return nn_list
 
 
-def train_nn(nn_list, fx, fy, basic_trainable=True, epochs=10, batch_size=64, loss="categorical_crossentropy", verbose=1):
+def train_nn(nn_list, fx, fy, fw, basic_trainable=True, epochs=10, batch_size=64, loss="categorical_crossentropy", metrics=None, verbose=1):
     for layer in nn_list:
         layer.trainable = basic_trainable
     print(f"shape of fx: {fx.shape}")
     print(f"shape of fy: {fy.shape}")
     output_layer = Dense(np.max(fy) + 1, activation="softmax", trainable=True)(nn_list[-1])
     temp_model = Model(inputs=nn_list[0], outputs=output_layer)
-    temp_model.compile(optimizer="adam", loss=loss)
-    temp_model.fit(fx, fy, epochs=epochs, batch_size=batch_size, verbose=verbose)
+    temp_model.compile(optimizer="adam", loss=loss, metrics=metrics)
+    temp_model.fit(fx, fy, sample_weight=fw, epochs=epochs, batch_size=batch_size, verbose=verbose)
     
 
 def get_target(df):
@@ -69,8 +62,18 @@ def augment_1(df, theta):
 
 
 def get_feature(df):
-    return df
-    
+    return df[["x", "y", "z"]]
+
+
+def get_feature_cylindrical(df):
+    df = df[["x", "y", "z"]].copy()
+    df["r"] = np.sqrt(df["x"]**2 + df["y"]**2)
+    df["a"] = np.arctan2(df["y"], df["x"])
+    df["phi"] = np.arctan2(df["z"], df["r"])
+    df["z"] = df["z"] / 3000
+    df["r"] = df["r"] / 1000
+    return df[["r", "a", "z", "phi"]]
+
 if __name__ == '__main__':
     pass
     
