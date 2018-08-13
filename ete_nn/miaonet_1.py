@@ -3,15 +3,18 @@ import pandas as pd
 
 from utils.session import Session
 
+from sklearn.preprocessing import LabelEncoder
+
 from keras.models import Model
 from keras.layers import Input, Embedding, Dense, PReLU, BatchNormalization
 
 
 def prepare_df(hits_df, truth_df):
-    df = truth_df[["hit_id", "particle_id"]].merge(hits_df[["hit_id", "x", "y", "z", "volume_id", "layer_id", "module_id", "weight"]], on="hit_id")
+    df = truth_df[["hit_id", "particle_id", "weight"]].merge(hits_df[["hit_id", "x", "y", "z", "volume_id", "layer_id", "module_id"]], on="hit_id")
     # drop useless rows
-    df = df.merge(pd.DataFrame(hits_df.groupby("particle_id").size().rename("track_size")), left_on="particle_id", right_index=True)
-    df = df.loc[(df["track_size"] > 3) & (df["particle_id"] != 0), ["x", "y", "z", "volume_id", "layer_id", "module_id", "weight"]]
+    df["track_size"] = df.groupby("particle_id")["particle_id"].transform("count")
+    # df = df.merge(pd.DataFrame(hits_df.groupby("particle_id").size().rename("track_size")), left_on="particle_id", right_index=True)
+    df = df.loc[(df["track_size"] > 3) & (df["particle_id"] != 0), ["x", "y", "z", "volume_id", "layer_id", "module_id", "weight", "particle_id"]]
     # prepare categorical variables for embedding
     # volume_dict = {7: 0, 8: 1, 9: 2, 12: 3, 13: 4, 14: 5, 16: 6, 17: 7, 18: 8}
     # layer_dict = {2: 0, 4: 1, 6: 2, 8: 3, 10: 4, 12: 5, 14: 6}
@@ -41,24 +44,23 @@ def get_basic_nn(input_size=9):
     return nn_list
 
 
-def train_nn(nn_list, fx, fy, basic_trainable=True, epochs=10, batch_size=64, verbose=1):
+def train_nn(nn_list, fx, fy, basic_trainable=True, epochs=10, batch_size=64, loss="categorical_crossentropy", verbose=1):
     for layer in nn_list:
         layer.trainable = basic_trainable
     print(f"shape of fx: {fx.shape}")
     print(f"shape of fy: {fy.shape}")
-    n_targets = fy.shape[1]
-    output_layer = Dense(n_targets, activation="softmax", trainable=True)(nn_list[-1])
+    output_layer = Dense(1, activation="softmax", trainable=True)(nn_list[-1])
     temp_model = Model(inputs=nn_list[0], outputs=output_layer)
-    temp_model.compile(optimizer="adam", loss="categorical_crossentropy")
+    temp_model.compile(optimizer="adam", loss=loss)
     temp_model.fit(fx, fy, epochs=epochs, batch_size=batch_size, verbose=verbose)
-
+    
 
 def get_target(df):
-    return pd.get_dummies(df["particle_id"], dummy_na=False).values
+    return LabelEncoder().fit_transform(df["particle_id"])
 
 
 def permute_target(target):
-    return target[:, np.random.permutation(range(target.shape[1]))]
+    return np.random.permutation(np.max(target) + 1)[target]
 
     
 def augment_1(df, theta):
@@ -74,6 +76,19 @@ def get_feature(df):
     return df
 
 
+def main():
+    np.random.seed(1)  # restart random number generator
+    s1 = Session("../data/")
+    nn_list_basic = get_basic_nn(3)
+    for hits, truth in s1.get_train_events(n=10, content=[s1.HITS, s1.TRUTH], randomness=True)[1]: break
+    df = prepare_df(hits, truth)
+    fy = get_target(df)
+    train_nn(nn_list_basic, get_feature(augment_1(df, np.random.rand()*2*np.pi)), fy, basic_trainable=False, epochs=5, batch_size=1024, loss="sparse_categorical_crossentropy", verbose=1)
+        
+        
+if __name__ == '__main__':
+    main()
+    
 
 """
 s1 = Session("../portable-dataset/")
