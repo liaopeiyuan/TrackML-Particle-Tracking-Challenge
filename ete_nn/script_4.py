@@ -25,11 +25,22 @@ from ete_nn.miaonet_2 import InceptionResNetV2
 # np.random.seed(1)  # restart random number generator
 s1 = Session("../data/")
 
-for hits, truth in s1.get_train_events(n=10, content=[s1.HITS, s1.TRUTH], randomness=True)[1]: break
+for hits, cells, truth in s1.get_train_events(n=10, content=[s1.HITS, s1.CELLS, s1.TRUTH], randomness=True)[1]:
+    break
+
+max(hits.module_id.max() for hits, in s1.get_test_event(n=10000, content=[s1.HITS], randomness=True)[1])
+
+temp_set_1 = set()
+for cells, in s1.get_train_events(n=10000, content=[s1.CELLS], randomness=True)[1]:
+    temp_set_1.add((cells.ch0.nunique(), cells.ch1.nunique(), cells.ch0.min(), cells.ch1.min(), cells.ch0.max(), cells.ch1.max()))
+    
+
+
 
 df = prepare_df(hits, truth)
 # fx = get_feature(augment_1(df, np.random.rand()*2*np.pi))
-fx = get_feature(augment_1(df, np.random.rand()*2*np.pi))
+# fx = get_feature(augment_1(df, np.random.rand()*2*np.pi))
+fx = get_feature_cylindrical(df)
 fy = get_target(df)
 
 fw = df["weight"] * (df.shape[0] / df["weight"].sum())
@@ -39,7 +50,7 @@ fw = df["weight"] * (df.shape[0] / df["weight"].sum())
 nn_input, nn_output = InceptionResNetV2(input_shape=(3,))
 
 # nn_list_basic = get_basic_nn(3)
-train_nn(nn_input, nn_output, fx, fy, fw=fw.values, epochs=3, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=1)
+train_nn(nn_input, nn_output, fx, fy, fw=fw.values, epochs=2000, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=1)
 #
 
 # final_encoder = Model(inputs=nn_list_basic[0], outputs=nn_list_basic[-1])

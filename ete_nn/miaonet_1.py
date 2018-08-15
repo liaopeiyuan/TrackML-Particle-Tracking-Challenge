@@ -70,7 +70,7 @@ def get_feature_cylindrical(df):
     df["phi"] = np.arctan2(df["z"], df["r"])
     df["z"] = df["z"] / 3000
     df["r"] = df["r"] / 1000
-    return df[["r", "a", "z", "phi"]]
+    return df[["r", "a", "phi"]]
 
 if __name__ == '__main__':
     pass
