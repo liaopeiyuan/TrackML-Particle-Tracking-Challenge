@@ -30,9 +30,11 @@ s1 = Session("../data/")
 for hits, cells, truth in s1.get_train_events(n=10, content=[s1.HITS, s1.CELLS, s1.TRUTH], randomness=True)[1]:
     di, do, dw = get_nn_data(hits, cells, truth)
     break
-    
-    
+
+
 mi_1, mo_1 = get_nn_model()
+
+train_nn(mi_1, mo_1, di, do[0], fw=dw, epochs=100, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=1)
 
 
 

@@ -34,8 +34,6 @@ def get_basic_nn(input_size=9):
 
 
 def train_nn(input_layer, output_layer, fx, fy, fw, epochs=10, batch_size=64, loss="categorical_crossentropy", metrics=None, verbose=1):
-    print(f"shape of fx: {fx.shape}")
-    print(f"shape of fy: {fy.shape}")
     final_output_layer = Dense(np.max(fy) + 1, activation="softmax", trainable=True)(output_layer)
     temp_model = Model(inputs=input_layer, outputs=final_output_layer)
     temp_model.compile(optimizer="adam", loss=loss, metrics=metrics)

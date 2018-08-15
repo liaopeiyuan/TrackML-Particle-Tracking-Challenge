@@ -32,13 +32,20 @@ def get_nn_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.Data
     di_layer = hits_df[["layer_id"]].values
     di_module = hits_df[["module_id"]].values
     # output_tp = truth_df[["tpx", "tpy", "tpz"]]
+
+    x = {
+        "input_geometric": di_geometric,
+        "input_volume": di_volume,
+        "input_layer": di_layer,
+        "input_module": di_module,
+    }
     
     if truth_df is None:
-        return [di_geometric, di_volume, di_layer, di_module], None, None
+        return x, None, None
     else:
         do_id = truth_df["particle_id"].values
         do_id = LabelEncoder().fit_transform(do_id)
-        return [di_geometric, di_volume, di_layer, di_module], [do_id], truth_df["weight"].values
+        return x, do_id, truth_df["weight"].values
     
     
 def get_nn_model():
