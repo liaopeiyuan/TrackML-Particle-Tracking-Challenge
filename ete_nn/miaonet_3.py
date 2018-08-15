@@ -7,8 +7,10 @@ from keras.layers import Input, Dense, Embedding, Concatenate, Flatten, BatchNor
 
 def get_nn_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.DataFrame=None):
     # notice that hit_id in hits_df, cells_df, and truth_df is already sorted
+    hits_df = hits_df.copy()
     hits_df.index = hits_df.hit_id
     if truth_df is not None:
+        truth_df = truth_df.copy()
         truth_df.index = truth_df.hit_id
     
     # create mask for only the important hits
@@ -26,9 +28,9 @@ def get_nn_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.Data
     
     # data input and data output
     di_geometric = hits_df[["x", "y", "z"]].values
-    di_volume = hits_df[["volume"]].values
-    di_layer = hits_df[["layer"]].values
-    di_module = hits_df[["module"]].values
+    di_volume = hits_df[["volume_id"]].values
+    di_layer = hits_df[["layer_id"]].values
+    di_module = hits_df[["module_id"]].values
     # output_tp = truth_df[["tpx", "tpy", "tpz"]]
     
     if truth_df is None:
