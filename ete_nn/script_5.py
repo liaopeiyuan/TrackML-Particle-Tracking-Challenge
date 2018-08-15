@@ -34,8 +34,13 @@ for hits, cells, truth in s1.get_train_events(n=10, content=[s1.HITS, s1.CELLS, 
 
 mi_1, mo_1 = get_nn_model()
 
-train_nn(mi_1, mo_1, di, do[0], fw=dw, epochs=100, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=1)
+train_nn(mi_1, mo_1, di, do, fw=dw, epochs=100, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=1)
 
 
+final_output_layer = Dense(np.max(do) + 1, activation="softmax", trainable=True)(mo_1)
 
-
+def train_nn(input_layer, output_layer, fx, fy, fw, epochs=10, batch_size=64, loss="categorical_crossentropy", metrics=None, verbose=1):
+    final_output_layer = Dense(np.max(fy) + 1, activation="softmax", trainable=True)(output_layer)
+    temp_model = Model(inputs=input_layer, outputs=final_output_layer)
+    temp_model.compile(optimizer="adam", loss=loss, metrics=metrics)
+    temp_model.fit(fx, fy, sample_weight=fw, epochs=epochs, batch_size=batch_size, verbose=verbose)

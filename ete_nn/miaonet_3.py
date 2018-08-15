@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
+from keras.models import Model
 from keras.layers import Input, Dense, Embedding, Concatenate, Flatten, BatchNormalization, Activation
 
 
@@ -80,6 +81,7 @@ def get_nn_model():
         x = Dense(units=128, use_bias=False)(x)
         x = BatchNormalization(scale=False)(x)
         x = Activation("relu")(x)
-    return [input_geometric, input_volume, input_layer, input_module], [x]
+    return [input_geometric, input_volume, input_layer, input_module], x
+
 
 
