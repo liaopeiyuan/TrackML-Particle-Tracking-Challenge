@@ -46,7 +46,9 @@ def get_nn_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.Data
     else:
         do_id = truth_df["particle_id"].values
         do_id = LabelEncoder().fit_transform(do_id)
-        return x, do_id, truth_df["weight"].values
+        dw = truth_df["weight"].values
+        dw = dw * (dw.shape[0] / dw.sum())
+        return x, do_id, dw
     
     
 def get_nn_model():
