@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder
 
 from keras.layers import Input, Dense, Embedding, Concatenate, Flatten, BatchNormalization, Activation
 
 
-def prepare_nn_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.DataFrame=None):
+def get_nn_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.DataFrame=None):
     # notice that hit_id in hits_df, cells_df, and truth_df is already sorted
     hits_df.index = hits_df.hit_id
     if truth_df is not None:
@@ -29,14 +30,16 @@ def prepare_nn_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.
     di_layer = hits_df[["layer"]].values
     di_module = hits_df[["module"]].values
     # output_tp = truth_df[["tpx", "tpy", "tpz"]]
-    do_id = truth_df["particle_id"].values
+    
     if truth_df is None:
-        return [di_geometric, di_volume, di_layer, di_module], [do_id]
+        return [di_geometric, di_volume, di_layer, di_module], None, None
     else:
+        do_id = truth_df["particle_id"].values
+        do_id = LabelEncoder().fit_transform(do_id)
         return [di_geometric, di_volume, di_layer, di_module], [do_id], truth_df["weight"].values
     
     
-def prepare_nn_model():
+def get_nn_model():
     embed_dim_in_ch0 = 1200
     embed_dim_in_ch1 = 1280
     embed_dim_out_ch0 = 16
@@ -69,4 +72,5 @@ def prepare_nn_model():
         x = BatchNormalization(scale=False)(x)
         x = Activation("relu")(x)
     return [input_geometric, input_volume, input_layer, input_module], [x]
+
 
