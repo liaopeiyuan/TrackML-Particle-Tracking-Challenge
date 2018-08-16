@@ -51,7 +51,11 @@ def get_nn_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.Data
         return x, do_id, dw
     
     
-def get_nn_model():
+def get_nn_model(geometric_size=3):
+    """
+    :param geometric_size: the size of the geometric input (e.g. cartesian coordinates: x, y, z -> size=3)
+    :return:
+    """
     embed_dim_in_ch0 = 1200
     embed_dim_in_ch1 = 1280
     embed_dim_out_ch0 = 16
@@ -65,7 +69,7 @@ def get_nn_model():
     embed_dim_out_layer = 3
     embed_dim_out_module = 32
     
-    input_geometric = Input(shape=(3,), name="input_geometric")
+    input_geometric = Input(shape=(geometric_size,), name="input_geometric")
     input_volume = Input(shape=(1,), name="input_volume")
     input_layer = Input(shape=(1,), name="input_layer")
     input_module = Input(shape=(1,), name="input_module")

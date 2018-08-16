@@ -34,5 +34,5 @@ for hits, cells, truth in s1.get_train_events(n=10, content=[s1.HITS, s1.CELLS, 
 
 mi_1, mo_1 = get_nn_model()
 
-train_nn(mi_1, mo_1, di, do, fw=dw, epochs=100, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=1)
+train_nn(mi_1, mo_1, di, do, fw=dw, epochs=2000, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=1)
 
