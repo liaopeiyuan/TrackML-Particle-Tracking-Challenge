@@ -32,7 +32,23 @@ for hits, cells, truth in s1.get_train_events(n=10, content=[s1.HITS, s1.CELLS, 
     break
 
 
-mi_1, mo_1 = get_nn_model()
+def cartesian_to_cylindrical(xyz):
+    r = np.sqrt(xyz[:, 0] ** 2 + xyz[:, 1] ** 2)
+    a = np.arctan2(xyz[:, 1], xyz[:, 0])
+    z = xyz[:, 2]
+    return np.vstack([r, a, z]).T
+
+
+def cartesian_to_cylindrical_2(xyz):
+    r = np.sqrt(xyz[:, 0] ** 2 + xyz[:, 1] ** 2)
+    a = np.arctan2(xyz[:, 1], xyz[:, 0])
+    phi = np.arctan2(xyz[:, 2], r)
+    return np.vstack([r, a, phi]).T
+
+
+di["input_geometric"] = cartesian_to_cylindrical(di["input_geometric"])
+
+mi_1, mo_1 = get_nn_model(3)
 
 train_nn(mi_1, mo_1, di, do, fw=dw, epochs=2000, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=1)
 
