@@ -51,9 +51,10 @@ def get_nn_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.Data
         return x, do_id, dw
     
     
-def get_nn_model(geometric_size=3, use_volume=True, use_layer=True, use_module=True):
+def get_nn_model(geometric_size=3, use_volume=3, use_layer=3, use_module=32):
     """
     geometric_size: the size of the geometric input (e.g. cartesian coordinates: x, y, z -> size=3)
+    use_volume: size of volume embedding
     """
     # embed_dim_in_ch0 = 1200
     # embed_dim_in_ch1 = 1280
@@ -65,27 +66,27 @@ def get_nn_model(geometric_size=3, use_volume=True, use_layer=True, use_module=T
     input_list = [input_geometric]
     concat_list = [input_geometric]
     
-    if use_volume:
+    if use_volume > 0:
         embed_dim_in_volume = 9
-        embed_dim_out_volume = 3
+        embed_dim_out_volume = use_volume
         input_volume = Input(shape=(1,), name="input_volume")
         input_list.append(input_volume)
         embed_volume = Embedding(input_dim=embed_dim_in_volume, output_dim=embed_dim_out_volume, name="embed_volume")(input_volume)
         flat_volume = Flatten(name="flat_volume")(embed_volume)
         concat_list.append(flat_volume)
         
-    if use_layer:
+    if use_layer > 0:
         embed_dim_in_layer = 7
-        embed_dim_out_layer = 3
+        embed_dim_out_layer = use_layer
         input_layer = Input(shape=(1,), name="input_layer")
         input_list.append(input_layer)
         embed_layer = Embedding(input_dim=embed_dim_in_layer, output_dim=embed_dim_out_layer, name="embed_layer")(input_layer)
         flat_layer = Flatten(name="flat_layer")(embed_layer)
         concat_list.append(flat_layer)
-
-    if use_module:
+    
+    if use_module > 0:
         embed_dim_in_module = 3192
-        embed_dim_out_module = 32
+        embed_dim_out_module = use_module
         input_module = Input(shape=(1,), name="input_module")
         input_list.append(input_module)
         embed_module = Embedding(input_dim=embed_dim_in_module, output_dim=embed_dim_out_module, name="embed_module")(input_module)
@@ -99,6 +100,15 @@ def get_nn_model(geometric_size=3, use_volume=True, use_layer=True, use_module=T
         x = BatchNormalization(scale=False)(x)
         x = Activation("relu")(x)
     return input_list, x
+
+
+def get_cell_data(cells_df: pd.DataFrame):
+    cells_gb = cells_df.groupby("hit_id")
+    ch0 = cells_gb[["ch0"]].apply(np.ndarray)
+    
+    
+def get_cells_model(use_ch0=16, use_ch1=16):
+    pass
 
 
 # train neural network and returns a final accuracy score
