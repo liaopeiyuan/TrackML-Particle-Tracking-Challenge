@@ -92,7 +92,7 @@ def get_nn_model(geometric_size=3, use_volume=True, use_layer=True, use_module=T
         flat_module = Flatten(name="flat_module")(embed_module)
         concat_list.append(flat_module)
         
-    x = Concatenate(name="concat_hits")(concat_list)
+    x = Concatenate(name="concat_hits")(concat_list) if len(concat_list) > 1 else input_geometric
     
     for i in range(10):
         x = Dense(units=128, use_bias=False)(x)

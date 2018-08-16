@@ -30,6 +30,16 @@ for hits, cells, truth in s1.get_train_events(n=10, content=[s1.HITS, s1.CELLS, 
     break
 
 
+# di["input_geometric"] = cartesian_to_cylindrical(di["input_geometric"])
+
+from itertools import product
+record_1 = {}
+for params in product((False, True), repeat=3):
+    di, do, dw = get_nn_data(hits, cells, truth, *params)
+    mi_1, mo_1 = get_nn_model(3, *params)
+    record_1[params] = train_nn(mi_1, mo_1, di, do, fw=dw, epochs=5, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=1)
+
+
 def cartesian_to_cylindrical(xyz):
     r = np.sqrt(xyz[:, 0] ** 2 + xyz[:, 1] ** 2)
     a = np.arctan2(xyz[:, 1], xyz[:, 0])
@@ -42,14 +52,5 @@ def cartesian_to_cylindrical_2(xyz):
     a = np.arctan2(xyz[:, 1], xyz[:, 0])
     phi = np.arctan2(xyz[:, 2], r)
     return np.vstack([r, a, phi]).T
-
-
-# di["input_geometric"] = cartesian_to_cylindrical(di["input_geometric"])
-
-
-di, do, dw = get_nn_data(hits, cells, truth, use_volume=True, use_layer=True, use_module=True)
-mi_1, mo_1 = get_nn_model(3, use_volume=True, use_layer=True, use_module=True)
-
-train_nn(mi_1, mo_1, di, do, fw=dw, epochs=200, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=1)
 
 
