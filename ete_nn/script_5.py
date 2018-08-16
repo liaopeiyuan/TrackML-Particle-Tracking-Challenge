@@ -9,8 +9,7 @@ import numpy as np
 import pandas as pd
 
 from utils.session import Session
-from ete_nn.miaonet_3 import get_nn_data, get_nn_model
-from ete_nn.miaonet_1 import train_nn
+from ete_nn.miaonet_3 import get_nn_data, get_nn_model, train_nn
 
 from trackml.score import score_event
 
@@ -28,7 +27,6 @@ def easy_score(truth, pred):
 s1 = Session("../data/")
 
 for hits, cells, truth in s1.get_train_events(n=10, content=[s1.HITS, s1.CELLS, s1.TRUTH], randomness=True)[1]:
-    di, do, dw = get_nn_data(hits, cells, truth)
     break
 
 
@@ -46,9 +44,12 @@ def cartesian_to_cylindrical_2(xyz):
     return np.vstack([r, a, phi]).T
 
 
-di["input_geometric"] = cartesian_to_cylindrical(di["input_geometric"])
+# di["input_geometric"] = cartesian_to_cylindrical(di["input_geometric"])
 
-mi_1, mo_1 = get_nn_model(3)
 
-train_nn(mi_1, mo_1, di, do, fw=dw, epochs=2000, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=1)
+di, do, dw = get_nn_data(hits, cells, truth, use_volume=True, use_layer=True, use_module=True)
+mi_1, mo_1 = get_nn_model(3, use_volume=True, use_layer=True, use_module=True)
+
+train_nn(mi_1, mo_1, di, do, fw=dw, epochs=200, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=1)
+
 

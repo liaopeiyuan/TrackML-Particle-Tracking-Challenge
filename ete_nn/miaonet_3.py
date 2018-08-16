@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import log_loss
 
 from keras.models import Model
 from keras.layers import Input, Dense, Embedding, Concatenate, Flatten, BatchNormalization, Activation
@@ -100,4 +101,11 @@ def get_nn_model(geometric_size=3, use_volume=True, use_layer=True, use_module=T
     return input_list, x
 
 
+# train neural network and returns a final accuracy score
+def train_nn(inputs, outputs, fx, fy, fw, epochs=10, batch_size=64, loss="categorical_crossentropy", metrics=None, verbose=1):
+    final_output_layer = Dense(np.max(fy) + 1, activation="softmax", trainable=True)(outputs)
+    temp_model = Model(inputs=inputs, outputs=final_output_layer)
+    temp_model.compile(optimizer="adam", loss=loss, metrics=metrics)
+    temp_model.fit(fx, fy, sample_weight=fw, epochs=epochs, batch_size=batch_size, verbose=verbose)
+    return log_loss(y_true=fy, y_pred=temp_model.predict(fx, batch_size=batch_size), sample_weight=fw)
 
