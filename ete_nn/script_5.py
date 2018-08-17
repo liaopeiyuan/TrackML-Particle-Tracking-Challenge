@@ -48,12 +48,13 @@ record_1 = {
     (3, 0, 0): 0.5616555043692665,
     (3, 0, 32): 0.3969729097340809,
     (3, 3, 0): 0.6702962944311427,
-    (3, 3, 32): 0.44920655267255877
+    (3, 3, 32): 0.44920655267255877,
+    (3, 2, 32): 0.5086306505932866,
 }
 
 
 record_1 = {}
-for params in [(3, 2, 32)]:
+for params in [(4, 0, 32)]:
     di, do, dw = get_nn_data(hits, cells, truth, *params)
     mi_1, mo_1 = get_nn_model(3, *params)
     record_1[params] = train_nn(mi_1, mo_1, di, do, fw=dw, epochs=4500, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=1)

@@ -4,7 +4,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import log_loss
 
 from keras.models import Model
-from keras.layers import Input, Dense, Embedding, Concatenate, Flatten, BatchNormalization, Activation
+from keras.layers import Input, Dense, Embedding, Concatenate, Flatten, BatchNormalization, Activation, GlobalMaxPool1D
 
 
 def get_nn_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.DataFrame=None,
@@ -56,11 +56,6 @@ def get_nn_model(geometric_size=3, use_volume=3, use_layer=3, use_module=32):
     geometric_size: the size of the geometric input (e.g. cartesian coordinates: x, y, z -> size=3)
     use_volume: size of volume embedding
     """
-    # embed_dim_in_ch0 = 1200
-    # embed_dim_in_ch1 = 1280
-    # embed_dim_out_ch0 = 16
-    # embed_dim_out_ch1 = 16
-    
     input_geometric = Input(shape=(geometric_size,), name="input_geometric")
     
     input_list = [input_geometric]
@@ -83,7 +78,7 @@ def get_nn_model(geometric_size=3, use_volume=3, use_layer=3, use_module=32):
         embed_layer = Embedding(input_dim=embed_dim_in_layer, output_dim=embed_dim_out_layer, name="embed_layer")(input_layer)
         flat_layer = Flatten(name="flat_layer")(embed_layer)
         concat_list.append(flat_layer)
-    
+        
     if use_module > 0:
         embed_dim_in_module = 3192
         embed_dim_out_module = use_module
@@ -102,15 +97,54 @@ def get_nn_model(geometric_size=3, use_volume=3, use_layer=3, use_module=32):
     return input_list, x
 
 
-def get_cell_data(cells_df: pd.DataFrame):
+def fast_cells_groupby(cells_df: pd.DataFrame, col):
+    idx = (np.where(cells_df.iloc[:-1, "hit_id"] != cells_df.iloc[:, -1])[0] + 1).tolist()
+    
+    
+def get_cells_data(cells_df: pd.DataFrame):
     cells_gb = cells_df.groupby("hit_id")
-    ch0 = cells_gb[["ch0"]].apply(np.ndarray)
+    ch0 = cells_gb["ch0"].apply(np.array)
+    ch1 = cells_gb["ch1"].apply(np.array)
+    value = cells_gb["value"].apply(lambda x: np.array(x).reshape(-1, 1))
+    return {"input_ch0": ch0, "input_ch1": ch1, "input_value": value}
     
-    
-def get_cells_model(use_ch0=16, use_ch1=16):
-    pass
+    from timeit import timeit
+    n = 20
+    timeit('cells_gb["ch0"].apply(np.array), cells_gb["ch1"].apply(np.array), cells_gb["value"].apply(np.array)', number=n, globals=globals()) / n
+
+temp_m.fit((lambda d: {x: d[x].tolist() for x in d})(ci_d), y, batch_size=2048, verbose=1)
+
+def get_cells_model(use_ch0=16, use_ch1=16, use_value=True):
+    input_list = []
+    concat_list = []
+    if use_ch0 > 0:
+        embed_dim_in_ch0, embed_dim_out_ch0 = 1200, use_ch0
+        input_ch0 = Input(shape=(None,), name="input_ch0")
+        input_list.append(input_ch0)
+        embed_ch0 = Embedding(input_dim=embed_dim_in_ch0, output_dim=embed_dim_out_ch0, name="embed_ch0")(input_ch0)
+        concat_list.append(embed_ch0)
+    if use_ch1 > 0:
+        embed_dim_in_ch1, embed_dim_out_ch1 = 1280, use_ch1
+        input_ch1 = Input(shape=(None,), name="input_ch1")
+        input_list.append(input_ch1)
+        embed_ch1 = Embedding(input_dim=embed_dim_in_ch1, output_dim=embed_dim_out_ch1, name="embed_ch1")(input_ch1)
+        concat_list.append(embed_ch1)
+    if use_value:
+        input_value = Input(shape=(None, 1), name="input_value")
+        input_list.append(input_value)
+        concat_list.append(input_value)
+    # at least one feature (ch0, ch1, value) should be used in cells, otherwise, stop at upper-level function
+    x = Concatenate(axis=-1, name="concat_cells")(concat_list) if len(concat_list) > 1 else concat_list[0]
+    for i in range(5):
+        x = Dense(units=64, use_bias=False)(x)
+        x = BatchNormalization(scale=False)(x)
+        x = Activation("relu")(x)
+    x = GlobalMaxPool1D()(x)
+    return input_list, x
 
 
+
+    
 # train neural network and returns a final accuracy score
 def train_nn(inputs, outputs, fx, fy, fw, epochs=10, batch_size=64, loss="categorical_crossentropy", metrics=None, verbose=1):
     final_output_layer = Dense(np.max(fy) + 1, activation="softmax", trainable=True)(outputs)
