@@ -51,7 +51,7 @@ def get_nn_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.Data
         return x, do_id, dw
     
     
-def get_nn_model(geometric_size=3, use_volume=3, use_layer=3, use_module=32):
+def get_nn_model(geometric_size=3, use_volume=3, use_layer=3, use_module=32, use_ch0=16, use_ch1=16, use_value=True):
     """
     geometric_size: the size of the geometric input (e.g. cartesian coordinates: x, y, z -> size=3)
     use_volume: size of volume embedding
@@ -87,6 +87,11 @@ def get_nn_model(geometric_size=3, use_volume=3, use_layer=3, use_module=32):
         embed_module = Embedding(input_dim=embed_dim_in_module, output_dim=embed_dim_out_module, name="embed_module")(input_module)
         flat_module = Flatten(name="flat_module")(embed_module)
         concat_list.append(flat_module)
+    
+    if any((use_ch0, use_ch1, use_value)):
+        cells_input_list, cells_output = get_cells_model(use_ch0, use_ch1, use_value)
+        input_list.extend(cells_input_list)
+        concat_list.append(cells_output)
         
     x = Concatenate(name="concat_hits")(concat_list) if len(concat_list) > 1 else input_geometric
     
@@ -96,23 +101,6 @@ def get_nn_model(geometric_size=3, use_volume=3, use_layer=3, use_module=32):
         x = Activation("relu")(x)
     return input_list, x
 
-
-def fast_cells_groupby(cells_df: pd.DataFrame, col):
-    idx = (np.where(cells_df.iloc[:-1, "hit_id"] != cells_df.iloc[:, -1])[0] + 1).tolist()
-    
-    
-def get_cells_data(cells_df: pd.DataFrame):
-    cells_gb = cells_df.groupby("hit_id")
-    ch0 = cells_gb["ch0"].apply(np.array)
-    ch1 = cells_gb["ch1"].apply(np.array)
-    value = cells_gb["value"].apply(lambda x: np.array(x).reshape(-1, 1))
-    return {"input_ch0": ch0, "input_ch1": ch1, "input_value": value}
-    
-    from timeit import timeit
-    n = 20
-    timeit('cells_gb["ch0"].apply(np.array), cells_gb["ch1"].apply(np.array), cells_gb["value"].apply(np.array)', number=n, globals=globals()) / n
-
-temp_m.fit((lambda d: {x: d[x].tolist() for x in d})(ci_d), y, batch_size=2048, verbose=1)
 
 def get_cells_model(use_ch0=16, use_ch1=16, use_value=True):
     input_list = []
@@ -143,9 +131,109 @@ def get_cells_model(use_ch0=16, use_ch1=16, use_value=True):
     return input_list, x
 
 
-
+# def fast_cells_groupby(cells_df: pd.DataFrame, col):
+#     idx = (np.where(cells_df.iloc[:-1, "hit_id"] != cells_df.iloc[:, -1])[0] + 1).tolist()
     
+    
+def get_cells_data(cells_df: pd.DataFrame):
+    cells_gb = cells_df.groupby("hit_id")
+    ch0 = cells_gb["ch0"].apply(np.array)
+    ch1 = cells_gb["ch1"].apply(np.array)
+    value = cells_gb["value"].apply(lambda x: np.array(x).reshape(-1, 1))
+    return {"input_ch0": ch0, "input_ch1": ch1, "input_value": value}
+    
+    from timeit import timeit
+    n = 20
+    timeit('cells_gb["ch0"].apply(np.array), cells_gb["ch1"].apply(np.array), cells_gb["value"].apply(np.array)', number=n, globals=globals()) / n
+
+# temp_m.fit((lambda d: {x: d[x].tolist() for x in d})(ci_d), y, batch_size=2048, verbose=1)
+
+
+def get_all_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.DataFrame=None,
+                 use_volume=True, use_layer=True, use_module=True, use_ch0=True, use_ch1=True, use_value=True):
+    hits_df = hits_df.copy()
+    hits_df.index = hits_df.hit_id.values
+    cells_df = cells_df.copy()
+    cells_df.index = cells_df.hit_id.values
+    
+    if truth_df is not None:
+        truth_df = truth_df.copy()
+        truth_df.index = truth_df.hit_id.values
+        # training, drop unimportant hits
+        drop_idx = ((truth_df.groupby("particle_id")["particle_id"].transform("count") <= 3) & (truth_df["weight"] == 0)).index
+        hits_df.drop(drop_idx, axis=0, inplace=True)
+        truth_df.drop(drop_idx, axis=0, inplace=True)
+        cells_df.drop(drop_idx, axis=0, inplace=True)
+        # prepare label encoder
+        le_1 = LabelEncoder()
+        le_1.fit(truth_df["particle_id"].values)
+        # normalize weight
+        truth_df["weight"] = truth_df["weight"] * (truth_df.shape[0] / truth_df["weight"].sum())
+        
+    # preprocess dataframe values
+    if use_volume:
+        volume_dict = {7: 0, 8: 1, 9: 2, 12: 3, 13: 4, 14: 5, 16: 6, 17: 7, 18: 8}
+        hits_df["volume_id"] = hits_df["volume_id"].map(volume_dict)
+
+    if use_layer:
+        layer_dict = {2: 0, 4: 1, 6: 2, 8: 3, 10: 4, 12: 5, 14: 6}
+        hits_df["layer_id"] = hits_df["layer_id"].map(layer_dict)
+        
+    if use_module:
+        hits_df["module_id"] -= 1
+        
+    # divide into batches by the number of cells
+    hit_id_to_n_cells = cells_df.groupby("hit_id").size().rename("n_cells")
+    n_cells_to_hit_id = hit_id_to_n_cells.groupby(hit_id_to_n_cells).apply(lambda x: x.index).to_dict()
+    
+    ret_list = []
+    for n_cells in n_cells_to_hit_id:
+        hit_idx = n_cells_to_hit_id[n_cells]
+        x = {
+            "input_geometric": hits_df.loc[hit_idx, ["x", "y", "z"]].values
+        }  # input dictionary to neural network
+
+        if use_volume:
+            x["input_volume"] = hits_df.loc[hit_idx, "volume_id"].values.reshape((-1, 1))
+        if use_layer:
+            x["input_layer"] = hits_df.loc[hit_idx, "layer_id"].values.reshape((-1, 1))
+        if use_module:
+            x["input_module"] = hits_df.loc[hit_idx, "module_id"].values.reshape((-1, 1))
+        if use_ch0:
+            x["input_ch0"] = cells_df.loc[hit_idx, "ch0"].values.reshape((-1, n_cells))
+        if use_ch1:
+            x["input_ch1"] = cells_df.loc[hit_idx, "ch1"].values.reshape((-1, n_cells))
+        if use_value:
+            x["input_value"] = cells_df.loc[hit_idx, "value"].values.reshape((-1, n_cells, 1))
+            
+        if truth_df is None:
+            ret_list.append(x)
+        else:
+            y = le_1.transform(truth_df.loc[hit_idx, "particle_id"].values)
+            w = truth_df.loc[hit_idx, "weight"].values
+            ret_list.append((x, y, w))
+            
+    if truth_df is None:
+        return ret_list, None
+    else:
+        return ret_list, le_1.classes_.shape[0]
+
+
 # train neural network and returns a final accuracy score
+
+def train_nn_all(inputs, outputs, data_list, n_classes, outer_epochs=10, inner_epochs=4, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=None, verbose=1):
+    final_output_layer = Dense(n_classes, activation="softmax", trainable=True)(outputs)
+    temp_model = Model(inputs=inputs, outputs=final_output_layer)
+    temp_model.compile(optimizer="adam", loss=loss, metrics=metrics)
+    
+    for i in range(outer_epochs):  # number of epochs for the entire dataset
+        print(f"outer epoch: {i+1}/{outer_epochs}")
+        for x, y, w in data_list:
+            # inner_epochs is the number of epochs for each n_cells batch
+            temp_model.fit(x, y, sample_weight=w, epochs=inner_epochs, batch_size=batch_size, verbose=verbose)
+    return temp_model.evaluate_generator(data_list)
+    
+            
 def train_nn(inputs, outputs, fx, fy, fw, epochs=10, batch_size=64, loss="categorical_crossentropy", metrics=None, verbose=1):
     final_output_layer = Dense(np.max(fy) + 1, activation="softmax", trainable=True)(outputs)
     temp_model = Model(inputs=inputs, outputs=final_output_layer)
