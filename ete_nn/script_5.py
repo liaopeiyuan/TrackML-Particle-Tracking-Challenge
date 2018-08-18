@@ -29,9 +29,10 @@ s1 = Session("../data/")
 
 for hits, cells, truth in s1.get_train_events(n=10, content=[s1.HITS, s1.CELLS, s1.TRUTH], randomness=True)[1]:
     break
-
-
+    
+    
 # di["input_geometric"] = cartesian_to_cylindrical(di["input_geometric"])
+
 
 
 record_1 = {}

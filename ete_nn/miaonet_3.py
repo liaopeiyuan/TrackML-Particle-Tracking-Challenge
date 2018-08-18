@@ -160,7 +160,7 @@ def get_all_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.Dat
         truth_df = truth_df.copy()
         truth_df.index = truth_df.hit_id.values
         # training, drop unimportant hits
-        drop_idx = ((truth_df.groupby("particle_id")["particle_id"].transform("count") <= 3) & (truth_df["weight"] == 0)).index
+        drop_idx = truth_df.index[((truth_df.groupby("particle_id")["particle_id"].transform("count") <= 3) | (truth_df["weight"] == 0)).values]
         hits_df.drop(drop_idx, axis=0, inplace=True)
         truth_df.drop(drop_idx, axis=0, inplace=True)
         cells_df.drop(drop_idx, axis=0, inplace=True)
@@ -174,7 +174,7 @@ def get_all_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.Dat
     if use_volume:
         volume_dict = {7: 0, 8: 1, 9: 2, 12: 3, 13: 4, 14: 5, 16: 6, 17: 7, 18: 8}
         hits_df["volume_id"] = hits_df["volume_id"].map(volume_dict)
-
+        
     if use_layer:
         layer_dict = {2: 0, 4: 1, 6: 2, 8: 3, 10: 4, 12: 5, 14: 6}
         hits_df["layer_id"] = hits_df["layer_id"].map(layer_dict)
@@ -192,7 +192,7 @@ def get_all_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.Dat
         x = {
             "input_geometric": hits_df.loc[hit_idx, ["x", "y", "z"]].values
         }  # input dictionary to neural network
-
+        
         if use_volume:
             x["input_volume"] = hits_df.loc[hit_idx, "volume_id"].values.reshape((-1, 1))
         if use_layer:
@@ -218,21 +218,22 @@ def get_all_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.Dat
     else:
         return ret_list, le_1.classes_.shape[0]
 
-
+    
 # train neural network and returns a final accuracy score
 
 def train_nn_all(inputs, outputs, data_list, n_classes, outer_epochs=10, inner_epochs=4, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=None, verbose=1):
     final_output_layer = Dense(n_classes, activation="softmax", trainable=True)(outputs)
     temp_model = Model(inputs=inputs, outputs=final_output_layer)
     temp_model.compile(optimizer="adam", loss=loss, metrics=metrics)
-    
     for i in range(outer_epochs):  # number of epochs for the entire dataset
         print(f"outer epoch: {i+1}/{outer_epochs}")
         for x, y, w in data_list:
             # inner_epochs is the number of epochs for each n_cells batch
             temp_model.fit(x, y, sample_weight=w, epochs=inner_epochs, batch_size=batch_size, verbose=verbose)
-    return temp_model.evaluate_generator(data_list)
-    
+        scores = temp_model.evaluate_generator(iter(data_list), steps=len(data_list))
+        print(f"loss={scores[0]}, accuracy={scores[1]}")
+    return temp_model.evaluate_generator(iter(data_list), steps=len(data_list))
+
             
 def train_nn(inputs, outputs, fx, fy, fw, epochs=10, batch_size=64, loss="categorical_crossentropy", metrics=None, verbose=1):
     final_output_layer = Dense(np.max(fy) + 1, activation="softmax", trainable=True)(outputs)
