@@ -2,9 +2,10 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import log_loss
+from itertools import cycle
 
 from keras.models import Model
-from keras.layers import Input, Dense, Embedding, Concatenate, Flatten, BatchNormalization, Activation, GlobalMaxPool1D
+from keras.layers import Input, Dense, Embedding, Concatenate, Flatten, BatchNormalization, Activation, GlobalMaxPool1D, PReLU
 
 
 def get_nn_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.DataFrame=None,
@@ -87,7 +88,7 @@ def get_nn_model(geometric_size=3, use_volume=3, use_layer=3, use_module=32, use
         embed_module = Embedding(input_dim=embed_dim_in_module, output_dim=embed_dim_out_module, name="embed_module")(input_module)
         flat_module = Flatten(name="flat_module")(embed_module)
         concat_list.append(flat_module)
-    
+        
     if any((use_ch0, use_ch1, use_value)):
         cells_input_list, cells_output = get_cells_model(use_ch0, use_ch1, use_value)
         input_list.extend(cells_input_list)
@@ -123,10 +124,8 @@ def get_cells_model(use_ch0=16, use_ch1=16, use_value=True):
         concat_list.append(input_value)
     # at least one feature (ch0, ch1, value) should be used in cells, otherwise, stop at upper-level function
     x = Concatenate(axis=-1, name="concat_cells")(concat_list) if len(concat_list) > 1 else concat_list[0]
-    for i in range(5):
-        x = Dense(units=64, use_bias=False)(x)
-        x = BatchNormalization(scale=False)(x)
-        x = Activation("relu")(x)
+    for i in range(6):
+        x = Dense(units=64, use_bias=True, activation="relu")(x)
     x = GlobalMaxPool1D()(x)
     return input_list, x
 
@@ -221,10 +220,12 @@ def get_all_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.Dat
     
 # train neural network and returns a final accuracy score
 
-def train_nn_all(inputs, outputs, data_list, n_classes, outer_epochs=10, inner_epochs=4, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=None, verbose=1):
+def train_nn_all(inputs, outputs, data_list, n_classes, epochs=10, steps_per_epoch=10, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=None, verbose=1):
     final_output_layer = Dense(n_classes, activation="softmax", trainable=True)(outputs)
     temp_model = Model(inputs=inputs, outputs=final_output_layer)
     temp_model.compile(optimizer="adam", loss=loss, metrics=metrics)
+    temp_model.fit_generator(cycle(data_list), epochs=epochs, steps_per_epoch=steps_per_epoch, verbose=verbose)
+    '''
     for i in range(outer_epochs):  # number of epochs for the entire dataset
         print(f"outer epoch: {i+1}/{outer_epochs}")
         for x, y, w in data_list:
@@ -232,9 +233,11 @@ def train_nn_all(inputs, outputs, data_list, n_classes, outer_epochs=10, inner_e
             temp_model.fit(x, y, sample_weight=w, epochs=inner_epochs, batch_size=batch_size, verbose=verbose)
         scores = temp_model.evaluate_generator(iter(data_list), steps=len(data_list))
         print(f"loss={scores[0]}, accuracy={scores[1]}")
-    return temp_model.evaluate_generator(iter(data_list), steps=len(data_list))
+    '''
+    scores = temp_model.evaluate_generator(iter(data_list), steps=len(data_list))
+    return [scores[0] / 100, scores[1] * 100]
 
-            
+
 def train_nn(inputs, outputs, fx, fy, fw, epochs=10, batch_size=64, loss="categorical_crossentropy", metrics=None, verbose=1):
     final_output_layer = Dense(np.max(fy) + 1, activation="softmax", trainable=True)(outputs)
     temp_model = Model(inputs=inputs, outputs=final_output_layer)

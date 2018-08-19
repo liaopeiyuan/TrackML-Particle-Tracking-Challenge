@@ -39,9 +39,9 @@ params_1 = {
     'use_module': 128,
     'use_ch0': 16,
     'use_ch1': 16,
-    'use_value': True
+    'use_value': True,
 }
 
 m1_i, m1_o = get_nn_model(geometric_size=3, **params_1)
 data_list, n_classes = get_all_data(hits, cells, truth, **params_1)
-train_nn_all(m1_i, m1_o, data_list, n_classes, outer_epochs=8000, inner_epochs=4, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=0)
+train_nn_all(m1_i, m1_o, data_list, n_classes, epochs=2000, steps_per_epoch=80, batch_size=2048, loss="sparse_categorical_crossentropy", metrics=["sparse_categorical_accuracy"], verbose=1)
