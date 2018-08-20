@@ -7,7 +7,7 @@ from itertools import cycle
 from keras.models import Model
 from keras.layers import Input, Dense, Embedding, Concatenate, Flatten, BatchNormalization, Activation, GlobalMaxPool1D, PReLU
 
-
+'''
 def get_nn_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.DataFrame=None,
                 use_volume=True, use_layer=True, use_module=True):
     # notice that hit_id in hits_df, cells_df, and truth_df is already sorted
@@ -50,8 +50,9 @@ def get_nn_data(hits_df: pd.DataFrame, cells_df: pd.DataFrame, truth_df: pd.Data
         dw = truth_df["weight"].values
         dw = dw * (dw.shape[0] / dw.sum())
         return x, do_id, dw
-    
-    
+'''
+
+
 def get_nn_model(geometric_size=3, use_volume=3, use_layer=3, use_module=32, use_ch0=16, use_ch1=16, use_value=True):
     """
     geometric_size: the size of the geometric input (e.g. cartesian coordinates: x, y, z -> size=3)
@@ -133,7 +134,7 @@ def get_cells_model(use_ch0=16, use_ch1=16, use_value=True):
 # def fast_cells_groupby(cells_df: pd.DataFrame, col):
 #     idx = (np.where(cells_df.iloc[:-1, "hit_id"] != cells_df.iloc[:, -1])[0] + 1).tolist()
     
-    
+'''
 def get_cells_data(cells_df: pd.DataFrame):
     cells_gb = cells_df.groupby("hit_id")
     ch0 = cells_gb["ch0"].apply(np.array)
@@ -144,7 +145,7 @@ def get_cells_data(cells_df: pd.DataFrame):
     from timeit import timeit
     n = 20
     timeit('cells_gb["ch0"].apply(np.array), cells_gb["ch1"].apply(np.array), cells_gb["value"].apply(np.array)', number=n, globals=globals()) / n
-
+'''
 # temp_m.fit((lambda d: {x: d[x].tolist() for x in d})(ci_d), y, batch_size=2048, verbose=1)
 
 
