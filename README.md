@@ -19,3 +19,4 @@ Team Members (in alphabetical order):
 - Alexander Liao - Kent School
 - Jiajun Mao - Kent School
 - Tianyi Miao - Indian Springs School
+- atom1231
